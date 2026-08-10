@@ -1,0 +1,85 @@
+package com.hzj.wechat.provider.wechat.payment.entity;
+
+import com.hzj.wechat.core.qrcode.enums.WechatXcxEnvVersion;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
+/**
+ * 微信商户配置快照。
+ * <p>
+ * 该对象用于承载一次业务调用所需的商户身份、OAuth2 与微信支付相关配置，
+ * 具体来源可由配置文件、数据库、缓存或其他外部系统提供。
+ *
+ * @author YourName
+ * @version 1.0
+ * @since 2026-07-15
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class WechatPaymentConfig {
+
+    /**
+     * 微信支付商户号。
+     */
+    private String mchid;
+
+    /**
+     * 微信应用唯一标识。
+     */
+    private String appid;
+
+    /**
+     * 微信应用密钥。
+     */
+    private String appSecret;
+
+    /**
+     * 商户 API 证书私钥内容。
+     */
+    private PrivateKey privateKey;
+
+    /**
+     * 商户 API 证书序列号。
+     */
+    private String certificateSerialNo;
+
+    /**
+     * 微信支付公钥内容。
+     */
+    private PublicKey wechatPayPublicKey;
+
+    /**
+     * 微信支付公钥 ID。
+     */
+    private String wechatPayPublicKeyId;
+
+    /**
+     * 微信支付 APIv3 密钥。
+     */
+    private String apiV3Secret;
+
+    /**
+     * 微信支付异步通知地址
+     */
+    private String paymentNotifyUrl;
+
+    /**
+     * 商家转账异步通知地址
+     */
+    private String transferNotifyUrl;
+
+    /**
+     * 免确认收款授权结果通知
+     */
+    private String authorizationNotifyUrl;
+
+    /**
+     * 小程序二维码激活版本
+     */
+    private WechatXcxEnvVersion envVersion;
+}

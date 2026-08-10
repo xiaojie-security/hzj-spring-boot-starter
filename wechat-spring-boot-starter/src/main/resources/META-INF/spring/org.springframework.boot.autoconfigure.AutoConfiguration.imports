@@ -1,0 +1,9 @@
+com.hzj.wechat.config.WechatConfiguration
+com.hzj.wechat.config.WechatAccessConfiguration
+com.hzj.wechat.config.WechatAdConfiguration
+com.hzj.wechat.config.WechatOAuth2Configuration
+com.hzj.wechat.config.WechatPaymentConfiguration
+com.hzj.wechat.config.WechatXcxConfiguration
+com.hzj.wechat.config.WechatProfitsharingConfiguration
+com.hzj.wechat.config.WechatTransferConfiguration
+com.hzj.wechat.config.WechatVirtualPaymentConfiguration
