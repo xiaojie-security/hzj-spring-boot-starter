@@ -5,6 +5,7 @@ import com.hzj.elasticsearch.provider.es.enums.ElasticsearchScheme;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -17,27 +18,25 @@ import java.util.List;
 @NoArgsConstructor
 public class ElasticsearchConfig {
 
-    /** 节点连接模式。 */
+    /**
+     * 节点连接模式。
+     */
     private ElasticsearchMode mode = ElasticsearchMode.SINGLE_NODE;
 
     /**
-     * 单节点-IP，集群模式优先使用 nodes
+     * 单节点配置（单节点模式使用）
      */
-    private String address;
+    private ElasticsearchNode node;
 
     /**
-     * 单节点-端口
+     * 集群节点列表（集群模式使用）
      */
-    private Integer port;
+    private List<ElasticsearchNode> nodes;
 
-    /** 连接协议。 */
+    /**
+     * 连接协议。
+     */
     private ElasticsearchScheme scheme = ElasticsearchScheme.HTTP;
-
-    /**
-     * 集群节点列表，格式示例：["http://127.0.0.1:9200","http://127.0.0.2:9200"]
-     * 集群模式下使用此节点列表。
-     */
-    private List<String> nodes;
 
     /**
      * 账号
@@ -98,4 +97,59 @@ public class ElasticsearchConfig {
      * 是否启动时校验ES连通性，失败直接抛出异常阻止应用启动
      */
     private boolean healthCheckAtStartup = true;
+
+
+    /**
+     * Elasticsearch 节点配置
+     */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ElasticsearchNode {
+
+        /**
+         * 节点地址（IP或域名）
+         */
+        private String host;
+
+        /**
+         * 节点端口
+         */
+        private Integer port;
+
+        /**
+         * 完整的节点地址（host:port）
+         */
+        public String getAddress() {
+            if (!StringUtils.hasText(host)) {
+                return null;
+            }
+            return port != null ? host + ":" + port : host;
+        }
+    }
+
+    /**
+     * 创建节点对象
+     */
+    public static ElasticsearchNode of(String host, Integer port) {
+        return new ElasticsearchNode(host, port);
+    }
+
+    /**
+     * 从 "host:port" 字符串解析
+     */
+    public ElasticsearchNode parse(String nodeStr) {
+        if (!StringUtils.hasText(nodeStr)) {
+            return null;
+        }
+        String[] parts = nodeStr.trim().split(":");
+        if (parts.length == 2) {
+            return new ElasticsearchNode(parts[0], Integer.parseInt(parts[1]));
+        } else if (parts.length == 1) {
+            return new ElasticsearchNode(parts[0], null);
+        }
+        throw new IllegalArgumentException("无效的节点配置: " + nodeStr + "，格式应为 host:port");
+    }
+
+
 }
