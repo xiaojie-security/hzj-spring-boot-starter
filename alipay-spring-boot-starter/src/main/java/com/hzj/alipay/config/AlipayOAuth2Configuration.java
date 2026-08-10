@@ -2,7 +2,7 @@ package com.hzj.alipay.config;
 
 import com.hzj.alipay.core.oauth2.AliPayOAuth2Service;
 import com.hzj.alipay.core.oauth2.impl.DefaultAliPayOAuth2Service;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.oauth2.AlipayOAuth2ConfigProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -24,7 +24,7 @@ public class AlipayOAuth2Configuration {
      */
     @Bean
     @ConditionalOnMissingBean(AliPayOAuth2Service.class)
-    public AliPayOAuth2Service aliPayOAuth2Service(AlipayConfigProvider provider) {
+    public AliPayOAuth2Service aliPayOAuth2Service(AlipayOAuth2ConfigProvider provider) {
         return new DefaultAliPayOAuth2Service(provider);
     }
 }

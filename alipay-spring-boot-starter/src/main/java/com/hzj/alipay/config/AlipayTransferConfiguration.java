@@ -2,7 +2,7 @@ package com.hzj.alipay.config;
 
 import com.hzj.alipay.core.transfer.AlipayTransferService;
 import com.hzj.alipay.core.transfer.impl.DefaultAlipayTransferService;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.transfer.AlipayTransferConfigProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -22,7 +22,7 @@ public class AlipayTransferConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AlipayTransferService.class)
-    public AlipayTransferService alipayTransferService(AlipayConfigProvider provider) {
+    public AlipayTransferService alipayTransferService(AlipayTransferConfigProvider provider) {
         return new DefaultAlipayTransferService(provider);
     }
 }

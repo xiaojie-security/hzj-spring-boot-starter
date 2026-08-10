@@ -43,7 +43,8 @@ import com.hzj.alipay.core.payment.domain.AliPayTradeCloseResult;
 import com.hzj.alipay.core.payment.domain.AliPayTradeQueryParam;
 import com.hzj.alipay.core.payment.domain.AliPayTradeQueryResult;
 import com.hzj.alipay.core.AliPayException;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.payment.AlipayPaymentConfigProvider;
+import com.hzj.alipay.provider.alipay.payment.entity.AlipayPaymentConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -58,7 +59,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultAlipayPaymentService extends AbstractAlipayService implements AlipayPaymentService {
+public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPaymentConfig> implements AlipayPaymentService {
     private static final String APP_PRODUCT_CODE = "QUICK_MSECURITY_PAY";
     private static final String PAGE_PRODUCT_CODE = "FAST_INSTANT_TRADE_PAY";
     private static final String PRECREATE_PRODUCT_CODE = "FACE_TO_FACE_PAYMENT";
@@ -67,7 +68,7 @@ public class DefaultAlipayPaymentService extends AbstractAlipayService implement
     private static final String DEFAULT_INTEGRATION_TYPE = "PCWEB";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final AlipayConfigProvider provider;
+    private final AlipayPaymentConfigProvider provider;
 
     @Override
     protected AlipayClient getAlipayClient() {
@@ -75,7 +76,7 @@ public class DefaultAlipayPaymentService extends AbstractAlipayService implement
     }
 
     @Override
-    protected AlipayConfigProvider getAlipayConfigProvider() {
+    protected AlipayPaymentConfigProvider getAlipayConfigProvider() {
         return provider;
     }
 

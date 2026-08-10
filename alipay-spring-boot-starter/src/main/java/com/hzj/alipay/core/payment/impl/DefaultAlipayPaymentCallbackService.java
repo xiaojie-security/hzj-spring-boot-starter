@@ -2,8 +2,8 @@ package com.hzj.alipay.core.payment.impl;
 
 import com.hzj.alipay.core.payment.AlipayPaymentCallbackService;
 import com.hzj.alipay.core.payment.domain.AliPayCallbackResult;
-import com.hzj.alipay.provider.AlipayConfigProvider;
-import com.hzj.alipay.provider.domain.AlipayConfig;
+import com.hzj.alipay.provider.alipay.payment.AlipayPaymentConfigProvider;
+import com.hzj.alipay.provider.alipay.payment.entity.AlipayPaymentConfig;
 import com.hzj.alipay.utils.AlipayCallbackValidateUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,7 +25,7 @@ public class DefaultAlipayPaymentCallbackService implements AlipayPaymentCallbac
     private static final String FAIL_RESPONSE = "fail";
     private static final String TEXT_CONTENT_TYPE = "text/plain";
 
-    private final AlipayConfigProvider provider;
+    private final AlipayPaymentConfigProvider provider;
 
     /**
      * 验签并解析支付宝支付异步通知。
@@ -37,7 +37,7 @@ public class DefaultAlipayPaymentCallbackService implements AlipayPaymentCallbac
     @Override
     public AliPayCallbackResult parseCallback(HttpServletRequest request, HttpServletResponse response) {
         try {
-            AlipayConfig config = getAlipayConfig();
+            AlipayPaymentConfig config = getAlipayConfig();
             AliPayCallbackResult callbackResult = verifyCallback(request, config);
             validateCallback(callbackResult, config);
             writeResponse(response, HttpServletResponse.SC_OK, SUCCESS_RESPONSE);
@@ -60,7 +60,7 @@ public class DefaultAlipayPaymentCallbackService implements AlipayPaymentCallbac
      * @param config 支付宝配置
      * @return 验签后的回调结果
      */
-    private AliPayCallbackResult verifyCallback(HttpServletRequest request, AlipayConfig config) {
+    private AliPayCallbackResult verifyCallback(HttpServletRequest request, AlipayPaymentConfig config) {
         if (request == null) {
             throw new IllegalArgumentException("支付宝异步通知请求不能为空");
         }
@@ -79,7 +79,7 @@ public class DefaultAlipayPaymentCallbackService implements AlipayPaymentCallbac
      * @param callbackResult 支付宝回调结果
      * @param config 支付宝配置
      */
-    private void validateCallback(AliPayCallbackResult callbackResult, AlipayConfig config) {
+    private void validateCallback(AliPayCallbackResult callbackResult, AlipayPaymentConfig config) {
         if (!StringUtils.hasText(callbackResult.getOutTradeNo())
                 || !StringUtils.hasText(callbackResult.getTradeNo())
                 || !StringUtils.hasText(callbackResult.getTotalAmount())
@@ -100,11 +100,11 @@ public class DefaultAlipayPaymentCallbackService implements AlipayPaymentCallbac
      *
      * @return 支付宝配置
      */
-    private AlipayConfig getAlipayConfig() {
+    private AlipayPaymentConfig getAlipayConfig() {
         if (provider == null) {
-            throw new IllegalStateException("AlipayConfigProvider 未初始化");
+            throw new IllegalStateException("AlipayPaymentConfigProvider 未初始化");
         }
-        AlipayConfig config = provider.getConfig();
+        AlipayPaymentConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("支付宝配置不能为空");
         }

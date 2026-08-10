@@ -60,7 +60,8 @@ import com.hzj.alipay.core.transfer.enums.AlipayFundTransferProductCode;
 import com.hzj.alipay.core.transfer.enums.AlipayTransferParticipantIdentityType;
 import com.hzj.alipay.core.transfer.enums.AlipayTransferStatus;
 import com.hzj.alipay.core.AliPayException;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.transfer.AlipayTransferConfigProvider;
+import com.hzj.alipay.provider.alipay.transfer.entity.AlipayTransferConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -72,13 +73,13 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultAlipayTransferService extends AbstractAlipayService implements AlipayTransferService {
+public class DefaultAlipayTransferService extends AbstractAlipayService<AlipayTransferConfig> implements AlipayTransferService {
     private static final String DEFAULT_TRANSFER_BIZ_SCENE = AlipayFundTransferBizScene.DIRECT_TRANSFER.getCode();
     private static final String DEFAULT_TRANSFER_PRODUCT_CODE = AlipayFundTransferProductCode.TRANS_ACCOUNT_NO_PWD.getCode();
     private static final String DEFAULT_ACCOUNT_TYPE = AlipayFundAccountType.ACCTRANS_ACCOUNT.getCode();
     private static final String DEFAULT_PAYEE_IDENTITY_TYPE = AlipayTransferParticipantIdentityType.ALIPAY_OPEN_ID.getCode();
 
-    private final AlipayConfigProvider provider;
+    private final AlipayTransferConfigProvider provider;
 
 
     /**
@@ -92,7 +93,7 @@ public class DefaultAlipayTransferService extends AbstractAlipayService implemen
     }
 
     @Override
-    protected AlipayConfigProvider getAlipayConfigProvider() {
+    protected AlipayTransferConfigProvider getAlipayConfigProvider() {
         return provider;
     }
 

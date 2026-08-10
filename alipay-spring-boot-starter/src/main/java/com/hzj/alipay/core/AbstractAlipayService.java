@@ -5,26 +5,27 @@ import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayRequest;
 import com.alipay.api.AlipayResponse;
 import com.alipay.api.DefaultAlipayClient;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.ConfigProvider;
+import com.hzj.alipay.provider.alipay.entity.AlipayBaseConfig;
 
-public abstract class AbstractAlipayService {
+public abstract class AbstractAlipayService<T extends AlipayBaseConfig> {
     private static final String FORMAT = "json";
     private static final String CHARSET = "UTF-8";
     private static final String SIGN_TYPE = "RSA2";
 
     protected abstract AlipayClient getAlipayClient();
 
-    protected abstract AlipayConfigProvider getAlipayConfigProvider();
+    protected abstract ConfigProvider<T> getAlipayConfigProvider();
 
     /**
      * 执行支付宝请求。
      *
      * @param request 支付宝请求
-     * @param <T>     响应类型
+     * @param <E>     响应类型
      * @return 支付宝响应
      * @throws AlipayApiException 支付宝接口异常
      */
-    protected <T extends AlipayResponse> T execute(AlipayRequest<T> request) throws AlipayApiException {
+    protected <E extends AlipayResponse> E execute(AlipayRequest<E> request) throws AlipayApiException {
         if (useCertificateMode()) {
             return getAlipayClient().certificateExecute(request);
         }
@@ -36,11 +37,11 @@ public abstract class AbstractAlipayService {
      *
      * @param request     支付宝请求
      * @param accessToken 访问令牌
-     * @param <T>         响应类型
+     * @param <E>         响应类型
      * @return 支付宝响应
      * @throws AlipayApiException 支付宝接口异常
      */
-    protected <T extends AlipayResponse> T execute(AlipayRequest<T> request, String accessToken) throws AlipayApiException {
+    protected <E extends AlipayResponse> E execute(AlipayRequest<E> request, String accessToken) throws AlipayApiException {
         if (useCertificateMode()) {
             return getAlipayClient().certificateExecute(request, accessToken);
         }
@@ -56,20 +57,20 @@ public abstract class AbstractAlipayService {
         return getCurrentConfig().isCertificates();
     }
 
-    protected com.hzj.alipay.provider.domain.AlipayConfig getCurrentConfig() {
-        AlipayConfigProvider provider = getAlipayConfigProvider();
+    protected T getCurrentConfig() {
+        ConfigProvider<T> provider = getAlipayConfigProvider();
         if (provider == null) {
-            throw new IllegalStateException("AlipayConfigProvider 未初始化");
+            throw new IllegalStateException("ConfigProvider 未初始化");
         }
-        com.hzj.alipay.provider.domain.AlipayConfig config = provider.getConfig();
+        T config = provider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("AlipayConfigProvider 返回的配置不能为空");
+            throw new IllegalStateException("ConfigProvider 返回的配置不能为空");
         }
         return config;
     }
 
     protected AlipayClient createAlipayClient() {
-        com.hzj.alipay.provider.domain.AlipayConfig config = getCurrentConfig();
+        T config = getCurrentConfig();
         com.alipay.api.AlipayConfig alipayConfig = new com.alipay.api.AlipayConfig();
         alipayConfig.setServerUrl(config.getGateWay());
         alipayConfig.setAppId(config.getAppId());

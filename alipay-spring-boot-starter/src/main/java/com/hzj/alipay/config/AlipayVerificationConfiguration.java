@@ -2,7 +2,7 @@ package com.hzj.alipay.config;
 
 import com.hzj.alipay.core.verification.AlipayVerificationService;
 import com.hzj.alipay.core.verification.impl.DefaultAlipayVerificationService;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.verification.AlipayVerificationConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,7 +23,7 @@ public class AlipayVerificationConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AlipayVerificationService.class)
-    public AlipayVerificationService alipayVerificationService(AlipayConfigProvider provider) {
+    public AlipayVerificationService alipayVerificationService(AlipayVerificationConfigProvider provider) {
         return new DefaultAlipayVerificationService(provider);
     }
 }

@@ -14,16 +14,17 @@ import com.hzj.alipay.core.oauth2.domain.AuthorizationRequest;
 import com.hzj.alipay.core.oauth2.enums.AlipayOauthGrantType;
 import com.hzj.alipay.core.oauth2.enums.AlipayOauthScope;
 import com.hzj.alipay.core.AliPayException;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.oauth2.AlipayOAuth2ConfigProvider;
+import com.hzj.alipay.provider.alipay.oauth2.entity.AlipayOAuth2Config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultAliPayOAuth2Service extends AbstractAlipayService implements AliPayOAuth2Service {
+public class DefaultAliPayOAuth2Service extends AbstractAlipayService<AlipayOAuth2Config> implements AliPayOAuth2Service {
     private static final String AUTH_URL = "https://openauth.alipay.com/oauth2/publicAppAuthorize.htm";
-    private final AlipayConfigProvider provider;
+    private final AlipayOAuth2ConfigProvider provider;
     /**
      * 生成支付宝授权地址。
      *
@@ -163,7 +164,7 @@ public class DefaultAliPayOAuth2Service extends AbstractAlipayService implements
     }
 
     @Override
-    protected AlipayConfigProvider getAlipayConfigProvider() {
+    protected AlipayOAuth2ConfigProvider getAlipayConfigProvider() {
         return provider;
     }
 }

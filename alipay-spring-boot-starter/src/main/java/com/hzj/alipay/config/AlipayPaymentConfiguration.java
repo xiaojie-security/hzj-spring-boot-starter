@@ -4,7 +4,7 @@ import com.hzj.alipay.core.payment.AlipayPaymentService;
 import com.hzj.alipay.core.payment.impl.DefaultAlipayPaymentService;
 import com.hzj.alipay.core.payment.AlipayPaymentCallbackService;
 import com.hzj.alipay.core.payment.impl.DefaultAlipayPaymentCallbackService;
-import com.hzj.alipay.provider.AlipayConfigProvider;
+import com.hzj.alipay.provider.alipay.payment.AlipayPaymentConfigProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -23,7 +23,7 @@ public class AlipayPaymentConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AlipayPaymentService.class)
-    public AlipayPaymentService alipayPaymentService(AlipayConfigProvider provider) {
+    public AlipayPaymentService alipayPaymentService(AlipayPaymentConfigProvider provider) {
         return new DefaultAlipayPaymentService(provider);
     }
 
@@ -34,7 +34,7 @@ public class AlipayPaymentConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AlipayPaymentCallbackService.class)
-    public AlipayPaymentCallbackService alipayPaymentCallbackService(AlipayConfigProvider provider) {
+    public AlipayPaymentCallbackService alipayPaymentCallbackService(AlipayPaymentConfigProvider provider) {
         return new DefaultAlipayPaymentCallbackService(provider);
     }
 }
