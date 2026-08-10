@@ -1,0 +1,5 @@
+com.hzj.alipay.config.AlipayConfiguration
+com.hzj.alipay.config.AlipayOAuth2Configuration
+com.hzj.alipay.config.AlipayPaymentConfiguration
+com.hzj.alipay.config.AlipayTransferConfiguration
+com.hzj.alipay.config.AlipayVerificationConfiguration
