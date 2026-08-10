@@ -571,7 +571,6 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
                     accessKeyId, accessKeySecret, securityToken);
             throw AliyunOssException.SYSTEM_ERROR;
         }
-        // 得到STS认证信息
         AliyunOssConfig config = configProvider.getConfig();
         String region = config.getRegion();
         String endpoint = config.getEndpoint();
