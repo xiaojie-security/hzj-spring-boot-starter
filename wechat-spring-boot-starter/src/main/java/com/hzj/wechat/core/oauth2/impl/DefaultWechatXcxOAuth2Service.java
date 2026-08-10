@@ -33,7 +33,7 @@ public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
     @Override
     public XcxCode2SessionResponse getSessionByCode(XcxCode2SessionRequest request) {
         requireNonNull(request, "XcxCode2SessionRequest");
-        WechatAccessConfig config = getMerchantConfig();
+        WechatAccessConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String secret = defaultIfBlank(request.getSecret(), config.getSecret());
         String grantType = defaultIfBlank(request.getGrantType(), "authorization_code");
@@ -122,7 +122,7 @@ public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
         return isBlank(value) ? defaultValue : value;
     }
 
-    private WechatAccessConfig getMerchantConfig() {
+    private WechatAccessConfig getConfig() {
         WechatAccessConfig config = provider.getConfig();
         if (config == null) {
             throw new WechatXcxOAuth2Exception("未获取到微信商户配置");

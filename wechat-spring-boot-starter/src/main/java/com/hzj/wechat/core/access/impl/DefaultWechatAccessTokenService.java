@@ -60,7 +60,7 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
 
     @Override
     public WechatAccessTokenResponse getStableAccessToken(boolean forceRefresh) {
-        WechatAccessConfig config = getMerchantConfig();
+        WechatAccessConfig config = getConfig();
         requireNotBlank(config.getAppid(), "appid");
         requireNotBlank(config.getSecret(), "secret");
 
@@ -125,7 +125,7 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
         }
     }
 
-    private WechatAccessConfig getMerchantConfig() {
+    private WechatAccessConfig getConfig() {
         WechatAccessConfig config = provider.getConfig();
         if (config == null) {
             log.error("DefaultWechatAccessTokenService.getStableAccessToken 未获取到微信商户配置");

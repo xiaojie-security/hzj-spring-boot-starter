@@ -38,7 +38,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/fund-app/mch-transfer/user-confirm-authorization";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -86,7 +86,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/fund-app/mch-transfer/transfer-bills/transfer";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -134,7 +134,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/fund-app/mch-transfer/transfer-bills/pre-transfer-with-authorization";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -188,7 +188,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/fund-app/mch-transfer/user-confirm-authorization/out-authorization-no/{out_authorization_no}";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{out_authorization_no}", WechatPayUtils.urlEncode(request.outAuthorizationNo));
         Map<String, Object> args = new HashMap<>();
@@ -228,7 +228,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/fund-app/mch-transfer/transfer-bills/out-bill-no/{out_bill_no}";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{out_bill_no}", WechatPayUtils.urlEncode(request.outBillNo));
 
@@ -263,7 +263,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/fund-app/mch-transfer/transfer-bills/transfer-bill-no/{transfer_bill_no}";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{transfer_bill_no}", WechatPayUtils.urlEncode(request.transferBillNo));
 
@@ -298,7 +298,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/fund-app/mch-transfer/user-confirm-authorization/out-authorization-no/{out_authorization_no}/close";
-        WechatTransferConfig config = getMerchantConfig();
+        WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{out_authorization_no}", WechatPayUtils.urlEncode(request.outAuthorizationNo));
 
@@ -330,7 +330,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         }
     }
 
-    private WechatTransferConfig getMerchantConfig() {
+    private WechatTransferConfig getConfig() {
         WechatTransferConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信商户配置");

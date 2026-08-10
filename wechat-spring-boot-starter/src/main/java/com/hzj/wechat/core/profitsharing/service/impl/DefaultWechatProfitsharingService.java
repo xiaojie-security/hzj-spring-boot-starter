@@ -41,7 +41,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/profitsharing/orders";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -57,7 +57,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/profitsharing/orders/{out_order_no}";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path.replace("{out_order_no}", WechatPayUtils.urlEncode(request.outOrderNo));
         Map<String, Object> args = new HashMap<>();
@@ -74,7 +74,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/profitsharing/return-orders";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.returnMchid)) {
             request.returnMchid = config.getMchid();
@@ -89,7 +89,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/profitsharing/return-orders/{out_return_no}";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path.replace("{out_return_no}", WechatPayUtils.urlEncode(request.outReturnNo));
         return executeJsonRequest(config, host, method, uri, null, ProfitsharingReturnOrderEntity.class);
@@ -100,7 +100,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/profitsharing/orders/unfreeze";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String reqBody = WechatPayUtils.toJson(request);
         return executeJsonRequest(config, host, method, path, reqBody, ProfitsharingOrderEntity.class);
@@ -111,7 +111,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/profitsharing/transactions/{transaction_id}/amounts";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path.replace("{transaction_id}", WechatPayUtils.urlEncode(request.transactionId));
         return executeJsonRequest(config, host, method, uri, null, ProfitsharingAmountEntity.class);
@@ -122,7 +122,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/profitsharing/receivers/add";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -140,7 +140,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/profitsharing/receivers/delete";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -155,7 +155,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/profitsharing/bills";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path;
         Map<String, Object> args = new HashMap<>();
@@ -239,7 +239,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         }
     }
 
-    private WechatPaymentConfig getMerchantConfig() {
+    private WechatPaymentConfig getConfig() {
         WechatPaymentConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信商户配置");

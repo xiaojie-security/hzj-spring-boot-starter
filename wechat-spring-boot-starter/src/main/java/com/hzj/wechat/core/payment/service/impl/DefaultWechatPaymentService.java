@@ -41,7 +41,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/pay/transactions/jsapi";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -62,7 +62,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/pay/transactions/app";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -83,7 +83,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/pay/transactions/h5";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -104,7 +104,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/pay/transactions/native";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -125,7 +125,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/pay/transactions/id/{transaction_id}";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.mchid)) {
             request.mchid = config.getMchid();
@@ -146,7 +146,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/pay/transactions/out-trade-no/{out_trade_no}";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.mchid)) {
             request.mchid = config.getMchid();
@@ -167,7 +167,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/pay/transactions/out-trade-no/{out_trade_no}/close";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         if (isBlank(request.mchid)) {
             request.mchid = config.getMchid();
@@ -183,7 +183,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/refund/domestic/refunds";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String reqBody = WechatPayUtils.toJson(request);
         return executeJsonRequest(config, host, method, path, reqBody, RefundEntity.class);
@@ -194,7 +194,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/refund/domestic/refunds/{out_refund_no}";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path.replace("{out_refund_no}", WechatPayUtils.urlEncode(request.outRefundNo));
         return executeJsonRequest(config, host, method, uri, null, RefundEntity.class);
@@ -205,7 +205,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "POST";
         String path = "/v3/refund/domestic/refunds/{refund_id}/apply-abnormal-refund";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path.replace("{refund_id}", WechatPayUtils.urlEncode(request.refundId));
         if (!isBlank(request.bankAccount)) {
@@ -223,7 +223,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/bill/tradebill";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path;
         Map<String, Object> args = new HashMap<>();
@@ -242,7 +242,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         String host = "https://api.mch.weixin.qq.com";
         String method = "GET";
         String path = "/v3/bill/fundflowbill";
-        WechatPaymentConfig config = getMerchantConfig();
+        WechatPaymentConfig config = getConfig();
 
         String uri = path;
         Map<String, Object> args = new HashMap<>();
@@ -317,7 +317,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         }
     }
 
-    private WechatPaymentConfig getMerchantConfig() {
+    private WechatPaymentConfig getConfig() {
         WechatPaymentConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信商户配置");

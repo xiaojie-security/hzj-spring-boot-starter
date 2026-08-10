@@ -28,7 +28,7 @@ public class DefaultWechatPaymentCallbackService implements WechatPaymentCallbac
         try {
             String body = request.getReader().lines().reduce("", String::concat);
             CallbackNotifyRequest notifyRequest = WechatPayUtils.fromJson(body, CallbackNotifyRequest.class);
-            WechatPaymentConfig config = getMerchantConfig();
+            WechatPaymentConfig config = getConfig();
             AesUtil aesUtil = new AesUtil(config.getApiV3Secret().getBytes(StandardCharsets.UTF_8));
             String decryptJson = aesUtil.decryptToString(
                     notifyRequest.resource.associatedData.getBytes(StandardCharsets.UTF_8),
@@ -60,7 +60,7 @@ public class DefaultWechatPaymentCallbackService implements WechatPaymentCallbac
         }
     }
 
-    private WechatPaymentConfig getMerchantConfig() {
+    private WechatPaymentConfig getConfig() {
         WechatPaymentConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信商户配置");

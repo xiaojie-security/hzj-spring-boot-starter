@@ -31,7 +31,7 @@ public class DefaultWechatTransferCallbackService implements WechatTransferCallb
         try {
             String body = request.getReader().lines().reduce("", String::concat);
             CallbackNotifyRequest notifyRequest = WechatPayUtils.fromJson(body, CallbackNotifyRequest.class);
-            WechatTransferConfig config = getMerchantConfig();
+            WechatTransferConfig config = getConfig();
             AesUtil aesUtil = new AesUtil(config.getApiV3Secret().getBytes(StandardCharsets.UTF_8));
             String decryptJson = aesUtil.decryptToString(
                     notifyRequest.resource.associatedData.getBytes(StandardCharsets.UTF_8),
@@ -63,7 +63,7 @@ public class DefaultWechatTransferCallbackService implements WechatTransferCallb
         }
     }
 
-    private WechatTransferConfig getMerchantConfig() {
+    private WechatTransferConfig getConfig() {
         WechatTransferConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信商户配置");

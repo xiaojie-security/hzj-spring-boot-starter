@@ -34,7 +34,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
     @Override
     public String generateAuthUrl(AuthorizationRequest request) {
         requireNonNull(request, "AuthorizationRequest");
-        WechatAccessConfig config = getMerchantConfig();
+        WechatAccessConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String responseType = defaultIfBlank(request.getResponseType(), "code");
         String scope = defaultIfBlank(request.getScope(), "snsapi_login");
@@ -58,7 +58,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
     @Override
     public AccessTokenResponse getAccessTokenByCode(AccessTokenRequest request) {
         requireNonNull(request, "AccessTokenRequest");
-        WechatAccessConfig config = getMerchantConfig();
+        WechatAccessConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String secret = defaultIfBlank(request.getSecret(), config.getSecret());
         String grantType = defaultIfBlank(request.getGrantType(), "authorization_code");
@@ -108,7 +108,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
     @Override
     public RefreshTokenResponse refreshAccessToken(RefreshTokenRequest request) {
         requireNonNull(request, "RefreshTokenRequest");
-        WechatAccessConfig config = getMerchantConfig();
+        WechatAccessConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String grantType = defaultIfBlank(request.getGrantType(), "refresh_token");
         requireNotBlank(appid, "appid");
@@ -208,7 +208,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         return isBlank(value) ? defaultValue : value;
     }
 
-    private WechatAccessConfig getMerchantConfig() {
+    private WechatAccessConfig getConfig() {
         WechatAccessConfig config = provider.getConfig();
         if (config == null) {
             throw new WechatOAuth2Exception("未获取到微信商户配置");
