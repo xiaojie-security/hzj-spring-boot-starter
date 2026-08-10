@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import com.aliyun.core.pns.AliyunPnsService;
 import com.aliyun.dypnsapi20170525.models.CheckSmsVerifyCodeResponseBody;
 import com.aliyun.provider.aliyun.pns.AliyunPnsConfigProvider;
+import com.aliyun.provider.aliyun.pns.entity.AliyunPnsConfig;
 import com.aliyun.tea.*;
 import com.aliyun.core.pns.domain.AliyunPnsTemplateParam;
 import lombok.RequiredArgsConstructor;
@@ -18,51 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DefaultAliyunPnsService implements AliyunPnsService {
 
-    /**
-     * 验证码长度
-     */
-    public static final long CODE_LENGTH = 6L;
-
-    /**
-     * 验证码有效时间（单位：秒）
-     */
-    public static final long VALID_TIME = 300L;
-
-    /**
-     * 重复发送策略
-     */
-    public static final long DUPLICATE_POLICY = 1L;
-
-    /**
-     * 发送间隔时间（单位：秒）
-     */
-    public static final long INTERVAL = 60L;
-
-    /**
-     * 验证码类型
-     */
-    public static final long CODE_TYPE = 1L;
-
-    /**
-     * 是否返回校验码
-     */
-    public static final boolean RETURN_VERIFY_CODE = true;
-
-    /**
-     * 是否自动重试
-     */
-    public static final long AUTO_RETRY = 1L;
-
-    /**
-     * 国家代码
-     */
-    public static final String COUNTRY_CODE = "86";
     private final AliyunPnsConfigProvider configProvider;
     private final com.aliyun.dypnsapi20170525.Client client;
 
     @Override
     public boolean sendSmsCode(String schemeName,String phoneNumber, String templateCode, AliyunPnsTemplateParam aliyunPnsTemplateParam) {
-        String signName = configProvider.getConfig().getSignName();
+        AliyunPnsConfig config = getConfig();
+        String signName = config.getSignName();
         if(StrUtil.isEmpty(phoneNumber)) {
             log.warn("DefaultAliyunPnsService smsCodeSend 手机号不能为空");
             throw new IllegalArgumentException("手机号不能为空");
@@ -73,19 +36,19 @@ public class DefaultAliyunPnsService implements AliyunPnsService {
         }
         CharSequence hideBetweenPhone = PhoneUtil.hideBetween(phoneNumber);
         com.aliyun.dypnsapi20170525.models.SendSmsVerifyCodeRequest sendSmsVerifyCodeRequest = new com.aliyun.dypnsapi20170525.models.SendSmsVerifyCodeRequest()
-                .setCountryCode(COUNTRY_CODE)
+                .setCountryCode(config.getCountryCode())
                 .setPhoneNumber(phoneNumber)
                 .setTemplateCode(templateCode)
                 .setTemplateParam(JSONUtil.toJsonStr(aliyunPnsTemplateParam))
                 .setSchemeName(schemeName)
                 .setSignName(signName)
-                .setCodeLength(CODE_LENGTH)
-                .setValidTime(VALID_TIME)
-                .setDuplicatePolicy(DUPLICATE_POLICY)
-                .setInterval(INTERVAL)
-                .setCodeType(CODE_TYPE)
-                .setReturnVerifyCode(RETURN_VERIFY_CODE)
-                .setAutoRetry(AUTO_RETRY);
+                .setCodeLength(config.getCodeLength())
+                .setValidTime(config.getValidTime())
+                .setDuplicatePolicy(config.getDuplicatePolicy())
+                .setInterval(config.getInterval())
+                .setCodeType(config.getCodeType())
+                .setReturnVerifyCode(config.getReturnVerifyCode())
+                .setAutoRetry(config.getAutoRetry());
         try {
             com.aliyun.teautil.models.RuntimeOptions runtime = new com.aliyun.teautil.models.RuntimeOptions();
             com.aliyun.dypnsapi20170525.models.SendSmsVerifyCodeResponse resp = client.sendSmsVerifyCodeWithOptions(sendSmsVerifyCodeRequest, runtime);
@@ -102,6 +65,7 @@ public class DefaultAliyunPnsService implements AliyunPnsService {
 
     @Override
     public boolean checkSmsVerifyCode(String schemeName, String phoneNumber, String verifyCode) {
+        AliyunPnsConfig config = getConfig();
         if(StrUtil.isEmpty(phoneNumber)) {
             log.warn("DefaultAliyunPnsService checkSmsVerifyCode 手机号不能为空");
             return false;
@@ -114,7 +78,7 @@ public class DefaultAliyunPnsService implements AliyunPnsService {
         try {
             com.aliyun.dypnsapi20170525.models.CheckSmsVerifyCodeRequest checkSmsVerifyCodeRequest = new com.aliyun.dypnsapi20170525.models.CheckSmsVerifyCodeRequest()
                     .setPhoneNumber(phoneNumber)
-                    .setCountryCode(COUNTRY_CODE)
+                    .setCountryCode(config.getCountryCode())
                     .setSchemeName(schemeName)
                     .setVerifyCode(verifyCode);
 
@@ -132,6 +96,14 @@ public class DefaultAliyunPnsService implements AliyunPnsService {
                     hideBetweenPhone, verifyCode, _error);
         }
         return false;
+    }
+
+    private AliyunPnsConfig getConfig() {
+        AliyunPnsConfig config = configProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("AliyunPnsConfigProvider 返回的配置不能为空");
+        }
+        return config;
     }
 
     @Override
