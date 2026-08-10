@@ -183,7 +183,7 @@ aliyun:
 ### OSS
 
 ```java
-import com.aliyun.core.oss.AliyunOssService;
+import com.hzj.aliyun.core.oss.AliyunOssService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;

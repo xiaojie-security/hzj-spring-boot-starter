@@ -1,6 +1,6 @@
-com.aliyun.config.AliyunStsConfiguration
-com.aliyun.config.AliyunOssConfiguration
-com.aliyun.config.AliyunImmConfiguration
-com.aliyun.config.AliyunSmsConfiguration
-com.aliyun.config.AliyunPnsConfiguration
-com.aliyun.config.AliyunConfiguration
+com.hzj.aliyun.config.AliyunStsConfiguration
+com.hzj.aliyun.config.AliyunOssConfiguration
+com.hzj.aliyun.config.AliyunImmConfiguration
+com.hzj.aliyun.config.AliyunSmsConfiguration
+com.hzj.aliyun.config.AliyunPnsConfiguration
+com.hzj.aliyun.config.AliyunConfiguration
