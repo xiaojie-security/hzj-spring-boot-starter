@@ -3,17 +3,14 @@ package com.hzj.elasticsearch.utils;
 import co.elastic.clients.elasticsearch._types.WriteResponseBase;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.UpdateResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentHit;
-import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentWriteResult;
-import com.hzj.elasticsearch.core.entity.enums.ElasticsearchOperation;
+import com.hzj.elasticsearch.core.document.enums.ElasticsearchDocumentWriteResult;
+import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**

@@ -1,7 +1,7 @@
 package com.hzj.elasticsearch.core.document.entity;
 
-import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchBulkOperationType;
-import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentWriteResult;
+import com.hzj.elasticsearch.core.document.enums.ElasticsearchBulkOperationType;
+import com.hzj.elasticsearch.core.document.enums.ElasticsearchDocumentWriteResult;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

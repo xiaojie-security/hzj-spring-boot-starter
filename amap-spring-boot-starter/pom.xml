@@ -2,21 +2,20 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.hzj.elasticsearch</groupId>
-  <artifactId>elasticsearch-spring-boot-starter</artifactId>
+  <groupId>com.hzj.amap</groupId>
+  <artifactId>amap-spring-boot-starter</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
-  <name>elasticsearch-spring-boot-starter</name>
-  <description>Elasticsearch Spring Boot Starter</description>
+  <name>amap-spring-boot-starter</name>
+  <url>http://maven.apache.org</url>
+  <description>高德 Spring Boot Starter</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <elasticsearch.version>8.19.0</elasticsearch.version>
     <hutool-all.version>5.8.24</hutool-all.version>
     <lombok.version>1.18.42</lombok.version>
     <spring.boot.starter.version>3.2.4</spring.boot.starter.version>
-    <jackson-databind.version>2.16.2</jackson-databind.version>
   </properties>
 
   <dependencies>
@@ -25,27 +24,6 @@
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
       <scope>test</scope>
-    </dependency>
-
-    <!-- elasticsearch java client 新客户端 -->
-    <dependency>
-      <groupId>co.elastic.clients</groupId>
-      <artifactId>elasticsearch-java</artifactId>
-      <version>${elasticsearch.version}</version>
-    </dependency>
-
-    <!-- 底层 rest client，提供 RestClient / RestClient.RestClientBuilder -->
-    <dependency>
-      <groupId>org.elasticsearch.client</groupId>
-      <artifactId>elasticsearch-rest-client</artifactId>
-      <version>${elasticsearch.version}</version>
-    </dependency>
-
-    <!-- jackson序列化 -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson-databind.version}</version>
     </dependency>
 
     <dependency>
@@ -75,10 +53,11 @@
 
   </dependencies>
 
+
   <distributionManagement>
-  <repository>
-    <id>local-repo</id>
-    <url>file://${project.basedir}/maven-repository</url>
-  </repository>
-</distributionManagement>
+    <repository>
+      <id>local-repo</id>
+      <url>file://${project.basedir}/maven-repository</url>
+    </repository>
+  </distributionManagement>
 </project>

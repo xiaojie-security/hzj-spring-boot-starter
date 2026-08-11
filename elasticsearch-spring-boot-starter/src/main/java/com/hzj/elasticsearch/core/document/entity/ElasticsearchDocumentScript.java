@@ -1,6 +1,6 @@
 package com.hzj.elasticsearch.core.document.entity;
 
-import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchScriptLanguage;
+import com.hzj.elasticsearch.core.document.enums.ElasticsearchScriptLanguage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

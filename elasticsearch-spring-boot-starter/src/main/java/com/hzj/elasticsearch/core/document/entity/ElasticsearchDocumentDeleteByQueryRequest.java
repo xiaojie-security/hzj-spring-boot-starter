@@ -1,7 +1,7 @@
 package com.hzj.elasticsearch.core.document.entity;
 
-import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchConflictPolicy;
-import com.hzj.elasticsearch.core.entity.enums.ElasticsearchRefreshPolicy;
+import com.hzj.elasticsearch.core.document.enums.ElasticsearchConflictPolicy;
+import com.hzj.elasticsearch.core.enums.ElasticsearchRefreshPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

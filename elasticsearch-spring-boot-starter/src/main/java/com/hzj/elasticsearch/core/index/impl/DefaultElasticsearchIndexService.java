@@ -29,7 +29,7 @@ import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.util.WithJsonObjectBuilderBase;
 import com.hzj.elasticsearch.core.AbstractElasticsearchService;
-import com.hzj.elasticsearch.core.entity.enums.ElasticsearchOperation;
+import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexAliasRequest;

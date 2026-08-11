@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.core.entity.enums;
+package com.hzj.elasticsearch.core.enums;
 
 /**
  * Elasticsearch 写入后刷新策略。

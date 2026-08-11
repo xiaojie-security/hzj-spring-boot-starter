@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.core.document.entity.enums;
+package com.hzj.elasticsearch.core.document.enums;
 
 /**
  * 文档搜索排序方向。

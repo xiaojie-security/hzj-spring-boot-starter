@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.core.entity.enums;
+package com.hzj.elasticsearch.core.enums;
 
 /**
  * Elasticsearch Starter 支持的业务操作。

@@ -1,6 +1,6 @@
 package com.hzj.elasticsearch.core.document.entity;
 
-import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentSortOrder;
+import com.hzj.elasticsearch.core.document.enums.ElasticsearchDocumentSortOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

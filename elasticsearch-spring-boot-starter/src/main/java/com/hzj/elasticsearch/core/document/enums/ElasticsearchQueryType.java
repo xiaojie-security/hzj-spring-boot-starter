@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.core.document.entity.enums;
+package com.hzj.elasticsearch.core.document.enums;
 
 /**
  * 常用 Elasticsearch 查询类型。

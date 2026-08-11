@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.core.document.entity.enums;
+package com.hzj.elasticsearch.core.document.enums;
 
 /**
  * Elasticsearch 内置脚本语言。
