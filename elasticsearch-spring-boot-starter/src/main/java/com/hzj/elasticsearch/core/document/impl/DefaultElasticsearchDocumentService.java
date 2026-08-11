@@ -1,11 +1,9 @@
 package com.hzj.elasticsearch.core.document.impl;
 
-import co.elastic.clients.elasticsearch._types.OpType;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.Conflicts;
+import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.ClearScrollRequest;
-import co.elastic.clients.elasticsearch.core.ClearScrollResponse;
 import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
@@ -13,540 +11,641 @@ import co.elastic.clients.elasticsearch.core.DeleteByQueryResponse;
 import co.elastic.clients.elasticsearch.core.DeleteRequest;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
-import co.elastic.clients.elasticsearch.core.ExistsSourceRequest;
 import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.GetSourceRequest;
-import co.elastic.clients.elasticsearch.core.GetSourceResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.MgetRequest;
 import co.elastic.clients.elasticsearch.core.MgetResponse;
-import co.elastic.clients.elasticsearch.core.ReindexRequest;
-import co.elastic.clients.elasticsearch.core.ReindexResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.ScrollRequest;
-import co.elastic.clients.elasticsearch.core.ScrollResponse;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
 import co.elastic.clients.elasticsearch.core.UpdateResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.json.JsonData;
-import co.elastic.clients.transport.endpoints.BooleanResponse;
+import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import com.hzj.elasticsearch.core.AbstractElasticsearchService;
 import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchBulkItemResponse;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchBulkOperation;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentBulkRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentDeleteByQueryRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentGetRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentHit;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentMgetRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentSearchRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentScript;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateByQueryRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateRequest;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchQuery;
+import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
+import com.hzj.elasticsearch.utils.ElasticsearchQueryConverter;
+import com.hzj.elasticsearch.utils.ElasticsearchResponseMapper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
- * Elasticsearch 文档级操作默认实现。
+ * Elasticsearch 文档级业务操作默认实现。
  *
- * <p>实现只使用索引名称和文档 ID，不引入 ES8 已删除的 type 参数。</p>
+ * <p>ES 官方 Request 和 Response 只在该实现内部使用，公开层只返回 Starter 自定义响应。</p>
  */
 public class DefaultElasticsearchDocumentService extends AbstractElasticsearchService
         implements ElasticsearchDocumentService {
 
     /**
-     * 写入或覆盖文档。
+     * 新增或覆盖文档，并回读完整实体。
      *
-     * @param request 官方索引请求
-     * @param <TDocument> 文档类型
-     * @return 写入响应
+     * @param request 自定义写入请求
+     * @param <T> 文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> IndexResponse index(IndexRequest<TDocument> request) throws IOException {
-        return requireClient().index(Objects.requireNonNull(request, "写入文档请求不能为空"));
-    }
-
-    /**
-     * 按索引、文档 ID 和文档内容写入文档。
-     *
-     * @param indexName 索引名称
-     * @param documentId 文档 ID
-     * @param document 文档内容
-     * @param <TDocument> 文档类型
-     * @return 写入响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public <TDocument> IndexResponse index(String indexName, String documentId, TDocument document)
-            throws IOException {
-        return index(IndexRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .id(requireDocumentId(documentId))
-                .document(Objects.requireNonNull(document, "文档内容不能为空"))));
+    public <T> ElasticsearchResponse<T> saveDocument(ElasticsearchDocumentRequest<T> request) throws IOException {
+        IndexResponse response = requireClient().index(buildIndexRequest(request, false));
+        T document = readAfterWrite(response.index(), response.id(), request.getDocumentClass(), request.getDocument());
+        return ElasticsearchResponseMapper.write(response, document, "saveDocument");
     }
 
     /**
      * 仅在文档不存在时创建文档。
      *
-     * @param indexName 索引名称
-     * @param documentId 文档 ID
-     * @param document 文档内容
-     * @param <TDocument> 文档类型
-     * @return 创建响应
+     * @param request 自定义创建请求
+     * @param <T> 文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> IndexResponse createDocument(String indexName, String documentId, TDocument document)
-            throws IOException {
-        return index(IndexRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .id(requireDocumentId(documentId))
-                .opType(OpType.Create)
-                .document(Objects.requireNonNull(document, "文档内容不能为空"))));
+    public <T> ElasticsearchResponse<T> createDocument(ElasticsearchDocumentRequest<T> request) throws IOException {
+        IndexResponse response = requireClient().index(buildIndexRequest(request, true));
+        T document = readAfterWrite(response.index(), response.id(), request.getDocumentClass(), request.getDocument());
+        return ElasticsearchResponseMapper.write(response, document, "createDocument");
     }
 
     /**
-     * 按官方请求获取文档。
+     * 使用便捷参数新增或覆盖文档。
      *
-     * @param request 官方获取请求
+     * @param indexName 索引名称
+     * @param documentId 文档 ID
+     * @param document 文档实体
      * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 获取响应
+     * @param <T> 文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> GetResponse<TDocument> get(GetRequest request, Class<TDocument> documentClass)
-            throws IOException {
-        return requireClient().get(Objects.requireNonNull(request, "获取文档请求不能为空"),
-                Objects.requireNonNull(documentClass, "文档类型不能为空"));
+    public <T> ElasticsearchResponse<T> saveDocument(String indexName, String documentId, T document,
+                                                       Class<T> documentClass) throws IOException {
+        return saveDocument(ElasticsearchDocumentRequest.<T>builder()
+                .indexName(indexName)
+                .documentId(documentId)
+                .document(document)
+                .documentClass(documentClass)
+                .build());
     }
 
     /**
-     * 获取未绑定具体 Java 类型的文档。
+     * 获取文档。
      *
-     * @param request 官方获取请求
-     * @return 获取响应
+     * @param request 自定义读取请求
+     * @param documentClass 文档类型
+     * @param <T> 文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public GetResponse<JsonData> get(GetRequest request) throws IOException {
-        return requireClient().get(Objects.requireNonNull(request, "获取文档请求不能为空"), JsonData.class);
+    public <T> ElasticsearchResponse<T> getDocument(ElasticsearchDocumentGetRequest request, Class<T> documentClass)
+            throws IOException {
+        GetResponse<T> response = requireClient().get(buildGetRequest(request), requireDocumentClass(documentClass));
+        return ElasticsearchResponseMapper.get(response, "getDocument");
     }
 
     /**
-     * 按索引和文档 ID 获取文档。
+     * 使用索引和 ID 获取文档。
      *
      * @param indexName 索引名称
      * @param documentId 文档 ID
      * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 获取响应
+     * @param <T> 文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> GetResponse<TDocument> get(String indexName, String documentId, Class<TDocument> documentClass)
+    public <T> ElasticsearchResponse<T> getDocument(String indexName, String documentId, Class<T> documentClass)
             throws IOException {
-        return get(GetRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .id(requireDocumentId(documentId))), documentClass);
+        return getDocument(ElasticsearchDocumentGetRequest.builder()
+                .indexName(indexName)
+                .documentId(documentId)
+                .build(), documentClass);
     }
 
     /**
-     * 按官方请求判断文档是否存在。
-     *
-     * @param request 官方存在性请求
-     * @return 存在性响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public BooleanResponse exists(ExistsRequest request) throws IOException {
-        return requireClient().exists(Objects.requireNonNull(request, "判断文档存在性请求不能为空"));
-    }
-
-    /**
-     * 按索引和文档 ID 判断文档是否存在。
+     * 判断文档是否存在。
      *
      * @param indexName 索引名称
      * @param documentId 文档 ID
-     * @return 存在性响应
+     * @return 统一存在性响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public BooleanResponse exists(String indexName, String documentId) throws IOException {
-        return exists(ExistsRequest.of(request -> request
+    public ElasticsearchResponse<Void> existsDocument(String indexName, String documentId) throws IOException {
+        boolean exists = requireClient().exists(ExistsRequest.of(request -> request
+                .index(requireIndexName(indexName))
+                .id(requireDocumentId(documentId)))).value();
+        return ElasticsearchResponse.<Void>builder()
+                .success(true)
+                .operation("existsDocument")
+                .message(exists ? "文档存在" : "文档不存在")
+                .indexName(indexName)
+                .documentId(documentId)
+                .found(exists)
+                .build();
+    }
+
+    /**
+     * 删除文档。
+     *
+     * @param indexName 索引名称
+     * @param documentId 文档 ID
+     * @return 统一删除响应
+     * @throws IOException Elasticsearch 请求异常
+     */
+    @Override
+    public ElasticsearchResponse<Void> deleteDocument(String indexName, String documentId) throws IOException {
+        DeleteResponse response = requireClient().delete(DeleteRequest.of(request -> request
                 .index(requireIndexName(indexName))
                 .id(requireDocumentId(documentId))));
+        return ElasticsearchResponseMapper.delete(response);
     }
 
     /**
-     * 按官方请求判断文档 source 是否存在。
+     * 更新文档，并回读完整实体。
      *
-     * @param request 官方 source 存在性请求
-     * @return 存在性响应
+     * @param request 自定义更新请求
+     * @param documentClass 完整文档类型
+     * @param <T> 局部文档类型
+     * @param <R> 完整文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public BooleanResponse existsSource(ExistsSourceRequest request) throws IOException {
-        return requireClient().existsSource(Objects.requireNonNull(request, "判断文档 source 存在性请求不能为空"));
+    public <T, R> ElasticsearchResponse<R> updateDocument(ElasticsearchDocumentUpdateRequest<T> request,
+                                                            Class<R> documentClass) throws IOException {
+        UpdateResponse<R> response = requireClient().update(buildUpdateRequest(request), requireDocumentClass(documentClass));
+        R document = readAfterWrite(response.index(), response.id(), documentClass, null);
+        return ElasticsearchResponseMapper.write(response, document, "updateDocument");
     }
 
     /**
-     * 按官方请求获取文档 source。
-     *
-     * @param request 官方 source 获取请求
-     * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return source 响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public <TDocument> GetSourceResponse<TDocument> getSource(GetSourceRequest request, Class<TDocument> documentClass)
-            throws IOException {
-        return requireClient().getSource(Objects.requireNonNull(request, "获取文档 source 请求不能为空"),
-                Objects.requireNonNull(documentClass, "文档类型不能为空"));
-    }
-
-    /**
-     * 获取未绑定具体 Java 类型的文档 source。
-     *
-     * @param request 官方 source 获取请求
-     * @return source 响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public GetSourceResponse<JsonData> getSource(GetSourceRequest request) throws IOException {
-        return requireClient().getSource(Objects.requireNonNull(request, "获取文档 source 请求不能为空"), JsonData.class);
-    }
-
-    /**
-     * 按官方请求删除文档。
-     *
-     * @param request 官方删除请求
-     * @return 删除响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public DeleteResponse delete(DeleteRequest request) throws IOException {
-        return requireClient().delete(Objects.requireNonNull(request, "删除文档请求不能为空"));
-    }
-
-    /**
-     * 按索引和文档 ID 删除文档。
-     *
-     * @param indexName 索引名称
-     * @param documentId 文档 ID
-     * @return 删除响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public DeleteResponse delete(String indexName, String documentId) throws IOException {
-        return delete(DeleteRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .id(requireDocumentId(documentId))));
-    }
-
-    /**
-     * 按官方请求更新文档。
-     *
-     * @param request 官方更新请求
-     * @param documentClass 返回文档类型
-     * @param <TDocument> 返回文档类型
-     * @param <TPartialDocument> 局部更新类型
-     * @return 更新响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public <TDocument, TPartialDocument> UpdateResponse<TDocument> update(
-            UpdateRequest<TDocument, TPartialDocument> request, Class<TDocument> documentClass) throws IOException {
-        return requireClient().update(Objects.requireNonNull(request, "更新文档请求不能为空"),
-                Objects.requireNonNull(documentClass, "文档类型不能为空"));
-    }
-
-    /**
-     * 更新未绑定具体 Java 类型的文档。
-     *
-     * @param request 官方更新请求
-     * @return 更新响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public UpdateResponse<JsonData> update(UpdateRequest<JsonData, JsonData> request) throws IOException {
-        return requireClient().update(Objects.requireNonNull(request, "更新文档请求不能为空"), JsonData.class);
-    }
-
-    /**
-     * 按索引、文档 ID 和局部文档更新文档。
+     * 使用便捷参数更新文档。
      *
      * @param indexName 索引名称
      * @param documentId 文档 ID
      * @param partialDocument 局部文档
-     * @param documentClass 返回文档类型
-     * @param <TDocument> 返回文档类型
-     * @param <TPartialDocument> 局部更新类型
-     * @return 更新响应
+     * @param documentClass 完整文档类型
+     * @param <T> 局部文档类型
+     * @param <R> 完整文档类型
+     * @return 统一文档响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument, TPartialDocument> UpdateResponse<TDocument> update(
-            String indexName, String documentId, TPartialDocument partialDocument, Class<TDocument> documentClass)
-            throws IOException {
-        UpdateRequest<TDocument, TPartialDocument> request = UpdateRequest.of(builder -> builder
-                .index(requireIndexName(indexName))
-                .id(requireDocumentId(documentId))
-                .doc(Objects.requireNonNull(partialDocument, "局部文档不能为空")));
-        return update(request, documentClass);
+    public <T, R> ElasticsearchResponse<R> updateDocument(String indexName, String documentId, T partialDocument,
+                                                            Class<R> documentClass) throws IOException {
+        return updateDocument(ElasticsearchDocumentUpdateRequest.<T>builder()
+                .indexName(indexName)
+                .documentId(documentId)
+                .document(partialDocument)
+                .documentClass(documentClass)
+                .build(), documentClass);
     }
 
     /**
-     * 按官方请求搜索文档。
+     * 搜索文档。
      *
-     * @param request 官方搜索请求
+     * @param request 自定义搜索请求
      * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 搜索响应
+     * @param <T> 文档类型
+     * @return 统一搜索响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> SearchResponse<TDocument> search(SearchRequest request, Class<TDocument> documentClass)
-            throws IOException {
-        return requireClient().search(Objects.requireNonNull(request, "搜索文档请求不能为空"),
-                Objects.requireNonNull(documentClass, "文档类型不能为空"));
+    public <T> ElasticsearchResponse<List<ElasticsearchDocumentHit<T>>> searchDocuments(
+            ElasticsearchDocumentSearchRequest request, Class<T> documentClass) throws IOException {
+        SearchResponse<T> response = requireClient().search(buildSearchRequest(request), requireDocumentClass(documentClass));
+        return ElasticsearchResponseMapper.search(response, "searchDocuments");
     }
 
     /**
-     * 搜索未绑定具体 Java 类型的文档。
+     * 统计文档数量。
      *
-     * @param request 官方搜索请求
-     * @return 搜索响应
+     * @param request 自定义搜索条件
+     * @return 统一计数响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public SearchResponse<JsonData> search(SearchRequest request) throws IOException {
-        return requireClient().search(Objects.requireNonNull(request, "搜索文档请求不能为空"), JsonData.class);
+    public ElasticsearchResponse<Long> countDocuments(ElasticsearchDocumentSearchRequest request) throws IOException {
+        CountRequest.Builder builder = new CountRequest.Builder();
+        List<String> indexes = requireIndexes(request);
+        builder.index(indexes);
+        builder.query(ElasticsearchQueryConverter.convert(request.getQuery()));
+        CountResponse response = requireClient().count(builder.build());
+        return ElasticsearchResponse.<Long>builder()
+                .success(true)
+                .operation("countDocuments")
+                .message("统计文档成功")
+                .data(response.count())
+                .total(response.count())
+                .build();
     }
 
     /**
-     * 按索引和查询条件搜索文档。
+     * 批量执行文档操作。
      *
-     * @param indexName 索引名称
-     * @param query 查询条件，可以为空
-     * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 搜索响应
+     * @param request 自定义 Bulk 请求
+     * @return 统一批量响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> SearchResponse<TDocument> search(String indexName, Query query, Class<TDocument> documentClass)
-            throws IOException {
-        SearchRequest.Builder builder = new SearchRequest.Builder().index(requireIndexName(indexName));
-        if (query != null) {
-            builder.query(query);
+    public ElasticsearchResponse<List<ElasticsearchBulkItemResponse>> bulkDocuments(
+            ElasticsearchDocumentBulkRequest request) throws IOException {
+        if (request == null || request.getOperations() == null || request.getOperations().isEmpty()) {
+            throw new IllegalArgumentException("Bulk 操作不能为空");
         }
-        return search(builder.build(), documentClass);
-    }
-
-    /**
-     * 按官方请求统计文档数量。
-     *
-     * @param request 官方统计请求
-     * @return 统计响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public CountResponse count(CountRequest request) throws IOException {
-        return requireClient().count(Objects.requireNonNull(request, "统计文档请求不能为空"));
-    }
-
-    /**
-     * 统计指定索引的文档数量。
-     *
-     * @param indexName 索引名称
-     * @return 统计响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public CountResponse count(String indexName) throws IOException {
-        return count(CountRequest.of(request -> request.index(requireIndexName(indexName))));
-    }
-
-    /**
-     * 按官方请求执行 Bulk 批量操作。
-     *
-     * @param request 官方 Bulk 请求
-     * @return 批量操作响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public BulkResponse bulk(BulkRequest request) throws IOException {
-        return requireClient().bulk(Objects.requireNonNull(request, "Bulk 请求不能为空"));
-    }
-
-    /**
-     * 按索引和批量操作列表执行 Bulk 操作。
-     *
-     * @param indexName 默认索引名称
-     * @param operations 批量操作列表
-     * @return 批量操作响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public BulkResponse bulk(String indexName, List<BulkOperation> operations) throws IOException {
-        if (operations == null || operations.isEmpty()) {
-            throw new IllegalArgumentException("Bulk 操作列表不能为空");
+        List<BulkOperation> operations = request.getOperations().stream()
+                .map(operation -> buildBulkOperation(request.getIndexName(), operation))
+                .toList();
+        BulkRequest.Builder builder = new BulkRequest.Builder().operations(operations);
+        if (hasText(request.getIndexName())) {
+            builder.index(request.getIndexName());
         }
-        return bulk(BulkRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .operations(operations)));
+        builder.refresh(ElasticsearchQueryConverter.convertRefresh(request.getRefreshPolicy()));
+        BulkResponse response = requireClient().bulk(builder.build());
+        List<ElasticsearchBulkItemResponse> items = response.items().stream()
+                .map(this::convertBulkItem)
+                .toList();
+        long failed = items.stream().filter(item -> !Boolean.TRUE.equals(item.getSuccess())).count();
+        return ElasticsearchResponse.<List<ElasticsearchBulkItemResponse>>builder()
+                .success(!response.errors())
+                .operation("bulkDocuments")
+                .message(response.errors() ? "Bulk 执行存在失败项" : "Bulk 执行成功")
+                .data(items)
+                .total((long) items.size())
+                .failed(failed)
+                .tookMillis(response.took())
+                .build();
     }
 
     /**
-     * 按官方请求批量删除匹配文档。
+     * 按条件批量删除文档。
      *
-     * @param request 官方按查询删除请求
-     * @return 删除响应
+     * @param request 自定义按查询删除请求
+     * @return 统一删除响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public DeleteByQueryResponse deleteByQuery(DeleteByQueryRequest request) throws IOException {
-        return requireClient().deleteByQuery(Objects.requireNonNull(request, "按查询删除文档请求不能为空"));
-    }
-
-    /**
-     * 按索引和查询条件批量删除文档。
-     *
-     * @param indexName 索引名称
-     * @param query 查询条件
-     * @return 删除响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public DeleteByQueryResponse deleteByQuery(String indexName, Query query) throws IOException {
-        return deleteByQuery(DeleteByQueryRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .query(Objects.requireNonNull(query, "按查询删除条件不能为空"))));
-    }
-
-    /**
-     * 按官方请求批量更新匹配文档。
-     *
-     * @param request 官方按查询更新请求
-     * @return 更新响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public UpdateByQueryResponse updateByQuery(UpdateByQueryRequest request) throws IOException {
-        return requireClient().updateByQuery(Objects.requireNonNull(request, "按查询更新文档请求不能为空"));
-    }
-
-    /**
-     * 按官方请求批量获取文档。
-     *
-     * @param request 官方批量获取请求
-     * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 批量获取响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public <TDocument> MgetResponse<TDocument> mget(MgetRequest request, Class<TDocument> documentClass)
+    public ElasticsearchResponse<Long> deleteDocumentsByQuery(ElasticsearchDocumentDeleteByQueryRequest request)
             throws IOException {
-        return requireClient().mget(Objects.requireNonNull(request, "批量获取文档请求不能为空"),
-                Objects.requireNonNull(documentClass, "文档类型不能为空"));
-    }
-
-    /**
-     * 批量获取未绑定具体 Java 类型的文档。
-     *
-     * @param request 官方批量获取请求
-     * @return 批量获取响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public MgetResponse<JsonData> mget(MgetRequest request) throws IOException {
-        return requireClient().mget(Objects.requireNonNull(request, "批量获取文档请求不能为空"), JsonData.class);
-    }
-
-    /**
-     * 按索引和文档 ID 列表批量获取文档。
-     *
-     * @param indexName 索引名称
-     * @param documentIds 文档 ID 列表
-     * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 批量获取响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public <TDocument> MgetResponse<TDocument> mget(String indexName, List<String> documentIds,
-                                                     Class<TDocument> documentClass) throws IOException {
-        if (documentIds == null || documentIds.isEmpty()) {
-            throw new IllegalArgumentException("批量获取文档 ID 列表不能为空");
+        DeleteByQueryRequest.Builder builder = new DeleteByQueryRequest.Builder()
+                .index(requireIndexName(request.getIndexName()))
+                .query(ElasticsearchQueryConverter.convert(request.getQuery()))
+                .refresh(isRefreshEnabled(request.getRefreshPolicy()))
+                .waitForCompletion(request.getWaitForCompletion());
+        if ("proceed".equalsIgnoreCase(request.getConflicts())) {
+            builder.conflicts(Conflicts.Proceed);
+        } else {
+            builder.conflicts(Conflicts.Abort);
         }
-        return mget(MgetRequest.of(request -> request
-                .index(requireIndexName(indexName))
-                .ids(documentIds)), documentClass);
+        DeleteByQueryResponse response = requireClient().deleteByQuery(builder.build());
+        return ElasticsearchResponse.<Long>builder()
+                .success(response.failures() == null || response.failures().isEmpty())
+                .operation("deleteDocumentsByQuery")
+                .message("按条件删除文档完成")
+                .data(response.deleted())
+                .total(response.total())
+                .failed(response.failures() == null ? 0L : (long) response.failures().size())
+                .tookMillis(response.took())
+                .build();
     }
 
     /**
-     * 按官方请求执行滚动查询。
+     * 按条件批量更新文档。
      *
-     * @param request 官方滚动请求
-     * @param documentClass 文档类型
-     * @param <TDocument> 文档类型
-     * @return 滚动响应
+     * @param request 自定义按查询更新请求
+     * @return 统一更新响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public <TDocument> ScrollResponse<TDocument> scroll(ScrollRequest request, Class<TDocument> documentClass)
+    public ElasticsearchResponse<Long> updateDocumentsByQuery(ElasticsearchDocumentUpdateByQueryRequest request)
             throws IOException {
-        return requireClient().scroll(Objects.requireNonNull(request, "滚动查询请求不能为空"),
-                Objects.requireNonNull(documentClass, "文档类型不能为空"));
+        UpdateByQueryRequest.Builder builder = new UpdateByQueryRequest.Builder()
+                .index(requireIndexName(request.getIndexName()))
+                .query(ElasticsearchQueryConverter.convert(request.getQuery()))
+                .refresh(isRefreshEnabled(request.getRefreshPolicy()))
+                .waitForCompletion(request.getWaitForCompletion());
+        if ("proceed".equalsIgnoreCase(request.getConflicts())) {
+            builder.conflicts(Conflicts.Proceed);
+        } else {
+            builder.conflicts(Conflicts.Abort);
+        }
+        builder.script(buildScript(request.getScript()));
+        UpdateByQueryResponse response = requireClient().updateByQuery(builder.build());
+        return ElasticsearchResponse.<Long>builder()
+                .success(response.failures() == null || response.failures().isEmpty())
+                .operation("updateDocumentsByQuery")
+                .message("按条件更新文档完成")
+                .data(response.updated())
+                .total(response.total())
+                .failed(response.failures() == null ? 0L : (long) response.failures().size())
+                .tookMillis(response.took())
+                .build();
     }
 
     /**
-     * 清理滚动查询上下文。
+     * 批量获取文档。
      *
-     * @param request 官方清理滚动请求
-     * @return 清理响应
+     * @param request 自定义批量获取请求
+     * @param documentClass 文档类型
+     * @param <T> 文档类型
+     * @return 统一批量获取响应
      * @throws IOException Elasticsearch 请求异常
      */
     @Override
-    public ClearScrollResponse clearScroll(ClearScrollRequest request) throws IOException {
-        return requireClient().clearScroll(Objects.requireNonNull(request, "清理滚动查询请求不能为空"));
+    public <T> ElasticsearchResponse<List<ElasticsearchDocumentHit<T>>> multiGetDocuments(
+            ElasticsearchDocumentMgetRequest request, Class<T> documentClass) throws IOException {
+        if (request == null || request.getDocumentIds() == null || request.getDocumentIds().isEmpty()) {
+            throw new IllegalArgumentException("批量获取文档 ID 不能为空");
+        }
+        MgetRequest.Builder builder = new MgetRequest.Builder()
+                .index(requireIndexName(request.getIndexName()))
+                .ids(request.getDocumentIds());
+        if (request.getSourceIncludes() != null) {
+            builder.sourceIncludes(request.getSourceIncludes());
+        }
+        if (request.getSourceExcludes() != null) {
+            builder.sourceExcludes(request.getSourceExcludes());
+        }
+        MgetResponse<T> response = requireClient().mget(builder.build(), requireDocumentClass(documentClass));
+        List<ElasticsearchDocumentHit<T>> documents = new ArrayList<>();
+        for (MultiGetResponseItem<T> item : response.docs()) {
+            if (item.isResult()) {
+                documents.add(ElasticsearchDocumentHit.<T>builder()
+                        .indexName(item.result().index())
+                        .documentId(item.result().id())
+                        .document(item.result().source())
+                        .build());
+            }
+        }
+        return ElasticsearchResponse.<List<ElasticsearchDocumentHit<T>>>builder()
+                .success(true)
+                .operation("multiGetDocuments")
+                .message("批量获取文档成功")
+                .data(documents)
+                .total((long) documents.size())
+                .build();
     }
 
-    /**
-     * 按官方请求执行重建索引。
-     *
-     * @param request 官方重建索引请求
-     * @return 重建索引响应
-     * @throws IOException Elasticsearch 请求异常
-     */
-    @Override
-    public ReindexResponse reindex(ReindexRequest request) throws IOException {
-        return requireClient().reindex(Objects.requireNonNull(request, "重建索引请求不能为空"));
+    private <T> IndexRequest<T> buildIndexRequest(ElasticsearchDocumentRequest<T> request, boolean createOnly) {
+        Objects.requireNonNull(request, "文档请求不能为空");
+        IndexRequest.Builder<T> builder = new IndexRequest.Builder<T>()
+                .index(requireIndexName(request.getIndexName()))
+                .document(Objects.requireNonNull(request.getDocument(), "文档实体不能为空"));
+        if (hasText(request.getDocumentId())) {
+            builder.id(request.getDocumentId());
+        }
+        if (createOnly) {
+            builder.opType(co.elastic.clients.elasticsearch._types.OpType.Create);
+        }
+        if (request.getRefreshPolicy() != null) {
+            builder.refresh(ElasticsearchQueryConverter.convertRefresh(request.getRefreshPolicy()));
+        }
+        if (hasText(request.getRouting())) {
+            builder.routing(request.getRouting());
+        }
+        if (hasText(request.getPipeline())) {
+            builder.pipeline(request.getPipeline());
+        }
+        if (request.getIfSequenceNumber() != null) {
+            builder.ifSeqNo(request.getIfSequenceNumber());
+        }
+        if (request.getIfPrimaryTerm() != null) {
+            builder.ifPrimaryTerm(request.getIfPrimaryTerm());
+        }
+        if (request.getRequireAlias() != null) {
+            builder.requireAlias(request.getRequireAlias());
+        }
+        return builder.build();
     }
 
-    /**
-     * 校验索引名称。
-     *
-     * @param indexName 索引名称
-     * @return 原始索引名称
-     */
+    private GetRequest buildGetRequest(ElasticsearchDocumentGetRequest request) {
+        Objects.requireNonNull(request, "文档读取请求不能为空");
+        GetRequest.Builder builder = new GetRequest.Builder()
+                .index(requireIndexName(request.getIndexName()))
+                .id(requireDocumentId(request.getDocumentId()));
+        if (request.getSourceIncludes() != null) {
+            builder.sourceIncludes(request.getSourceIncludes());
+        }
+        if (request.getSourceExcludes() != null) {
+            builder.sourceExcludes(request.getSourceExcludes());
+        }
+        if (hasText(request.getRouting())) {
+            builder.routing(request.getRouting());
+        }
+        if (request.getRealtime() != null) {
+            builder.realtime(request.getRealtime());
+        }
+        return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T, R> UpdateRequest<R, T> buildUpdateRequest(ElasticsearchDocumentUpdateRequest<T> request) {
+        Objects.requireNonNull(request, "文档更新请求不能为空");
+        UpdateRequest.Builder<R, T> builder = new UpdateRequest.Builder<R, T>()
+                .index(requireIndexName(request.getIndexName()))
+                .id(requireDocumentId(request.getDocumentId()))
+                .doc(Objects.requireNonNull(request.getDocument(), "局部文档不能为空"));
+        if (request.getUpsert() != null) {
+            builder.upsert((R) request.getUpsert());
+        }
+        if (request.getDocumentAsUpsert() != null) {
+            builder.docAsUpsert(request.getDocumentAsUpsert());
+        }
+        if (request.getDetectNoop() != null) {
+            builder.detectNoop(request.getDetectNoop());
+        }
+        if (request.getRefreshPolicy() != null) {
+            builder.refresh(ElasticsearchQueryConverter.convertRefresh(request.getRefreshPolicy()));
+        }
+        if (hasText(request.getRouting())) {
+            builder.routing(request.getRouting());
+        }
+        if (request.getRetryOnConflict() != null) {
+            builder.retryOnConflict(request.getRetryOnConflict());
+        }
+        return builder.build();
+    }
+
+    private SearchRequest buildSearchRequest(ElasticsearchDocumentSearchRequest request) {
+        Objects.requireNonNull(request, "文档搜索请求不能为空");
+        SearchRequest.Builder builder = new SearchRequest.Builder()
+                .index(requireIndexes(request))
+                .query(ElasticsearchQueryConverter.convert(request.getQuery()));
+        if (request.getFrom() != null) {
+            builder.from(request.getFrom());
+        }
+        if (request.getSize() != null) {
+            builder.size(request.getSize());
+        }
+        if (request.getTrackTotalHits() != null) {
+            builder.trackTotalHits(TrackHits.of(trackHits -> trackHits.enabled(request.getTrackTotalHits())));
+        }
+        if (request.getSourceIncludes() != null || request.getSourceExcludes() != null) {
+            builder.source(source -> source.filter(filter -> {
+                if (request.getSourceIncludes() != null) {
+                    filter.includes(request.getSourceIncludes());
+                }
+                if (request.getSourceExcludes() != null) {
+                    filter.excludes(request.getSourceExcludes());
+                }
+                return filter;
+            }));
+        }
+        if (request.getSortFields() != null) {
+            request.getSortFields().stream()
+                    .filter(this::hasText)
+                    .forEach(sortField -> addSort(builder, sortField));
+        }
+        return builder.build();
+    }
+
+    private void addSort(SearchRequest.Builder builder, String sortField) {
+        boolean descending = sortField.startsWith("-");
+        String field = descending || sortField.startsWith("+") ? sortField.substring(1) : sortField;
+        builder.sort(sort -> sort.field(fieldOption -> fieldOption
+                .field(requireText(field, "排序字段不能为空"))
+                .order(descending ? SortOrder.Desc : SortOrder.Asc)));
+    }
+
+    private BulkOperation buildBulkOperation(String defaultIndex, ElasticsearchBulkOperation operation) {
+        Objects.requireNonNull(operation, "Bulk 操作项不能为空");
+        String indexName = hasText(operation.getIndexName()) ? operation.getIndexName() : requireIndexName(defaultIndex);
+        return switch (Objects.requireNonNull(operation.getType(), "Bulk 操作类型不能为空")) {
+            case INDEX -> BulkOperation.of(builder -> builder.index(index -> {
+                index.index(indexName).document(Objects.requireNonNull(operation.getDocument(), "Bulk 文档不能为空"));
+                if (hasText(operation.getDocumentId())) {
+                    index.id(operation.getDocumentId());
+                }
+                return index;
+            }));
+            case CREATE -> BulkOperation.of(builder -> builder.create(create -> {
+                create.index(indexName).document(Objects.requireNonNull(operation.getDocument(), "Bulk 文档不能为空"));
+                if (hasText(operation.getDocumentId())) {
+                    create.id(operation.getDocumentId());
+                }
+                return create;
+            }));
+            case UPDATE -> BulkOperation.of(builder -> builder.update(update -> {
+                update.index(indexName).id(requireDocumentId(operation.getDocumentId()));
+                update.action(action -> {
+                    action.doc(Objects.requireNonNull(operation.getPartialDocument(), "Bulk 局部文档不能为空"));
+                    if (operation.getUpsert() != null) {
+                        action.upsert(operation.getUpsert());
+                    }
+                    if (operation.getDocumentAsUpsert() != null) {
+                        action.docAsUpsert(operation.getDocumentAsUpsert());
+                    }
+                    return action;
+                });
+                return update;
+            }));
+            case DELETE -> BulkOperation.of(builder -> builder.delete(delete -> delete
+                    .index(indexName)
+                    .id(requireDocumentId(operation.getDocumentId()))));
+        };
+    }
+
+    private ElasticsearchBulkItemResponse convertBulkItem(BulkResponseItem item) {
+        String error = item.error() == null ? null : item.error().reason();
+        return ElasticsearchBulkItemResponse.builder()
+                .operation(item.operationType() == null ? null : item.operationType().jsonValue())
+                .indexName(item.index())
+                .documentId(item.id())
+                .status(item.status())
+                .success(error == null && item.status() < 300)
+                .result(item.result())
+                .error(error)
+                .build();
+    }
+
+    private Script buildScript(ElasticsearchDocumentScript source) {
+        if (source == null || !hasText(source.getSource())) {
+            throw new IllegalArgumentException("更新脚本不能为空");
+        }
+        Script.Builder builder = new Script.Builder()
+                .source(source.getSource())
+                .lang(hasText(source.getLanguage()) ? source.getLanguage() : "painless");
+        if (source.getParameters() != null) {
+            Map<String, JsonData> parameters = source.getParameters().entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> JsonData.of(entry.getValue())));
+            builder.params(parameters);
+        }
+        return builder.build();
+    }
+
+    private <T> T readAfterWrite(String indexName, String documentId, Class<T> documentClass, T fallback)
+            throws IOException {
+        if (documentClass == null || !hasText(indexName) || !hasText(documentId)) {
+            return fallback;
+        }
+        GetResponse<T> response = requireClient().get(GetRequest.of(request -> request
+                .index(indexName)
+                .id(documentId)), documentClass);
+        return response.found() ? response.source() : fallback;
+    }
+
+    private <T> Class<T> requireDocumentClass(Class<T> documentClass) {
+        return Objects.requireNonNull(documentClass, "文档类型不能为空");
+    }
+
+    private List<String> requireIndexes(ElasticsearchDocumentSearchRequest request) {
+        Objects.requireNonNull(request, "文档搜索请求不能为空");
+        if (request.getIndexNames() == null || request.getIndexNames().isEmpty()) {
+            throw new IllegalArgumentException("搜索索引不能为空");
+        }
+        return request.getIndexNames();
+    }
+
+    private boolean isRefreshEnabled(com.hzj.elasticsearch.core.entity.ElasticsearchRefreshPolicy policy) {
+        return policy != null && policy != com.hzj.elasticsearch.core.entity.ElasticsearchRefreshPolicy.NONE;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String requireText(String value, String message) {
+        if (!hasText(value)) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
     private String requireIndexName(String indexName) {
-        if (indexName == null || indexName.trim().isEmpty()) {
-            throw new IllegalArgumentException("索引名称不能为空");
-        }
-        return indexName;
+        return requireText(indexName, "索引名称不能为空");
     }
 
-    /**
-     * 校验文档 ID。
-     *
-     * @param documentId 文档 ID
-     * @return 原始文档 ID
-     */
     private String requireDocumentId(String documentId) {
-        if (documentId == null || documentId.trim().isEmpty()) {
-            throw new IllegalArgumentException("文档 ID 不能为空");
-        }
-        return documentId;
+        return requireText(documentId, "文档 ID 不能为空");
     }
 }
