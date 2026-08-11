@@ -116,7 +116,7 @@ public abstract class AbstractElasticsearchService implements ElasticsearchServi
     private RestClientBuilder buildRestClientBuilder(ElasticsearchConfig config) {
         ElasticsearchMode mode = config.getMode() == null ? ElasticsearchMode.SINGLE_NODE : config.getMode();
         ElasticsearchScheme scheme = config.getScheme() == null ? ElasticsearchScheme.HTTP : config.getScheme();
-        if (mode == ElasticsearchMode.CLUSTER) {
+        if (mode.isCluster()) {
             List<ElasticsearchConfig.ElasticsearchNode> nodes = config.getNodes();
             if (CollUtil.isEmpty(nodes)) {
                 throw new IllegalArgumentException("Elasticsearch 集群模式必须配置 nodes");
