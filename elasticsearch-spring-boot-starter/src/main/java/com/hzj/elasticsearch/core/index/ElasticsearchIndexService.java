@@ -1,169 +1,153 @@
 package com.hzj.elasticsearch.core.index;
 
 import com.hzj.elasticsearch.core.ElasticsearchService;
-import co.elastic.clients.elasticsearch.indices.CloseIndexRequest;
-import co.elastic.clients.elasticsearch.indices.CloseIndexResponse;
-import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
-import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
-import co.elastic.clients.elasticsearch.indices.DeleteAliasRequest;
-import co.elastic.clients.elasticsearch.indices.DeleteAliasResponse;
-import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
-import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
-import co.elastic.clients.elasticsearch.indices.ExistsAliasRequest;
-import co.elastic.clients.elasticsearch.indices.ExistsRequest;
-import co.elastic.clients.elasticsearch.indices.GetAliasRequest;
-import co.elastic.clients.elasticsearch.indices.GetAliasResponse;
-import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
-import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
-import co.elastic.clients.elasticsearch.indices.GetIndicesSettingsRequest;
-import co.elastic.clients.elasticsearch.indices.GetIndicesSettingsResponse;
-import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
-import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
-import co.elastic.clients.elasticsearch.indices.OpenRequest;
-import co.elastic.clients.elasticsearch.indices.OpenResponse;
-import co.elastic.clients.elasticsearch.indices.PutAliasRequest;
-import co.elastic.clients.elasticsearch.indices.PutAliasResponse;
-import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsRequest;
-import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsResponse;
-import co.elastic.clients.elasticsearch.indices.PutMappingRequest;
-import co.elastic.clients.elasticsearch.indices.PutMappingResponse;
-import co.elastic.clients.elasticsearch.indices.RefreshRequest;
-import co.elastic.clients.elasticsearch.indices.RefreshResponse;
-import co.elastic.clients.elasticsearch.indices.UpdateAliasesRequest;
-import co.elastic.clients.elasticsearch.indices.UpdateAliasesResponse;
-import co.elastic.clients.transport.endpoints.BooleanResponse;
+import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
+import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexAliasRequest;
+import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexCreateRequest;
+import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexMappingRequest;
+import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexSettingsRequest;
 
 import java.io.IOException;
 
 /**
- * Elasticsearch 索引级操作服务。
+ * Elasticsearch 索引级业务操作服务。
  *
- * <p>ES8 中索引直接对应业务表，不存在 type 中间层。</p>
+ * <p>ES8 中索引直接对应业务表，不存在 type 中间层；公开接口不暴露 ES 官方请求和响应类型。</p>
  */
 public interface ElasticsearchIndexService extends ElasticsearchService {
 
     /**
      * 创建索引。
+     *
+     * @param request 自定义索引创建请求
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    CreateIndexResponse createIndex(String indexName) throws IOException;
+    ElasticsearchResponse<Void> createIndex(ElasticsearchIndexCreateRequest request) throws IOException;
 
     /**
-     * 按官方请求创建索引。
+     * 使用索引名称创建索引。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    CreateIndexResponse createIndex(CreateIndexRequest request) throws IOException;
+    ElasticsearchResponse<Void> createIndex(String indexName) throws IOException;
 
     /**
      * 删除索引。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    DeleteIndexResponse deleteIndex(String indexName) throws IOException;
-
-    /**
-     * 按官方请求删除索引。
-     */
-    DeleteIndexResponse deleteIndex(DeleteIndexRequest request) throws IOException;
+    ElasticsearchResponse<Void> deleteIndex(String indexName) throws IOException;
 
     /**
      * 判断索引是否存在。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引存在性响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    BooleanResponse existsIndex(String indexName) throws IOException;
+    ElasticsearchResponse<Boolean> existsIndex(String indexName) throws IOException;
 
     /**
-     * 按官方请求判断索引是否存在。
+     * 获取索引基本信息。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    BooleanResponse existsIndex(ExistsRequest request) throws IOException;
-
-    /**
-     * 获取索引信息。
-     */
-    GetIndexResponse getIndex(String indexName) throws IOException;
-
-    /**
-     * 按官方请求获取索引信息。
-     */
-    GetIndexResponse getIndex(GetIndexRequest request) throws IOException;
+    ElasticsearchResponse<String> getIndex(String indexName) throws IOException;
 
     /**
      * 刷新索引。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    RefreshResponse refreshIndex(String indexName) throws IOException;
-
-    /**
-     * 按官方请求刷新索引。
-     */
-    RefreshResponse refreshIndex(RefreshRequest request) throws IOException;
+    ElasticsearchResponse<Void> refreshIndex(String indexName) throws IOException;
 
     /**
      * 打开索引。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    OpenResponse openIndex(String indexName) throws IOException;
-
-    /**
-     * 按官方请求打开索引。
-     */
-    OpenResponse openIndex(OpenRequest request) throws IOException;
+    ElasticsearchResponse<Void> openIndex(String indexName) throws IOException;
 
     /**
      * 关闭索引。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    CloseIndexResponse closeIndex(String indexName) throws IOException;
-
-    /**
-     * 按官方请求关闭索引。
-     */
-    CloseIndexResponse closeIndex(CloseIndexRequest request) throws IOException;
+    ElasticsearchResponse<Void> closeIndex(String indexName) throws IOException;
 
     /**
      * 更新索引 Mapping。
+     *
+     * @param request 自定义 Mapping 请求
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    PutMappingResponse putMapping(PutMappingRequest request) throws IOException;
+    ElasticsearchResponse<Void> putMapping(ElasticsearchIndexMappingRequest request) throws IOException;
 
     /**
-     * 获取索引 Mapping。
+     * 获取索引 Mapping 的可视化 JSON 文本。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    GetMappingResponse getMapping(String indexName) throws IOException;
-
-    /**
-     * 按官方请求获取索引 Mapping。
-     */
-    GetMappingResponse getMapping(GetMappingRequest request) throws IOException;
-
-    /**
-     * 获取索引 Settings。
-     */
-    GetIndicesSettingsResponse getSettings(String indexName) throws IOException;
-
-    /**
-     * 按官方请求获取索引 Settings。
-     */
-    GetIndicesSettingsResponse getSettings(GetIndicesSettingsRequest request) throws IOException;
+    ElasticsearchResponse<String> getMapping(String indexName) throws IOException;
 
     /**
      * 更新索引 Settings。
+     *
+     * @param request 自定义 Settings 请求
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    PutIndicesSettingsResponse putSettings(PutIndicesSettingsRequest request) throws IOException;
+    ElasticsearchResponse<Void> putSettings(ElasticsearchIndexSettingsRequest request) throws IOException;
 
     /**
-     * 批量更新索引别名。
+     * 获取索引 Settings 的可视化 JSON 文本。
+     *
+     * @param indexName 索引名称
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    UpdateAliasesResponse updateAliases(UpdateAliasesRequest request) throws IOException;
+    ElasticsearchResponse<String> getSettings(String indexName) throws IOException;
 
     /**
-     * 创建或更新单个索引别名。
+     * 创建或更新索引别名。
+     *
+     * @param request 自定义别名请求
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    PutAliasResponse putAlias(PutAliasRequest request) throws IOException;
+    ElasticsearchResponse<Void> putAlias(ElasticsearchIndexAliasRequest request) throws IOException;
 
     /**
      * 删除索引别名。
+     *
+     * @param request 自定义别名请求
+     * @return 统一索引响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    DeleteAliasResponse deleteAlias(DeleteAliasRequest request) throws IOException;
-
-    /**
-     * 获取索引别名。
-     */
-    GetAliasResponse getAlias(GetAliasRequest request) throws IOException;
+    ElasticsearchResponse<Void> deleteAlias(ElasticsearchIndexAliasRequest request) throws IOException;
 
     /**
      * 判断索引别名是否存在。
+     *
+     * @param request 自定义别名请求
+     * @return 统一别名存在性响应
+     * @throws IOException Elasticsearch 请求异常
      */
-    BooleanResponse existsAlias(ExistsAliasRequest request) throws IOException;
+    ElasticsearchResponse<Boolean> existsAlias(ElasticsearchIndexAliasRequest request) throws IOException;
 }
