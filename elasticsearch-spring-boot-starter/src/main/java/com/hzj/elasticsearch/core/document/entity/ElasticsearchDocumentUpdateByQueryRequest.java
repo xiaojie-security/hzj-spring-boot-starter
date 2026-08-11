@@ -1,5 +1,6 @@
 package com.hzj.elasticsearch.core.document.entity;
 
+import com.hzj.elasticsearch.core.entity.ElasticsearchConflictPolicy;
 import com.hzj.elasticsearch.core.entity.ElasticsearchRefreshPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,7 +41,7 @@ public class ElasticsearchDocumentUpdateByQueryRequest {
      * 冲突处理策略，默认 abort。
      */
     @Builder.Default
-    private String conflicts = "abort";
+    private ElasticsearchConflictPolicy conflicts = ElasticsearchConflictPolicy.ABORT;
 
     /**
      * 是否等待任务完成。

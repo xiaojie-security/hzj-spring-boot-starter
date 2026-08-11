@@ -43,6 +43,7 @@ import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentSearchReq
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentScript;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateByQueryRequest;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateRequest;
+import com.hzj.elasticsearch.core.entity.ElasticsearchConflictPolicy;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchQuery;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.utils.ElasticsearchQueryConverter;
@@ -322,7 +323,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
                 .query(ElasticsearchQueryConverter.convert(request.getQuery()))
                 .refresh(isRefreshEnabled(request.getRefreshPolicy()))
                 .waitForCompletion(request.getWaitForCompletion());
-        if ("proceed".equalsIgnoreCase(request.getConflicts())) {
+        if (request.getConflicts() == ElasticsearchConflictPolicy.PROCEED) {
             builder.conflicts(Conflicts.Proceed);
         } else {
             builder.conflicts(Conflicts.Abort);
@@ -354,7 +355,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
                 .query(ElasticsearchQueryConverter.convert(request.getQuery()))
                 .refresh(isRefreshEnabled(request.getRefreshPolicy()))
                 .waitForCompletion(request.getWaitForCompletion());
-        if ("proceed".equalsIgnoreCase(request.getConflicts())) {
+        if (request.getConflicts() == ElasticsearchConflictPolicy.PROCEED) {
             builder.conflicts(Conflicts.Proceed);
         } else {
             builder.conflicts(Conflicts.Abort);
