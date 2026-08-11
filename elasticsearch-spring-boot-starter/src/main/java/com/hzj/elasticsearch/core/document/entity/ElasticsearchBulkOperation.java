@@ -1,5 +1,6 @@
 package com.hzj.elasticsearch.core.document.entity;
 
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchBulkOperationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class ElasticsearchBulkOperation {
     /**
      * 操作类型。
      */
-    private Type type;
+    private ElasticsearchBulkOperationType type;
 
     /**
      * 操作目标索引；为空时使用 Bulk 请求默认索引。
@@ -49,13 +50,4 @@ public class ElasticsearchBulkOperation {
      */
     private Boolean documentAsUpsert;
 
-    /**
-     * Bulk 操作类型。
-     */
-    public enum Type {
-        INDEX,
-        CREATE,
-        UPDATE,
-        DELETE
-    }
 }

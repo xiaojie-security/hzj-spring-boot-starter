@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.core.entity;
+package com.hzj.elasticsearch.core.document.entity.enums;
 
 /**
  * Elasticsearch 按查询操作的版本冲突处理策略。

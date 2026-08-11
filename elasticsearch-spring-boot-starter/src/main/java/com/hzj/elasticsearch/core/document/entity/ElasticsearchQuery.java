@@ -1,5 +1,6 @@
 package com.hzj.elasticsearch.core.document.entity;
 
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchQueryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,7 @@ public class ElasticsearchQuery {
     /**
      * 查询类型。
      */
-    private Type type;
+    private ElasticsearchQueryType type;
 
     /**
      * 查询字段。
@@ -69,25 +70,12 @@ public class ElasticsearchQuery {
     private List<ElasticsearchQuery> mustNot = Collections.emptyList();
 
     /**
-     * 查询类型枚举。
-     */
-    public enum Type {
-        MATCH_ALL,
-        TERM,
-        MATCH,
-        EXISTS,
-        IDS,
-        QUERY_STRING,
-        BOOL
-    }
-
-    /**
      * 创建匹配全部查询。
      *
      * @return 查询条件
      */
     public static ElasticsearchQuery matchAll() {
-        return ElasticsearchQuery.builder().type(Type.MATCH_ALL).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.MATCH_ALL).build();
     }
 
     /**
@@ -98,7 +86,7 @@ public class ElasticsearchQuery {
      * @return 查询条件
      */
     public static ElasticsearchQuery term(String field, Object value) {
-        return ElasticsearchQuery.builder().type(Type.TERM).field(field).value(value).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.TERM).field(field).value(value).build();
     }
 
     /**
@@ -109,7 +97,7 @@ public class ElasticsearchQuery {
      * @return 查询条件
      */
     public static ElasticsearchQuery match(String field, Object value) {
-        return ElasticsearchQuery.builder().type(Type.MATCH).field(field).value(value).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.MATCH).field(field).value(value).build();
     }
 
     /**
@@ -119,7 +107,7 @@ public class ElasticsearchQuery {
      * @return 查询条件
      */
     public static ElasticsearchQuery exists(String field) {
-        return ElasticsearchQuery.builder().type(Type.EXISTS).field(field).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.EXISTS).field(field).build();
     }
 
     /**
@@ -129,7 +117,7 @@ public class ElasticsearchQuery {
      * @return 查询条件
      */
     public static ElasticsearchQuery ids(List<String> values) {
-        return ElasticsearchQuery.builder().type(Type.IDS).values(values).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.IDS).values(values).build();
     }
 
     /**
@@ -139,7 +127,7 @@ public class ElasticsearchQuery {
      * @return 查询条件
      */
     public static ElasticsearchQuery queryString(String queryString) {
-        return ElasticsearchQuery.builder().type(Type.QUERY_STRING).queryString(queryString).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.QUERY_STRING).queryString(queryString).build();
     }
 
     /**
@@ -150,6 +138,6 @@ public class ElasticsearchQuery {
      * @return 查询条件
      */
     public static ElasticsearchQuery bool(List<ElasticsearchQuery> must, List<ElasticsearchQuery> filter) {
-        return ElasticsearchQuery.builder().type(Type.BOOL).must(must).filter(filter).build();
+        return ElasticsearchQuery.builder().type(ElasticsearchQueryType.BOOL).must(must).filter(filter).build();
     }
 }

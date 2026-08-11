@@ -4,7 +4,7 @@ import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchQuery;
-import com.hzj.elasticsearch.core.entity.ElasticsearchRefreshPolicy;
+import com.hzj.elasticsearch.core.entity.enums.ElasticsearchRefreshPolicy;
 
 import java.util.Collections;
 import java.util.List;

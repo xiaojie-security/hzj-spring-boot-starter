@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,10 +40,10 @@ public class ElasticsearchDocumentSearchRequest {
     private Integer size = 10;
 
     /**
-     * 排序字段，字段名前缀使用 - 表示倒序。
+     * 排序条件。
      */
     @Builder.Default
-    private List<String> sortFields = Collections.emptyList();
+    private List<ElasticsearchDocumentSort> sorts = List.of();
 
     /**
      * 返回 source 字段白名单。

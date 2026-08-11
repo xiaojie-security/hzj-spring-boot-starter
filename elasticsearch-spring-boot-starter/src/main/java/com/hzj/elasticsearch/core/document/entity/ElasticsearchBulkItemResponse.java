@@ -1,5 +1,7 @@
 package com.hzj.elasticsearch.core.document.entity;
 
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchBulkOperationType;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentWriteResult;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +19,7 @@ public class ElasticsearchBulkItemResponse {
     /**
      * 操作类型。
      */
-    private String operation;
+    private ElasticsearchBulkOperationType operation;
 
     /**
      * 索引名称。
@@ -42,7 +44,7 @@ public class ElasticsearchBulkItemResponse {
     /**
      * Elasticsearch 返回结果。
      */
-    private String result;
+    private ElasticsearchDocumentWriteResult result;
 
     /**
      * 错误信息。

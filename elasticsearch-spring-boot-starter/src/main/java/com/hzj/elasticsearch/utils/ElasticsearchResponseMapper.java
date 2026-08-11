@@ -8,6 +8,8 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.UpdateResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentHit;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentWriteResult;
+import com.hzj.elasticsearch.core.entity.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 
 import java.util.ArrayList;
@@ -31,13 +33,15 @@ public final class ElasticsearchResponseMapper {
      * @param <T> 文档类型
      * @return Starter 响应
      */
-    public static <T> ElasticsearchResponse<T> write(WriteResponseBase response, T document, String operation) {
-        String result = response.result() == null ? null : response.result().jsonValue();
-        boolean created = "created".equals(result);
+    public static <T> ElasticsearchResponse<T> write(WriteResponseBase response, T document,
+                                                       ElasticsearchOperation operation) {
+        ElasticsearchDocumentWriteResult result = ElasticsearchDocumentWriteResult.fromValue(
+                response.result() == null ? null : response.result().jsonValue());
+        boolean created = result == ElasticsearchDocumentWriteResult.CREATED;
         return ElasticsearchResponse.<T>builder()
                 .success(true)
                 .operation(operation)
-                .message(operation + "成功")
+                .message(operation.getValue() + "成功")
                 .indexName(response.index())
                 .documentId(response.id())
                 .data(document)
@@ -56,7 +60,7 @@ public final class ElasticsearchResponseMapper {
      * @param <T> 文档类型
      * @return Starter 响应
      */
-    public static <T> ElasticsearchResponse<T> get(GetResponse<T> response, String operation) {
+    public static <T> ElasticsearchResponse<T> get(GetResponse<T> response, ElasticsearchOperation operation) {
         return ElasticsearchResponse.<T>builder()
                 .success(response.found())
                 .operation(operation)
@@ -80,7 +84,7 @@ public final class ElasticsearchResponseMapper {
      * @return Starter 响应
      */
     public static <T> ElasticsearchResponse<List<ElasticsearchDocumentHit<T>>> search(
-            SearchResponse<T> response, String operation) {
+            SearchResponse<T> response, ElasticsearchOperation operation) {
         List<ElasticsearchDocumentHit<T>> hits = new ArrayList<>();
         for (Hit<T> hit : response.hits().hits()) {
             hits.add(ElasticsearchDocumentHit.<T>builder()
@@ -109,11 +113,12 @@ public final class ElasticsearchResponseMapper {
      * @return Starter 响应
      */
     public static ElasticsearchResponse<Void> delete(DeleteResponse response) {
-        String result = response.result() == null ? null : response.result().jsonValue();
-        boolean deleted = "deleted".equals(result);
+        ElasticsearchDocumentWriteResult result = ElasticsearchDocumentWriteResult.fromValue(
+                response.result() == null ? null : response.result().jsonValue());
+        boolean deleted = result == ElasticsearchDocumentWriteResult.DELETED;
         return ElasticsearchResponse.<Void>builder()
                 .success(deleted)
-                .operation("deleteDocument")
+                .operation(ElasticsearchOperation.DELETE_DOCUMENT)
                 .message(deleted ? "删除文档成功" : "文档不存在")
                 .indexName(response.index())
                 .documentId(response.id())
@@ -132,7 +137,8 @@ public final class ElasticsearchResponseMapper {
      * @param <T> 数据类型
      * @return 响应构建器
      */
-    public static <T> ElasticsearchResponse.ElasticsearchResponseBuilder<T> builder(String operation, String message) {
+    public static <T> ElasticsearchResponse.ElasticsearchResponseBuilder<T> builder(ElasticsearchOperation operation,
+                                                                                        String message) {
         return ElasticsearchResponse.<T>builder()
                 .success(true)
                 .operation(operation)

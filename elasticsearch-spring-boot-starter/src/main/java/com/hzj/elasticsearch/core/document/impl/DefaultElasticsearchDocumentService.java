@@ -41,10 +41,17 @@ import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentMgetReque
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentRequest;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentSearchRequest;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentScript;
+import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentSort;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateByQueryRequest;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateRequest;
-import com.hzj.elasticsearch.core.entity.ElasticsearchConflictPolicy;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchQuery;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchBulkOperationType;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchConflictPolicy;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentSortOrder;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchDocumentWriteResult;
+import com.hzj.elasticsearch.core.document.entity.enums.ElasticsearchScriptLanguage;
+import com.hzj.elasticsearch.core.entity.enums.ElasticsearchOperation;
+import com.hzj.elasticsearch.core.entity.enums.ElasticsearchRefreshPolicy;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.utils.ElasticsearchQueryConverter;
 import com.hzj.elasticsearch.utils.ElasticsearchResponseMapper;
@@ -77,7 +84,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     public <T> ElasticsearchResponse<T> saveDocument(ElasticsearchDocumentRequest<T> request) throws IOException {
         IndexResponse response = requireClient().index(buildIndexRequest(request, false));
         T document = readAfterWrite(response.index(), response.id(), request.getDocumentClass(), request.getDocument());
-        return ElasticsearchResponseMapper.write(response, document, "saveDocument");
+        return ElasticsearchResponseMapper.write(response, document, ElasticsearchOperation.SAVE_DOCUMENT);
     }
 
     /**
@@ -92,7 +99,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     public <T> ElasticsearchResponse<T> createDocument(ElasticsearchDocumentRequest<T> request) throws IOException {
         IndexResponse response = requireClient().index(buildIndexRequest(request, true));
         T document = readAfterWrite(response.index(), response.id(), request.getDocumentClass(), request.getDocument());
-        return ElasticsearchResponseMapper.write(response, document, "createDocument");
+        return ElasticsearchResponseMapper.write(response, document, ElasticsearchOperation.CREATE_DOCUMENT);
     }
 
     /**
@@ -130,7 +137,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     public <T> ElasticsearchResponse<T> getDocument(ElasticsearchDocumentGetRequest request, Class<T> documentClass)
             throws IOException {
         GetResponse<T> response = requireClient().get(buildGetRequest(request), requireDocumentClass(documentClass));
-        return ElasticsearchResponseMapper.get(response, "getDocument");
+        return ElasticsearchResponseMapper.get(response, ElasticsearchOperation.GET_DOCUMENT);
     }
 
     /**
@@ -167,7 +174,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
                 .id(requireDocumentId(documentId)))).value();
         return ElasticsearchResponse.<Void>builder()
                 .success(true)
-                .operation("existsDocument")
+                .operation(ElasticsearchOperation.EXISTS_DOCUMENT)
                 .message(exists ? "文档存在" : "文档不存在")
                 .indexName(indexName)
                 .documentId(documentId)
@@ -206,7 +213,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
                                                             Class<R> documentClass) throws IOException {
         UpdateResponse<R> response = requireClient().update(buildUpdateRequest(request), requireDocumentClass(documentClass));
         R document = readAfterWrite(response.index(), response.id(), documentClass, null);
-        return ElasticsearchResponseMapper.write(response, document, "updateDocument");
+        return ElasticsearchResponseMapper.write(response, document, ElasticsearchOperation.UPDATE_DOCUMENT);
     }
 
     /**
@@ -245,7 +252,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     public <T> ElasticsearchResponse<List<ElasticsearchDocumentHit<T>>> searchDocuments(
             ElasticsearchDocumentSearchRequest request, Class<T> documentClass) throws IOException {
         SearchResponse<T> response = requireClient().search(buildSearchRequest(request), requireDocumentClass(documentClass));
-        return ElasticsearchResponseMapper.search(response, "searchDocuments");
+        return ElasticsearchResponseMapper.search(response, ElasticsearchOperation.SEARCH_DOCUMENTS);
     }
 
     /**
@@ -264,7 +271,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         CountResponse response = requireClient().count(builder.build());
         return ElasticsearchResponse.<Long>builder()
                 .success(true)
-                .operation("countDocuments")
+                .operation(ElasticsearchOperation.COUNT_DOCUMENTS)
                 .message("统计文档成功")
                 .data(response.count())
                 .total(response.count())
@@ -299,7 +306,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         long failed = items.stream().filter(item -> !Boolean.TRUE.equals(item.getSuccess())).count();
         return ElasticsearchResponse.<List<ElasticsearchBulkItemResponse>>builder()
                 .success(!response.errors())
-                .operation("bulkDocuments")
+                .operation(ElasticsearchOperation.BULK_DOCUMENTS)
                 .message(response.errors() ? "Bulk 执行存在失败项" : "Bulk 执行成功")
                 .data(items)
                 .total((long) items.size())
@@ -331,7 +338,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         DeleteByQueryResponse response = requireClient().deleteByQuery(builder.build());
         return ElasticsearchResponse.<Long>builder()
                 .success(response.failures() == null || response.failures().isEmpty())
-                .operation("deleteDocumentsByQuery")
+                .operation(ElasticsearchOperation.DELETE_DOCUMENTS_BY_QUERY)
                 .message("按条件删除文档完成")
                 .data(response.deleted())
                 .total(response.total())
@@ -364,7 +371,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         UpdateByQueryResponse response = requireClient().updateByQuery(builder.build());
         return ElasticsearchResponse.<Long>builder()
                 .success(response.failures() == null || response.failures().isEmpty())
-                .operation("updateDocumentsByQuery")
+                .operation(ElasticsearchOperation.UPDATE_DOCUMENTS_BY_QUERY)
                 .message("按条件更新文档完成")
                 .data(response.updated())
                 .total(response.total())
@@ -410,7 +417,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         }
         return ElasticsearchResponse.<List<ElasticsearchDocumentHit<T>>>builder()
                 .success(true)
-                .operation("multiGetDocuments")
+                .operation(ElasticsearchOperation.MULTI_GET_DOCUMENTS)
                 .message("批量获取文档成功")
                 .data(documents)
                 .total((long) documents.size())
@@ -522,20 +529,20 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
                 return filter;
             }));
         }
-        if (request.getSortFields() != null) {
-            request.getSortFields().stream()
-                    .filter(this::hasText)
-                    .forEach(sortField -> addSort(builder, sortField));
+        if (request.getSorts() != null) {
+            request.getSorts().stream()
+                    .filter(Objects::nonNull)
+                    .forEach(sort -> addSort(builder, sort));
         }
         return builder.build();
     }
 
-    private void addSort(SearchRequest.Builder builder, String sortField) {
-        boolean descending = sortField.startsWith("-");
-        String field = descending || sortField.startsWith("+") ? sortField.substring(1) : sortField;
-        builder.sort(sort -> sort.field(fieldOption -> fieldOption
-                .field(requireText(field, "排序字段不能为空"))
-                .order(descending ? SortOrder.Desc : SortOrder.Asc)));
+    private void addSort(SearchRequest.Builder builder, ElasticsearchDocumentSort sort) {
+        SortOrder sortOrder = sort.getOrder() == ElasticsearchDocumentSortOrder.DESC
+                ? SortOrder.Desc : SortOrder.Asc;
+        builder.sort(sortBuilder -> sortBuilder.field(fieldOption -> fieldOption
+                .field(requireText(sort.getField(), "排序字段不能为空"))
+                .order(sortOrder)));
     }
 
     private BulkOperation buildBulkOperation(String defaultIndex, ElasticsearchBulkOperation operation) {
@@ -579,12 +586,13 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     private ElasticsearchBulkItemResponse convertBulkItem(BulkResponseItem item) {
         String error = item.error() == null ? null : item.error().reason();
         return ElasticsearchBulkItemResponse.builder()
-                .operation(item.operationType() == null ? null : item.operationType().jsonValue())
+                .operation(ElasticsearchBulkOperationType.fromValue(
+                        item.operationType() == null ? null : item.operationType().jsonValue()))
                 .indexName(item.index())
                 .documentId(item.id())
                 .status(item.status())
                 .success(error == null && item.status() < 300)
-                .result(item.result())
+                .result(ElasticsearchDocumentWriteResult.fromValue(item.result()))
                 .error(error)
                 .build();
     }
@@ -595,7 +603,8 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         }
         Script.Builder builder = new Script.Builder()
                 .source(source.getSource())
-                .lang(hasText(source.getLanguage()) ? source.getLanguage() : "painless");
+                .lang((source.getLanguage() == null ? ElasticsearchScriptLanguage.PAINLESS
+                        : source.getLanguage()).getValue());
         if (source.getParameters() != null) {
             Map<String, JsonData> parameters = source.getParameters().entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, entry -> JsonData.of(entry.getValue())));
@@ -627,8 +636,8 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         return request.getIndexNames();
     }
 
-    private boolean isRefreshEnabled(com.hzj.elasticsearch.core.entity.ElasticsearchRefreshPolicy policy) {
-        return policy != null && policy != com.hzj.elasticsearch.core.entity.ElasticsearchRefreshPolicy.NONE;
+    private boolean isRefreshEnabled(ElasticsearchRefreshPolicy policy) {
+        return policy != null && policy != ElasticsearchRefreshPolicy.NONE;
     }
 
     private boolean hasText(String value) {

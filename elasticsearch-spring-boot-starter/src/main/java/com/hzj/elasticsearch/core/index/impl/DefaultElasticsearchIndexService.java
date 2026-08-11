@@ -29,6 +29,7 @@ import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.util.WithJsonObjectBuilderBase;
 import com.hzj.elasticsearch.core.AbstractElasticsearchService;
+import com.hzj.elasticsearch.core.entity.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexAliasRequest;
@@ -83,7 +84,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         applyJsonBody(builder, body);
         CreateIndexResponse response = requireClient().indices().create(builder.build());
         return acknowledgedResponse(response.acknowledged(), response.shardsAcknowledged(),
-                "createIndex", "创建索引成功", indexName);
+                ElasticsearchOperation.CREATE_INDEX, "创建索引成功", indexName);
     }
 
     /**
@@ -110,7 +111,8 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         final String validatedIndexName = requireIndexName(indexName);
         DeleteIndexResponse response = requireClient().indices().delete(DeleteIndexRequest.of(request -> request
                 .index(validatedIndexName)));
-        return acknowledgedResponse(response.acknowledged(), null, "deleteIndex", "删除索引成功", validatedIndexName);
+        return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.DELETE_INDEX,
+                "删除索引成功", validatedIndexName);
     }
 
     /**
@@ -126,7 +128,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         BooleanResponse response = requireClient().indices().exists(ExistsRequestFactory.of(validatedIndexName));
         return ElasticsearchResponse.<Boolean>builder()
                 .success(true)
-                .operation("existsIndex")
+                .operation(ElasticsearchOperation.EXISTS_INDEX)
                 .message(response.value() ? "索引存在" : "索引不存在")
                 .indexName(validatedIndexName)
                 .data(response.value())
@@ -148,7 +150,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
                 .index(validatedIndexName)));
         return ElasticsearchResponse.<String>builder()
                 .success(true)
-                .operation("getIndex")
+                .operation(ElasticsearchOperation.GET_INDEX)
                 .message("获取索引信息成功")
                 .indexName(validatedIndexName)
                 .data(toJson(response.result()))
@@ -167,7 +169,8 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         final String validatedIndexName = requireIndexName(indexName);
         RefreshResponse response = requireClient().indices().refresh(RefreshRequest.of(request -> request
                 .index(validatedIndexName)));
-        return shardResponse(response.shards().successful().intValue() > 0, "refreshIndex", "刷新索引完成", validatedIndexName);
+        return shardResponse(response.shards().successful().intValue() > 0, ElasticsearchOperation.REFRESH_INDEX,
+                "刷新索引完成", validatedIndexName);
     }
 
     /**
@@ -183,7 +186,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         OpenResponse response = requireClient().indices().open(OpenRequest.of(request -> request
                 .index(validatedIndexName)));
         return acknowledgedResponse(response.acknowledged(), response.shardsAcknowledged(),
-                "openIndex", "打开索引成功", validatedIndexName);
+                ElasticsearchOperation.OPEN_INDEX, "打开索引成功", validatedIndexName);
     }
 
     /**
@@ -199,7 +202,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         CloseIndexResponse response = requireClient().indices().close(CloseIndexRequest.of(request -> request
                 .index(validatedIndexName)));
         return acknowledgedResponse(response.acknowledged(), response.shardsAcknowledged(),
-                "closeIndex", "关闭索引成功", validatedIndexName);
+                ElasticsearchOperation.CLOSE_INDEX, "关闭索引成功", validatedIndexName);
     }
 
     /**
@@ -217,7 +220,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         applyJsonBody(builder, request.getMappings());
         PutMappingResponse response = requireClient().indices().putMapping(builder.build());
         return acknowledgedResponse(response.acknowledged(), null,
-                "putMapping", "更新索引 Mapping 成功", indexName);
+                ElasticsearchOperation.PUT_MAPPING, "更新索引 Mapping 成功", indexName);
     }
 
     /**
@@ -234,7 +237,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
                 .index(validatedIndexName)));
         return ElasticsearchResponse.<String>builder()
                 .success(true)
-                .operation("getMapping")
+                .operation(ElasticsearchOperation.GET_MAPPING)
                 .message("获取索引 Mapping 成功")
                 .indexName(validatedIndexName)
                 .data(toJson(response.result()))
@@ -255,7 +258,8 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         PutIndicesSettingsRequest.Builder builder = new PutIndicesSettingsRequest.Builder().index(indexName);
         applyJsonBody(builder, request.getSettings());
         PutIndicesSettingsResponse response = requireClient().indices().putSettings(builder.build());
-        return acknowledgedResponse(response.acknowledged(), null, "putSettings", "更新索引 Settings 成功", indexName);
+        return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.PUT_SETTINGS,
+                "更新索引 Settings 成功", indexName);
     }
 
     /**
@@ -272,7 +276,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
                 .index(validatedIndexName)));
         return ElasticsearchResponse.<String>builder()
                 .success(true)
-                .operation("getSettings")
+                .operation(ElasticsearchOperation.GET_SETTINGS)
                 .message("获取索引 Settings 成功")
                 .indexName(validatedIndexName)
                 .data(toJson(response.result()))
@@ -294,7 +298,8 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         PutAliasResponse response = requireClient().indices().putAlias(PutAliasRequest.of(aliasRequest -> aliasRequest
                 .index(indexName)
                 .name(aliasName)));
-        return acknowledgedResponse(response.acknowledged(), null, "putAlias", "创建索引别名成功", indexName);
+        return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.PUT_ALIAS,
+                "创建索引别名成功", indexName);
     }
 
     /**
@@ -312,7 +317,8 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         DeleteAliasResponse response = requireClient().indices().deleteAlias(DeleteAliasRequest.of(aliasRequest -> aliasRequest
                 .index(indexName)
                 .name(aliasName)));
-        return acknowledgedResponse(response.acknowledged(), null, "deleteAlias", "删除索引别名成功", indexName);
+        return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.DELETE_ALIAS,
+                "删除索引别名成功", indexName);
     }
 
     /**
@@ -332,7 +338,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
                 .name(aliasName)));
         return ElasticsearchResponse.<Boolean>builder()
                 .success(true)
-                .operation("existsAlias")
+                .operation(ElasticsearchOperation.EXISTS_ALIAS)
                 .message(response.value() ? "索引别名存在" : "索引别名不存在")
                 .indexName(indexName)
                 .data(response.value())
@@ -358,23 +364,24 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     }
 
     private ElasticsearchResponse<Void> acknowledgedResponse(boolean acknowledged, Boolean shardsAcknowledged,
-                                                              String operation, String message, String indexName) {
+                                                              ElasticsearchOperation operation, String message,
+                                                              String indexName) {
         return ElasticsearchResponse.<Void>builder()
                 .success(acknowledged)
                 .operation(operation)
-                .message(acknowledged ? message : operation + "未确认")
+                .message(acknowledged ? message : operation.getValue() + "未确认")
                 .indexName(indexName)
                 .acknowledged(acknowledged)
                 .shardsAcknowledged(shardsAcknowledged)
                 .build();
     }
 
-    private ElasticsearchResponse<Void> shardResponse(boolean success, String operation, String message,
+    private ElasticsearchResponse<Void> shardResponse(boolean success, ElasticsearchOperation operation, String message,
                                                        String indexName) {
         return ElasticsearchResponse.<Void>builder()
                 .success(success)
                 .operation(operation)
-                .message(success ? message : operation + "失败")
+                .message(success ? message : operation.getValue() + "失败")
                 .indexName(indexName)
                 .build();
     }

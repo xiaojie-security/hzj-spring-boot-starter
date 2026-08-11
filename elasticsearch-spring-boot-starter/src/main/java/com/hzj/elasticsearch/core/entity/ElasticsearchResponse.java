@@ -1,5 +1,6 @@
 package com.hzj.elasticsearch.core.entity;
 
+import com.hzj.elasticsearch.core.entity.enums.ElasticsearchOperation;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +27,7 @@ public class ElasticsearchResponse<T> {
     /**
      * 操作名称。
      */
-    private String operation;
+    private ElasticsearchOperation operation;
 
     /**
      * 可视化提示信息。
