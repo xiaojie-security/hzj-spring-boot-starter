@@ -4,11 +4,19 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.hzj.wechat.core.payment.enums.BillType;
 import com.hzj.wechat.core.payment.enums.TarType;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 申请交易账单请求参数。
  */
-public class TradeBillRequest {
+public class TradeBillRequest extends WechatPaymentApiRequest {
+    /**
+     * 创建交易账单请求参数。
+     */
+    public TradeBillRequest() {
+        requestPath = "/v3/bill/tradebill";
+        requestMethod = WechatHttpMethod.GET;
+    }
     /**
      * 账单日期。
      * 格式为 YYYY-MM-DD。

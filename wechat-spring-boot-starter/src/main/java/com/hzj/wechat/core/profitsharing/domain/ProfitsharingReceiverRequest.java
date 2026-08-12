@@ -7,7 +7,14 @@ import com.hzj.wechat.core.profitsharing.enums.ProfitsharingRelationType;
 /**
  * 添加分账接收方请求参数。
  */
-public class ProfitsharingReceiverRequest {
+public class ProfitsharingReceiverRequest extends WechatProfitsharingApiRequest {
+    /**
+     * 添加分账接收方请求参数。
+     */
+    public ProfitsharingReceiverRequest() {
+        requestPath = "/v3/profitsharing/receivers/add";
+        requestMethod = com.hzj.wechat.core.enums.WechatHttpMethod.POST;
+    }
     /**
      * 商户应用 AppID。
      * 服务层会在发起请求前自动注入。

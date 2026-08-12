@@ -1,11 +1,19 @@
 package com.hzj.wechat.core.transfer.domain;
 
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 发起免确认收款授权请求参数。
  */
-public class UserConfirmAuthorizationRequest {
+public class UserConfirmAuthorizationRequest extends WechatTransferApiRequest {
+    /**
+     * 创建免确认收款授权请求参数。
+     */
+    public UserConfirmAuthorizationRequest() {
+        requestPath = "/v3/fund-app/mch-transfer/user-confirm-authorization";
+        requestMethod = WechatHttpMethod.POST;
+    }
     /**
      * 商户侧授权单号。
      */

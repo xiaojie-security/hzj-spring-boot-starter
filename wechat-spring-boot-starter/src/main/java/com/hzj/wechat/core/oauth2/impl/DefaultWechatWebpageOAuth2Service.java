@@ -3,6 +3,7 @@ package com.hzj.wechat.core.oauth2.impl;
 import cn.hutool.core.net.url.UrlBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.oauth2.WechatWebpageOAuth2Service;
 import com.hzj.wechat.core.oauth2.domain.*;
 import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
@@ -20,12 +22,6 @@ import java.io.UncheckedIOException;
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Service {
-
-    private static final String AUTH_URL_HOST = "https://open.weixin.qq.com/connect/qrconnect";
-    private static final String ACCESS_TOKEN_URL = "https://api.weixin.qq.com/sns/oauth2/access_token";
-    private static final String REFRESH_TOKEN_URL = "https://api.weixin.qq.com/sns/oauth2/refresh_token";
-    private static final String AUTH_VALIDATE_URL = "https://api.weixin.qq.com/sns/auth";
-    private static final String USER_INFO_URL = "https://api.weixin.qq.com/sns/userinfo";
 
     private final OkHttpClient client = new OkHttpClient.Builder().build();
     private final WechatAccessConfigProvider provider;
@@ -41,8 +37,10 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         String lang = defaultIfBlank(request.getLang(), "cn");
         requireNotBlank(appid, "appid");
         requireNotBlank(request.getRedirectUri(), "redirectUri");
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
 
-        String authUrl = UrlBuilder.of(AUTH_URL_HOST)
+        String authUrl = UrlBuilder.of(request.getRequestUrl())
                 .addQuery("appid", appid)
                 .addQuery("redirect_uri", request.getRedirectUri())
                 .addQuery("state", request.getState())
@@ -65,7 +63,9 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         requireNotBlank(appid, "appid");
         requireNotBlank(secret, "secret");
         requireNotBlank(request.getCode(), "code");
-        String url = UrlBuilder.of(ACCESS_TOKEN_URL)
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
+        String url = UrlBuilder.of(request.getRequestUrl())
                 .addQuery("appid", appid)
                 .addQuery("secret", secret)
                 .addQuery("code", request.getCode())
@@ -73,7 +73,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
                 .build();
         log.info("DefaultWechatOAuth2Service.getAccessTokenByCode 开始通过code换取网站授权access_token，appid={}, code={}",
                 maskValue(appid), maskValue(request.getCode()));
-        return executeGet(url, "DefaultWechatOAuth2Service.getAccessTokenByCode", AccessTokenResponse.class);
+        return execute(url, request.getRequestMethod(), "DefaultWechatOAuth2Service.getAccessTokenByCode", AccessTokenResponse.class);
     }
 
     @Override
@@ -81,13 +81,15 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         requireNonNull(request, "AccessTokenValidateRequest");
         requireNotBlank(request.getAccessToken(), "accessToken");
         requireNotBlank(request.getOpenid(), "openid");
-        String url = UrlBuilder.of(AUTH_VALIDATE_URL)
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
+        String url = UrlBuilder.of(request.getRequestUrl())
                 .addQuery("access_token", request.getAccessToken())
                 .addQuery("openid", request.getOpenid())
                 .build();
         log.info("DefaultWechatOAuth2Service.validateAccessToken 开始校验网站授权access_token，openid={}",
                 maskValue(request.getOpenid()));
-        return executeGet(url, "DefaultWechatOAuth2Service.validateAccessToken", AccessTokenValidateResponse.class);
+        return execute(url, request.getRequestMethod(), "DefaultWechatOAuth2Service.validateAccessToken", AccessTokenValidateResponse.class);
     }
 
     @Override
@@ -95,14 +97,16 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         requireNonNull(request, "UserInfoRequest");
         requireNotBlank(request.getAccessToken(), "accessToken");
         requireNotBlank(request.getOpenid(), "openid");
-        String url = UrlBuilder.of(USER_INFO_URL)
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
+        String url = UrlBuilder.of(request.getRequestUrl())
                 .addQuery("access_token", request.getAccessToken())
                 .addQuery("openid", request.getOpenid())
                 .addQuery("lang", defaultIfBlank(request.getLang(), "en"))
                 .build();
         log.info("DefaultWechatOAuth2Service.queryUserInfoShare 开始获取微信用户信息，openid={}, lang={}",
                 maskValue(request.getOpenid()), defaultIfBlank(request.getLang(), "en"));
-        return executeGet(url, "DefaultWechatOAuth2Service.queryUserInfoShare", UserInfoResponse.class);
+        return execute(url, request.getRequestMethod(), "DefaultWechatOAuth2Service.queryUserInfoShare", UserInfoResponse.class);
     }
 
     @Override
@@ -113,21 +117,20 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         String grantType = defaultIfBlank(request.getGrantType(), "refresh_token");
         requireNotBlank(appid, "appid");
         requireNotBlank(request.getRefreshToken(), "refreshToken");
-        String url = UrlBuilder.of(REFRESH_TOKEN_URL)
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
+        String url = UrlBuilder.of(request.getRequestUrl())
                 .addQuery("appid", appid)
                 .addQuery("grant_type", grantType)
                 .addQuery("refresh_token", request.getRefreshToken())
                 .build();
         log.info("DefaultWechatOAuth2Service.refreshAccessToken 开始刷新网站授权access_token，appid={}, refreshToken={}",
                 maskValue(appid), maskValue(request.getRefreshToken()));
-        return executeGet(url, "DefaultWechatOAuth2Service.refreshAccessToken", RefreshTokenResponse.class);
+        return execute(url, request.getRequestMethod(), "DefaultWechatOAuth2Service.refreshAccessToken", RefreshTokenResponse.class);
     }
 
-    private <T> T executeGet(String url, String action, Class<T> responseClass) {
-        Request httpRequest = new Request.Builder()
-                .url(url)
-                .get()
-                .build();
+    private <T> T execute(String url, WechatHttpMethod requestMethod, String action, Class<T> responseClass) {
+        Request httpRequest = buildHttpRequest(url, requestMethod);
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
             String respBody = httpResponse.body() == null ? "" : httpResponse.body().string();
             if (!httpResponse.isSuccessful()) {
@@ -147,6 +150,15 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
             log.error("{} 解析微信OAuth2接口响应失败，url={}", action, sanitizeUrl(url), e);
             throw new WechatOAuth2Exception("解析微信OAuth2接口响应失败");
         }
+    }
+
+    private Request buildHttpRequest(String url, WechatHttpMethod requestMethod) {
+        Request.Builder builder = new Request.Builder().url(url);
+        return switch (requestMethod) {
+            case GET -> builder.get().build();
+            case DELETE -> builder.delete().build();
+            case POST, PUT, PATCH -> builder.method(requestMethod.name(), RequestBody.create(new byte[0])).build();
+        };
     }
 
     private void validateBusinessResponse(String action, String url, String respBody) {

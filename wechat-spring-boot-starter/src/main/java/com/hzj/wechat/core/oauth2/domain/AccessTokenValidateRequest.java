@@ -1,5 +1,6 @@
 package com.hzj.wechat.core.oauth2.domain;
 
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,4 +28,16 @@ public class AccessTokenValidateRequest {
      * 授权用户唯一标识
      */
     private String openid;
+
+    /**
+     * 网站应用 access_token 校验接口地址。
+     */
+    @Builder.Default
+    private String requestUrl = "https://api.weixin.qq.com/sns/auth";
+
+    /**
+     * 网站应用 access_token 校验接口请求方法。
+     */
+    @Builder.Default
+    private WechatHttpMethod requestMethod = WechatHttpMethod.GET;
 }

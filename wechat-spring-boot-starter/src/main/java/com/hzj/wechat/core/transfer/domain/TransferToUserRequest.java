@@ -1,6 +1,9 @@
 package com.hzj.wechat.core.transfer.domain;
 
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.annotations.Expose;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
+import com.hzj.wechat.core.transfer.enums.WechatTransferType;
 
 import java.util.List;
 
@@ -8,7 +11,19 @@ import java.util.List;
  * 商家转账到用户请求参数。
  * 用于封装调用微信支付转账接口时提交的请求体字段。
  */
-public class TransferToUserRequest {
+public class TransferToUserRequest extends WechatTransferApiRequest {
+    /**
+     * 转账类型，用于解析未显式指定时的默认接口路径。
+     */
+    @Expose(serialize = false)
+    public WechatTransferType transferType = WechatTransferType.AFTER_AUTHORIZATION;
+
+    /**
+     * 创建商家转账到用户请求参数。
+     */
+    public TransferToUserRequest() {
+        requestMethod = WechatHttpMethod.POST;
+    }
     /**
      * 商户应用 AppID。
      * 该值需要与商户号存在绑定关系。

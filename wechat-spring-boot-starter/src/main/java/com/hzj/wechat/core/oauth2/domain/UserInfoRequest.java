@@ -1,5 +1,7 @@
 package com.hzj.wechat.core.oauth2.domain;
 
+import com.hzj.wechat.core.enums.WechatHttpMethod;
+import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 public class UserInfoRequest {
     
     /**
@@ -34,7 +37,20 @@ public class UserInfoRequest {
      * zh_CN 简体，zh_TW 繁体，en 英语
      * 默认为 en
      */
+    @Builder.Default
     private String lang = "en";
+
+    /**
+     * 微信用户信息接口地址。
+     */
+    @Builder.Default
+    private String requestUrl = "https://api.weixin.qq.com/sns/userinfo";
+
+    /**
+     * 微信用户信息接口请求方法。
+     */
+    @Builder.Default
+    private WechatHttpMethod requestMethod = WechatHttpMethod.GET;
 
     public UserInfoRequest(String accessToken, String openid) {
         this.accessToken = accessToken;

@@ -5,7 +5,14 @@ import com.google.gson.annotations.SerializedName;
 /**
  * 解冻剩余资金请求参数。
  */
-public class UnfreezeProfitsharingOrderRequest {
+public class UnfreezeProfitsharingOrderRequest extends WechatProfitsharingApiRequest {
+    /**
+     * 解冻剩余资金请求参数。
+     */
+    public UnfreezeProfitsharingOrderRequest() {
+        requestPath = "/v3/profitsharing/orders/unfreeze";
+        requestMethod = com.hzj.wechat.core.enums.WechatHttpMethod.POST;
+    }
     /**
      * 微信支付订单号。
      */

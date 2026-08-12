@@ -1,6 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.payment.enums.RefundFundsAccount;
 
 import java.util.List;
@@ -8,7 +9,14 @@ import java.util.List;
 /**
  * 退款申请请求参数。
  */
-public class RefundRequest {
+public class RefundRequest extends WechatPaymentApiRequest {
+    /**
+     * 创建退款申请请求参数。
+     */
+    public RefundRequest() {
+        requestPath = "/v3/refund/domestic/refunds";
+        requestMethod = WechatHttpMethod.POST;
+    }
     /**
      * 微信支付订单号。
      * 与商户订单号二选一。

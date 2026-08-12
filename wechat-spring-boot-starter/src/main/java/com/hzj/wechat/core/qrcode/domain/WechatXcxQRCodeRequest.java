@@ -1,6 +1,7 @@
 package com.hzj.wechat.core.qrcode.domain;
 
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.qrcode.enums.WechatXcxEnvVersion;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,4 +65,16 @@ public class WechatXcxQRCodeRequest {
      */
     @SerializedName("line_color")
     private WechatXcxQRCodeLineColor lineColor;
+
+    /**
+     * 小程序无限量二维码接口地址。
+     */
+    @Builder.Default
+    private transient String requestUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit";
+
+    /**
+     * 小程序无限量二维码接口请求方法。
+     */
+    @Builder.Default
+    private transient WechatHttpMethod requestMethod = WechatHttpMethod.POST;
 }

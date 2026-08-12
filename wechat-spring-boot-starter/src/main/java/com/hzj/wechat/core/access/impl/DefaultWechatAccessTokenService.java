@@ -4,7 +4,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.hzj.wechat.core.access.WechatAccessTokenException;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
+import com.hzj.wechat.core.access.domain.WechatAccessTokenRequest;
 import com.hzj.wechat.core.access.domain.WechatAccessTokenResponse;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
 import com.hzj.wechat.provider.wechat.access.entity.WechatAccessConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
@@ -23,10 +25,6 @@ import java.io.UncheckedIOException;
  */
 @Slf4j
 public class DefaultWechatAccessTokenService implements WechatAccessTokenService {
-
-    private static final String STABLE_TOKEN_URL = "https://api.weixin.qq.com/cgi-bin/stable_token";
-
-    private static final String GRANT_TYPE = "client_credential";
 
     private final WechatAccessConfigProvider provider;
 
@@ -60,26 +58,33 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
 
     @Override
     public WechatAccessTokenResponse getStableAccessToken(boolean forceRefresh) {
+        return getStableAccessToken(WechatAccessTokenRequest.builder().forceRefresh(forceRefresh).build());
+    }
+
+    @Override
+    public WechatAccessTokenResponse getStableAccessToken(WechatAccessTokenRequest request) {
+        requireNonNull(request, "WechatAccessTokenRequest");
         WechatAccessConfig config = getConfig();
         requireNotBlank(config.getAppid(), "appid");
         requireNotBlank(config.getSecret(), "secret");
+        requireNotBlank(request.getGrantType(), "grantType");
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
 
         JsonObject requestJson = new JsonObject();
-        requestJson.addProperty("grant_type", GRANT_TYPE);
+        requestJson.addProperty("grant_type", request.getGrantType());
         requestJson.addProperty("appid", config.getAppid());
         requestJson.addProperty("secret", config.getSecret());
-        requestJson.addProperty("force_refresh", forceRefresh);
+        requestJson.addProperty("force_refresh", request.isForceRefresh());
         String requestBody = WechatPayUtils.toJson(requestJson);
-        Request request = new Request.Builder()
-                .url(STABLE_TOKEN_URL)
+        Request httpRequest = buildHttpRequest(request.getRequestUrl(), request.getRequestMethod(), requestBody)
                 .addHeader("Accept", "application/json")
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody))
                 .build();
 
         log.info("DefaultWechatAccessTokenService.getStableAccessToken 开始获取微信稳定版接口调用凭据，appid={}, forceRefresh={}",
-                maskValue(config.getAppid()), forceRefresh);
-        try (Response response = client.newCall(request).execute()) {
+                maskValue(config.getAppid()), request.isForceRefresh());
+        try (Response response = client.newCall(httpRequest).execute()) {
             String responseBody = response.body() == null ? "" : response.body().string();
             if (!response.isSuccessful()) {
                 log.error("DefaultWechatAccessTokenService.getStableAccessToken 请求微信接口失败，code={}, responseBody={}",
@@ -93,6 +98,16 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
                     maskValue(config.getAppid()), e);
             throw new UncheckedIOException("调用微信稳定版接口调用凭据接口异常", e);
         }
+    }
+
+    private Request.Builder buildHttpRequest(String url, WechatHttpMethod requestMethod, String requestBody) {
+        Request.Builder builder = new Request.Builder().url(url);
+        return switch (requestMethod) {
+            case GET -> builder.get();
+            case DELETE -> builder.delete();
+            case POST, PUT, PATCH -> builder.method(requestMethod.name(),
+                    RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody));
+        };
     }
 
     private WechatAccessTokenResponse parseResponse(String responseBody, int httpStatus) {
@@ -138,6 +153,13 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
         if (isBlank(value)) {
             log.error("DefaultWechatAccessTokenService.requireNotBlank 微信接口调用凭据配置缺少必要参数，fieldName={}", fieldName);
             throw new WechatAccessTokenException("微信接口调用凭据配置不能为空: " + fieldName);
+        }
+    }
+
+    private void requireNonNull(Object value, String fieldName) {
+        if (value == null) {
+            log.error("DefaultWechatAccessTokenService.requireNonNull 请求参数不能为空，fieldName={}", fieldName);
+            throw new WechatAccessTokenException("请求参数不能为空: " + fieldName);
         }
     }
 

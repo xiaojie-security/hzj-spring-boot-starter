@@ -5,7 +5,14 @@ import com.google.gson.annotations.SerializedName;
 /**
  * 请求分账回退参数。
  */
-public class ProfitsharingReturnOrderRequest {
+public class ProfitsharingReturnOrderRequest extends WechatProfitsharingApiRequest {
+    /**
+     * 创建分账回退请求参数。
+     */
+    public ProfitsharingReturnOrderRequest() {
+        requestPath = "/v3/profitsharing/return-orders";
+        requestMethod = com.hzj.wechat.core.enums.WechatHttpMethod.POST;
+    }
     /**
      * 商户分账单号。
      */

@@ -3,12 +3,20 @@ package com.hzj.wechat.core.payment.domain;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.hzj.wechat.core.payment.enums.AbnormalRefundType;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 异常退款请求参数。
  * 当原路退款失败时，可通过该对象补充退回银行卡所需信息。
  */
-public class AbnormalRefundRequest {
+public class AbnormalRefundRequest extends WechatPaymentApiRequest {
+    /**
+     * 创建异常退款请求参数。
+     */
+    public AbnormalRefundRequest() {
+        requestPath = "/v3/refund/domestic/refunds/{refund_id}/apply-abnormal-refund";
+        requestMethod = WechatHttpMethod.POST;
+    }
     /**
      * 微信退款单号。
      * 用于路径参数定位待发起异常退款的退款记录。

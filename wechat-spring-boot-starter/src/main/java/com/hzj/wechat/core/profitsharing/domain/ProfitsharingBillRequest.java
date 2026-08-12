@@ -5,7 +5,14 @@ import com.hzj.wechat.core.profitsharing.enums.ProfitsharingBillTarType;
 /**
  * 申请分账账单请求参数。
  */
-public class ProfitsharingBillRequest {
+public class ProfitsharingBillRequest extends WechatProfitsharingApiRequest {
+    /**
+     * 申请分账账单请求参数。
+     */
+    public ProfitsharingBillRequest() {
+        requestPath = "/v3/profitsharing/bills";
+        requestMethod = com.hzj.wechat.core.enums.WechatHttpMethod.GET;
+    }
     /**
      * 账单日期。
      * 按 yyyy-MM-dd 格式传递。

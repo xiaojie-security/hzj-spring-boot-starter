@@ -2,11 +2,19 @@ package com.hzj.wechat.core.payment.domain;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 通过商户订单号查询订单请求参数。
  */
-public class QueryOrderByOutTradeNoRequest {
+public class QueryOrderByOutTradeNoRequest extends WechatPaymentApiRequest {
+    /**
+     * 创建按商户订单号查询订单请求参数。
+     */
+    public QueryOrderByOutTradeNoRequest() {
+        requestPath = "/v3/pay/transactions/out-trade-no/{out_trade_no}";
+        requestMethod = WechatHttpMethod.GET;
+    }
     /**
      * 商户订单号。
      */

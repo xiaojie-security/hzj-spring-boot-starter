@@ -8,7 +8,14 @@ import java.util.List;
 /**
  * 请求分账参数。
  */
-public class ProfitsharingOrderRequest {
+public class ProfitsharingOrderRequest extends WechatProfitsharingApiRequest {
+    /**
+     * 创建分账请求参数。
+     */
+    public ProfitsharingOrderRequest() {
+        requestPath = "/v3/profitsharing/orders";
+        requestMethod = com.hzj.wechat.core.enums.WechatHttpMethod.POST;
+    }
     /**
      * 商户应用 AppID。
      * 服务层会在发起请求前自动注入。

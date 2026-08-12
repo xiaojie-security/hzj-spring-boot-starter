@@ -3,6 +3,7 @@ package com.hzj.wechat.core.oauth2.impl;
 import cn.hutool.core.net.url.UrlBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.oauth2.WechatXcxOAuth2Service;
 import com.hzj.wechat.core.oauth2.domain.XcxCode2SessionRequest;
 import com.hzj.wechat.core.oauth2.domain.XcxCode2SessionResponse;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
@@ -24,8 +26,6 @@ import java.io.UncheckedIOException;
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
-
-    private static final String CODE_2_SESSION_URL = "https://api.weixin.qq.com/sns/jscode2session";
 
     private final OkHttpClient client = new OkHttpClient.Builder().build();
     private final WechatAccessConfigProvider provider;
@@ -40,8 +40,10 @@ public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
         requireNotBlank(appid, "appid");
         requireNotBlank(secret, "secret");
         requireNotBlank(request.getJsCode(), "jsCode");
+        requireNotBlank(request.getRequestUrl(), "requestUrl");
+        requireNonNull(request.getRequestMethod(), "requestMethod");
 
-        String url = UrlBuilder.of(CODE_2_SESSION_URL)
+        String url = UrlBuilder.of(request.getRequestUrl())
                 .addQuery("appid", appid)
                 .addQuery("secret", secret)
                 .addQuery("js_code", request.getJsCode())
@@ -49,14 +51,11 @@ public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
                 .build();
         log.info("DefaultWechatXcxOAuth2Service.getSessionByCode 开始通过code换取小程序session，appid={}, jsCode={}",
                 maskValue(appid), maskValue(request.getJsCode()));
-        return executeGet(url, "DefaultWechatXcxOAuth2Service.getSessionByCode");
+        return execute(url, request.getRequestMethod(), "DefaultWechatXcxOAuth2Service.getSessionByCode");
     }
 
-    private XcxCode2SessionResponse executeGet(String url, String action) {
-        Request httpRequest = new Request.Builder()
-                .url(url)
-                .get()
-                .build();
+    private XcxCode2SessionResponse execute(String url, WechatHttpMethod requestMethod, String action) {
+        Request httpRequest = buildHttpRequest(url, requestMethod);
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
             String respBody = httpResponse.body() == null ? "" : httpResponse.body().string();
             if (!httpResponse.isSuccessful()) {
@@ -76,6 +75,15 @@ public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
             log.error("{} 解析微信小程序OAuth2接口响应失败，url={}", action, sanitizeUrl(url), e);
             throw new WechatXcxOAuth2Exception("解析微信小程序OAuth2接口响应失败");
         }
+    }
+
+    private Request buildHttpRequest(String url, WechatHttpMethod requestMethod) {
+        Request.Builder builder = new Request.Builder().url(url);
+        return switch (requestMethod) {
+            case GET -> builder.get().build();
+            case DELETE -> builder.delete().build();
+            case POST, PUT, PATCH -> builder.method(requestMethod.name(), RequestBody.create(new byte[0])).build();
+        };
     }
 
     private void validateBusinessResponse(String action, String url, String respBody) {

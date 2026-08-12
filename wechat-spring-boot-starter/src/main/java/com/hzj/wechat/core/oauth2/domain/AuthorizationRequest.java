@@ -1,5 +1,6 @@
 package com.hzj.wechat.core.oauth2.domain;
 
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,6 +42,7 @@ public class AuthorizationRequest {
      * 固定值：code
      * 表示授权流程为授权码模式（Authorization Code Grant）
      */
+    @Builder.Default
     private String responseType = "code";
     
     /**
@@ -48,6 +50,7 @@ public class AuthorizationRequest {
      * 网页应用目前仅填写 snsapi_login
      * 多个作用域用逗号（,）分隔
      */
+    @Builder.Default
     private String scope = "snsapi_login";
     
     /**
@@ -63,7 +66,20 @@ public class AuthorizationRequest {
      * 支持 cn（中文简体）与 en（英文）
      * 默认为 cn
      */
+    @Builder.Default
     private String lang = "cn";
+
+    /**
+     * 网站应用授权接口地址。
+     */
+    @Builder.Default
+    private String requestUrl = "https://open.weixin.qq.com/connect/qrconnect";
+
+    /**
+     * 网站应用授权接口请求方法。
+     */
+    @Builder.Default
+    private WechatHttpMethod requestMethod = WechatHttpMethod.GET;
 
     public AuthorizationRequest(String redirectUri, String state) {
         this.redirectUri = redirectUri;

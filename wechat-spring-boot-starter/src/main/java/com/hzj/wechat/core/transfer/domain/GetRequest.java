@@ -2,12 +2,20 @@ package com.hzj.wechat.core.transfer.domain;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 商户单号查询授权结果请求参数。
  * 用于封装按商户授权单号查询免确认收款授权结果时需要的路径参数和查询参数。
  */
-public class GetRequest {
+public class GetRequest extends WechatTransferApiRequest {
+    /**
+     * 创建授权查询请求参数。
+     */
+    public GetRequest() {
+        requestPath = "/v3/fund-app/mch-transfer/user-confirm-authorization/out-authorization-no/{out_authorization_no}";
+        requestMethod = WechatHttpMethod.GET;
+    }
     /**
      * 商户授权单号。
      * 用于唯一标识商户侧发起的一次免确认收款授权申请。

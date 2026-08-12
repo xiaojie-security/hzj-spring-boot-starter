@@ -4,11 +4,19 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.hzj.wechat.core.payment.enums.FundFlowBillAccountType;
 import com.hzj.wechat.core.payment.enums.TarType;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 申请资金账单请求参数。
  */
-public class FundFlowBillRequest {
+public class FundFlowBillRequest extends WechatPaymentApiRequest {
+    /**
+     * 创建资金账单请求参数。
+     */
+    public FundFlowBillRequest() {
+        requestPath = "/v3/bill/fundflowbill";
+        requestMethod = WechatHttpMethod.GET;
+    }
     /**
      * 账单日期。
      * 格式为 YYYY-MM-DD。

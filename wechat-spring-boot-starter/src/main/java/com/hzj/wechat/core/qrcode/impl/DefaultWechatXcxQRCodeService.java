@@ -3,6 +3,7 @@ package com.hzj.wechat.core.qrcode.impl;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.qrcode.WechatXcxQRCodeException;
 import com.hzj.wechat.core.qrcode.WechatXcxQRCodeService;
 import com.hzj.wechat.core.qrcode.domain.WechatXcxQRCodeLineColor;
@@ -29,8 +30,6 @@ import java.util.Base64;
  */
 @Slf4j
 public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
-
-    private static final String QR_CODE_URL = "https://api.weixin.qq.com/wxa/getwxacodeunlimit";
 
     private static final String SCENE_PATTERN = "[0-9A-Za-z!#$&'()*+,/:;=?@._~-]+";
 
@@ -89,15 +88,14 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
             throw new WechatXcxQRCodeException("获取微信小程序二维码失败：access_token 为空");
         }
 
-        HttpUrl url = HttpUrl.get(QR_CODE_URL).newBuilder()
+        HttpUrl url = HttpUrl.get(request.getRequestUrl()).newBuilder()
                 .addQueryParameter("access_token", accessToken)
                 .build();
         String requestBody = WechatPayUtils.toJson(request);
-        Request httpRequest = new Request.Builder()
+        Request httpRequest = buildHttpRequest(url, request.getRequestMethod(), requestBody)
                 .url(url)
                 .addHeader("Accept", "image/png, application/json")
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody))
                 .build();
 
         log.info("DefaultWechatXcxQRCodeService.getUnlimitedQRCode 开始获取小程序二维码，scene={}, page={}",
@@ -143,6 +141,14 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
                     request.getScene());
             throw new WechatXcxQRCodeException("scene 最多 32 个字符，且只能使用微信接口支持的字符");
         }
+        if (isBlank(request.getRequestUrl())) {
+            log.error("DefaultWechatXcxQRCodeService.getUnlimitedQRCode requestUrl 不能为空");
+            throw new WechatXcxQRCodeException("requestUrl 不能为空");
+        }
+        if (request.getRequestMethod() == null) {
+            log.error("DefaultWechatXcxQRCodeService.getUnlimitedQRCode requestMethod 不能为空");
+            throw new WechatXcxQRCodeException("requestMethod 不能为空");
+        }
         if (!isBlank(request.getPage())
                 && (request.getPage().startsWith("/") || request.getPage().contains("?")
                 || request.getPage().contains("#"))) {
@@ -161,6 +167,16 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
             throw new WechatXcxQRCodeException("width 取值范围为 280 至 1280");
         }
         validateColor(request.getLineColor());
+    }
+
+    private Request.Builder buildHttpRequest(HttpUrl url, WechatHttpMethod requestMethod, String requestBody) {
+        Request.Builder builder = new Request.Builder().url(url);
+        return switch (requestMethod) {
+            case GET -> builder.get();
+            case DELETE -> builder.delete();
+            case POST, PUT, PATCH -> builder.method(requestMethod.name(),
+                    RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody));
+        };
     }
 
     private void applyConfiguredEnvVersion(WechatXcxQRCodeRequest request) {

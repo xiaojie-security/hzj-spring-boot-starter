@@ -11,11 +11,13 @@ import com.hzj.wechat.core.ad.domain.WechatAdDataResponse;
 import com.hzj.wechat.core.ad.domain.WechatAdDataDetailResponse;
 import com.hzj.wechat.core.ad.domain.WechatAdUnitListResponse;
 import com.hzj.wechat.core.ad.domain.WechatAdSettlementResponse;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
@@ -30,8 +32,6 @@ import java.time.temporal.ChronoUnit;
  */
 @Slf4j
 public class DefaultWechatAdDataService implements WechatAdDataService {
-
-    private static final String AD_DATA_URL = "https://api.weixin.qq.com/publisher/stat";
 
     private static final String SUMMARY_ACTION = "publisher_adpos_general";
 
@@ -112,7 +112,7 @@ public class DefaultWechatAdDataService implements WechatAdDataService {
             throw new WechatAdDataException("获取微信广告数据失败：access_token 为空");
         }
 
-        HttpUrl.Builder urlBuilder = HttpUrl.get(AD_DATA_URL).newBuilder()
+        HttpUrl.Builder urlBuilder = HttpUrl.get(request.getRequestUrl()).newBuilder()
                 .addQueryParameter("action", action)
                 .addQueryParameter("access_token", accessToken)
                 .addQueryParameter("page", String.valueOf(request.getPage()))
@@ -132,10 +132,9 @@ public class DefaultWechatAdDataService implements WechatAdDataService {
         log.info("{} 开始调用微信小程序广告数据接口，action={}, startDate={}, endDate={}, page={}, pageSize={}, adSlot={}, adUnitId={}",
                 methodName, action, request.getStartDate(), request.getEndDate(), request.getPage(),
                 request.getPageSize(), request.getAdSlot(), request.getAdUnitId());
-        Request httpRequest = new Request.Builder()
+        Request httpRequest = buildHttpRequest(url, request.getRequestMethod())
                 .url(url)
                 .addHeader("Accept", "application/json")
-                .get()
                 .build();
         try (Response response = client.newCall(httpRequest).execute()) {
             String responseBody = response.body() == null ? "" : response.body().string();
@@ -163,6 +162,14 @@ public class DefaultWechatAdDataService implements WechatAdDataService {
             log.error("{} page 参数非法，page={}", methodName, request.getPage());
             throw new WechatAdDataException("page 必须从 1 开始");
         }
+        if (isBlank(request.getRequestUrl())) {
+            log.error("{} requestUrl 不能为空", methodName);
+            throw new WechatAdDataException("requestUrl 不能为空");
+        }
+        if (request.getRequestMethod() == null) {
+            log.error("{} requestMethod 不能为空", methodName);
+            throw new WechatAdDataException("requestMethod 不能为空");
+        }
         if (request.getPageSize() == null || request.getPageSize() < 1
                 || request.getPageSize() > MAX_PAGE_SIZE) {
             log.error("{} pageSize 参数非法，pageSize={}", methodName,
@@ -183,6 +190,15 @@ public class DefaultWechatAdDataService implements WechatAdDataService {
                 throw new WechatAdDataException("startDate 与 endDate 的时间跨度不能超过 90 天");
             }
         }
+    }
+
+    private Request.Builder buildHttpRequest(String url, WechatHttpMethod requestMethod) {
+        Request.Builder builder = new Request.Builder().url(url);
+        return switch (requestMethod) {
+            case GET -> builder.get();
+            case DELETE -> builder.delete();
+            case POST, PUT, PATCH -> builder.method(requestMethod.name(), RequestBody.create(new byte[0]));
+        };
     }
 
     private LocalDate parseDate(String value, String fieldName, String methodName) {

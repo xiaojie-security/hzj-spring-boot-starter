@@ -1,5 +1,6 @@
 package com.hzj.wechat.core.oauth2.domain;
 
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,6 +37,18 @@ public class RefreshTokenRequest {
      * 通过access_token获取到的refresh_token参数
      */
     private String refreshToken;
+
+    /**
+     * 网站应用刷新 access_token 接口地址。
+     */
+    @Builder.Default
+    private String requestUrl = "https://api.weixin.qq.com/sns/oauth2/refresh_token";
+
+    /**
+     * 网站应用刷新 access_token 接口请求方法。
+     */
+    @Builder.Default
+    private WechatHttpMethod requestMethod = WechatHttpMethod.GET;
 
     public RefreshTokenRequest(String appid, String refreshToken) {
         this.appid = appid;

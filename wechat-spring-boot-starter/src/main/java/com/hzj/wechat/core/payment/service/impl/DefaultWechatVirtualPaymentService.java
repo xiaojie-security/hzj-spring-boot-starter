@@ -6,6 +6,7 @@ import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.payment.domain.*;
 import com.hzj.wechat.core.payment.service.WechatVirtualPaymentException;
 import com.hzj.wechat.core.payment.service.WechatVirtualPaymentService;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.provider.wechat.virtual.WechatVirtualPaymentConfigProvider;
 import com.hzj.wechat.provider.wechat.virtual.entity.WechatVirtualPaymentConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
@@ -449,6 +450,12 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
             log.error("DefaultWechatVirtualPaymentService.{} 请求参数为空", action);
             throw new WechatVirtualPaymentException("请求参数不能为空");
         }
+        if (isBlank(request.getRequestUrl())) {
+            request.setRequestUrl(XPAY_URL + action);
+        }
+        if (request.getRequestMethod() == null) {
+            request.setRequestMethod(WechatHttpMethod.POST);
+        }
         WechatVirtualPaymentConfig config = provider.getConfig();
         if (config == null) {
             log.error("DefaultWechatVirtualPaymentService.{} 未获取到虚拟支付配置", action);
@@ -479,7 +486,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
             log.error("DefaultWechatVirtualPaymentService.{} 获取到空 access_token", action);
             throw new WechatVirtualPaymentException("获取微信虚拟支付失败：access_token 为空");
         }
-        HttpUrl.Builder urlBuilder = HttpUrl.get(XPAY_URL + action).newBuilder()
+        HttpUrl.Builder urlBuilder = HttpUrl.get(request.getRequestUrl()).newBuilder()
                 .addQueryParameter("access_token", accessToken);
         if (!isBlank(request.getSignature())) {
             urlBuilder.addQueryParameter("signature", request.getSignature());
@@ -492,11 +499,10 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
             requestJson.remove("env");
         }
         String requestBody = WechatPayUtils.toJson(requestJson);
-        Request httpRequest = new Request.Builder()
+        Request httpRequest = buildHttpRequest(urlBuilder.build(), request.getRequestMethod(), requestBody)
                 .url(urlBuilder.build())
                 .addHeader("Accept", "application/json")
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody))
                 .build();
         log.info("DefaultWechatVirtualPaymentService.{} 开始调用微信虚拟支付接口，env={}", action, request.getEnv());
         try (Response response = client.newCall(httpRequest).execute()) {
@@ -507,6 +513,16 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
                     request.getEnv(), e);
             throw new UncheckedIOException("调用微信虚拟支付接口异常", e);
         }
+    }
+
+    private Request.Builder buildHttpRequest(HttpUrl url, WechatHttpMethod requestMethod, String requestBody) {
+        Request.Builder builder = new Request.Builder().url(url);
+        return switch (requestMethod) {
+            case GET -> builder.get();
+            case DELETE -> builder.delete();
+            case POST, PUT, PATCH -> builder.method(requestMethod.name(),
+                    RequestBody.create(MediaType.parse("application/json; charset=utf-8"), requestBody));
+        };
     }
 
     private WechatVirtualPaymentResponse parseResponse(String action, String responseBody, int httpStatus,

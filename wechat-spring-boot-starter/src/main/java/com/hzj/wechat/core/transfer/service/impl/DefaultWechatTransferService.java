@@ -9,6 +9,8 @@ import com.hzj.wechat.core.transfer.domain.TransferToUserRequest;
 import com.hzj.wechat.core.transfer.domain.TransferToUserResponse;
 import com.hzj.wechat.core.transfer.domain.UserConfirmAuthorizationRequest;
 import com.hzj.wechat.core.transfer.domain.UserConfirmAuthorizationEntity;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
+import com.hzj.wechat.core.transfer.enums.WechatTransferType;
 import com.hzj.wechat.core.transfer.service.WechatTransferService;
 import com.hzj.wechat.provider.wechat.transfer.WechatTransferConfigProvider;
 import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferConfig;
@@ -35,9 +37,9 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public UserConfirmAuthorizationEntity createAuthorization(UserConfirmAuthorizationRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "POST";
-        String path = "/v3/fund-app/mch-transfer/user-confirm-authorization";
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         if (isBlank(request.appid)) {
@@ -56,12 +58,12 @@ public class DefaultWechatTransferService implements WechatTransferService {
                         config.getMchid(),
                         config.getCertificateSerialNo(),
                         config.getPrivateKey(),
-                        method,
+                        method.name(),
                         path,
                         reqBody));
         reqBuilder.addHeader("Content-Type", "application/json");
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), reqBody);
-        reqBuilder.method(method, requestBody);
+        reqBuilder.method(method.name(), requestBody);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -83,9 +85,10 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public TransferToUserResponse transferAfterAuthorization(TransferToUserRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "POST";
-        String path = "/v3/fund-app/mch-transfer/transfer-bills/transfer";
+        applyTransferRequestDefaults(request, WechatTransferType.AFTER_AUTHORIZATION);
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         if (isBlank(request.appid)) {
@@ -104,12 +107,12 @@ public class DefaultWechatTransferService implements WechatTransferService {
                         config.getMchid(),
                         config.getCertificateSerialNo(),
                         config.getPrivateKey(),
-                        method,
+                        method.name(),
                         path,
                         reqBody));
         reqBuilder.addHeader("Content-Type", "application/json");
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), reqBody);
-        reqBuilder.method(method, requestBody);
+        reqBuilder.method(method.name(), requestBody);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -131,9 +134,10 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public TransferToUserResponse transferWithAutoApproval(TransferToUserRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "POST";
-        String path = "/v3/fund-app/mch-transfer/transfer-bills/pre-transfer-with-authorization";
+        applyTransferRequestDefaults(request, WechatTransferType.AUTO_APPROVAL);
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         if (isBlank(request.appid)) {
@@ -158,12 +162,12 @@ public class DefaultWechatTransferService implements WechatTransferService {
                         config.getMchid(),
                         config.getCertificateSerialNo(),
                         config.getPrivateKey(),
-                        method,
+                        method.name(),
                         path,
                         reqBody));
         reqBuilder.addHeader("Content-Type", "application/json");
         RequestBody requestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), reqBody);
-        reqBuilder.method(method, requestBody);
+        reqBuilder.method(method.name(), requestBody);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -185,9 +189,9 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public UserConfirmAuthorizationEntity queryAuthorization(GetRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "GET";
-        String path = "/v3/fund-app/mch-transfer/user-confirm-authorization/out-authorization-no/{out_authorization_no}";
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{out_authorization_no}", WechatPayUtils.urlEncode(request.outAuthorizationNo));
@@ -202,8 +206,8 @@ public class DefaultWechatTransferService implements WechatTransferService {
         reqBuilder.addHeader("Accept", "application/json");
         reqBuilder.addHeader("Wechatpay-Serial", config.getWechatPayPublicKeyId());
         reqBuilder.addHeader("Authorization", WechatPayUtils.buildAuthorization(config.getMchid(),
-                config.getCertificateSerialNo(), config.getPrivateKey(), method, uri, null));
-        reqBuilder.method(method, null);
+                config.getCertificateSerialNo(), config.getPrivateKey(), method.name(), uri, null));
+        reqBuilder.method(method.name(), null);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -225,9 +229,9 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public TransferBillEntity queryTransferBillByOutBillNo(GetTransferBillByOutNoRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "GET";
-        String path = "/v3/fund-app/mch-transfer/transfer-bills/out-bill-no/{out_bill_no}";
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{out_bill_no}", WechatPayUtils.urlEncode(request.outBillNo));
@@ -237,8 +241,8 @@ public class DefaultWechatTransferService implements WechatTransferService {
         reqBuilder.addHeader("Wechatpay-Serial", config.getWechatPayPublicKeyId());
         reqBuilder.addHeader("Authorization",
                 WechatPayUtils.buildAuthorization(config.getMchid(), config.getCertificateSerialNo(),
-                        config.getPrivateKey(), method, uri, null));
-        reqBuilder.method(method, null);
+                        config.getPrivateKey(), method.name(), uri, null));
+        reqBuilder.method(method.name(), null);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -260,9 +264,9 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public TransferBillEntity queryTransferBillByTransferBillNo(GetTransferBillByNoRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "GET";
-        String path = "/v3/fund-app/mch-transfer/transfer-bills/transfer-bill-no/{transfer_bill_no}";
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{transfer_bill_no}", WechatPayUtils.urlEncode(request.transferBillNo));
@@ -272,8 +276,8 @@ public class DefaultWechatTransferService implements WechatTransferService {
         reqBuilder.addHeader("Wechatpay-Serial", config.getWechatPayPublicKeyId());
         reqBuilder.addHeader("Authorization",
                 WechatPayUtils.buildAuthorization(config.getMchid(), config.getCertificateSerialNo(),
-                        config.getPrivateKey(), method, uri, null));
-        reqBuilder.method(method, null);
+                        config.getPrivateKey(), method.name(), uri, null));
+        reqBuilder.method(method.name(), null);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -295,9 +299,9 @@ public class DefaultWechatTransferService implements WechatTransferService {
 
     @Override
     public UserConfirmAuthorizationEntity closeAuthorization(CloseAuthorizationRequest request) {
-        String host = "https://api.mch.weixin.qq.com";
-        String method = "POST";
-        String path = "/v3/fund-app/mch-transfer/user-confirm-authorization/out-authorization-no/{out_authorization_no}/close";
+        String host = request.requestHost;
+        WechatHttpMethod method = request.requestMethod;
+        String path = request.requestPath;
         WechatTransferConfig config = getConfig();
 
         String uri = path.replace("{out_authorization_no}", WechatPayUtils.urlEncode(request.outAuthorizationNo));
@@ -307,10 +311,10 @@ public class DefaultWechatTransferService implements WechatTransferService {
         reqBuilder.addHeader("Wechatpay-Serial", config.getWechatPayPublicKeyId());
         reqBuilder.addHeader("Authorization",
                 WechatPayUtils.buildAuthorization(config.getMchid(), config.getCertificateSerialNo(),
-                        config.getPrivateKey(), method, uri, null));
+                        config.getPrivateKey(), method.name(), uri, null));
         reqBuilder.addHeader("Content-Type", "application/json");
         RequestBody emptyBody = RequestBody.create(null, "");
-        reqBuilder.method(method, emptyBody);
+        reqBuilder.method(method.name(), emptyBody);
         Request httpRequest = reqBuilder.build();
 
         try (Response httpResponse = client.newCall(httpRequest).execute()) {
@@ -336,6 +340,18 @@ public class DefaultWechatTransferService implements WechatTransferService {
             throw new IllegalStateException("未获取到微信转账配置");
         }
         return config;
+    }
+
+    private void applyTransferRequestDefaults(TransferToUserRequest request, WechatTransferType transferType) {
+        if (request.transferType == null) {
+            request.transferType = transferType;
+        }
+        if (isBlank(request.requestPath)) {
+            request.requestPath = request.transferType.getRequestPath();
+        }
+        if (request.requestMethod == null) {
+            request.requestMethod = WechatHttpMethod.POST;
+        }
     }
 
     private boolean isBlank(String value) {

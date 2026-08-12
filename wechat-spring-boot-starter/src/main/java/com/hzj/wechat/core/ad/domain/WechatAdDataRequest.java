@@ -1,6 +1,7 @@
 package com.hzj.wechat.core.ad.domain;
 
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,4 +52,16 @@ public class WechatAdDataRequest {
      */
     @SerializedName("ad_unit_id")
     private String adUnitId;
+
+    /**
+     * 微信小程序广告数据接口地址。
+     */
+    @Builder.Default
+    private String requestUrl = "https://api.weixin.qq.com/publisher/stat";
+
+    /**
+     * 微信小程序广告数据接口请求方法。
+     */
+    @Builder.Default
+    private WechatHttpMethod requestMethod = WechatHttpMethod.GET;
 }

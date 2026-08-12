@@ -1,6 +1,9 @@
 package com.hzj.wechat.core.payment.domain;
 
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.annotations.Expose;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
+import com.hzj.wechat.core.payment.enums.WechatPaymentPrepayType;
 
 import java.util.List;
 
@@ -8,7 +11,19 @@ import java.util.List;
  * 统一下单请求参数。
  * 适用于 JSAPI/小程序下单与 APP 下单接口的大部分公共字段。
  */
-public class PaymentPrepayRequest {
+public class PaymentPrepayRequest extends WechatPaymentApiRequest {
+    /**
+     * 预下单类型，用于解析未显式指定时的默认接口路径。
+     */
+    @Expose(serialize = false)
+    public WechatPaymentPrepayType prepayType = WechatPaymentPrepayType.JSAPI;
+
+    /**
+     * 创建统一下单请求参数。
+     */
+    public PaymentPrepayRequest() {
+        requestMethod = WechatHttpMethod.POST;
+    }
     /**
      * 商户应用 AppID。
      * 服务层会在发起请求前自动注入。

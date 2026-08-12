@@ -1,6 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
 import com.google.gson.annotations.Expose;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,4 +28,16 @@ public class WechatVirtualPaymentRequest {
      * 虚拟支付环境，0 表示正式环境，1 表示沙箱环境。
      */
     private Integer env;
+
+    /**
+     * 虚拟支付接口完整地址。
+     */
+    @Expose(serialize = false, deserialize = false)
+    private String requestUrl;
+
+    /**
+     * 虚拟支付接口请求方法。
+     */
+    @Expose(serialize = false, deserialize = false)
+    private WechatHttpMethod requestMethod = WechatHttpMethod.POST;
 }

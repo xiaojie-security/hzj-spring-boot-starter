@@ -2,11 +2,19 @@ package com.hzj.wechat.core.payment.domain;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.hzj.wechat.core.enums.WechatHttpMethod;
 
 /**
  * 关闭订单请求参数。
  */
-public class PaymentCloseOrderRequest {
+public class PaymentCloseOrderRequest extends WechatPaymentApiRequest {
+    /**
+     * 创建关闭订单请求参数。
+     */
+    public PaymentCloseOrderRequest() {
+        requestPath = "/v3/pay/transactions/out-trade-no/{out_trade_no}/close";
+        requestMethod = WechatHttpMethod.POST;
+    }
     /**
      * 商户订单号。
      */
