@@ -1,5 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
+import com.hzj.wechat.core.payment.enums.WechatVirtualPaymentApi;
+
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,6 +14,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class WechatResponseComplaintRequest extends WechatVirtualPaymentRequest {
+    public WechatResponseComplaintRequest() { super(WechatVirtualPaymentApi.RESPONSE_COMPLAINT); }
 
     /**
      * 投诉 ID。

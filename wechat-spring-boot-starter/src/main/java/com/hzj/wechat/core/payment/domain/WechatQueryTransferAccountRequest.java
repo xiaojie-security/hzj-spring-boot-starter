@@ -1,5 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
+import com.hzj.wechat.core.payment.enums.WechatVirtualPaymentApi;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,4 +11,5 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class WechatQueryTransferAccountRequest extends WechatVirtualPaymentRequest {
+    public WechatQueryTransferAccountRequest() { super(WechatVirtualPaymentApi.QUERY_TRANSFER_ACCOUNT); }
 }

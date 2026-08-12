@@ -1,5 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
+import com.hzj.wechat.core.payment.enums.WechatVirtualPaymentApi;
+
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,6 +12,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class WechatSubmitSubscribePayOrderRequest extends WechatVirtualPaymentRequest {
+    public WechatSubmitSubscribePayOrderRequest() { super(WechatVirtualPaymentApi.SUBMIT_SUBSCRIBE_PAY_ORDER); }
 
     /**
      * 用户 openid。

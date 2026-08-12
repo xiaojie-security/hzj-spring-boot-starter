@@ -1,5 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
+import com.hzj.wechat.core.payment.enums.WechatVirtualPaymentApi;
+
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,6 +12,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class WechatGetUploadFileSignRequest extends WechatVirtualPaymentRequest {
+    public WechatGetUploadFileSignRequest() { super(WechatVirtualPaymentApi.GET_UPLOAD_FILE_SIGN); }
 
     /**
      * 微信支付图片地址。

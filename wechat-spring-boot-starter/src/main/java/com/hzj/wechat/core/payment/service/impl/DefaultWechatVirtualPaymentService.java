@@ -23,82 +23,6 @@ import java.util.List;
 @Slf4j
 public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentService {
 
-    private static final String XPAY_URL = "https://api.weixin.qq.com/xpay/";
-
-    private static final String QUERY_USER_BALANCE = "query_user_balance";
-
-    private static final String CURRENCY_PAY = "currency_pay";
-
-    private static final String QUERY_ORDER = "query_order";
-
-    private static final String CANCEL_CURRENCY_PAY = "cancel_currency_pay";
-
-    private static final String NOTIFY_PROVIDE_GOODS = "notify_provide_goods";
-
-    private static final String PRESENT_CURRENCY = "present_currency";
-
-    private static final String REFUND_ORDER = "refund_order";
-
-    private static final String CREATE_WITHDRAW_ORDER = "create_withdraw_order";
-
-    private static final String QUERY_WITHDRAW_ORDER = "query_withdraw_order";
-
-    private static final String SEND_SUBSCRIBE_PRE_PAYMENT = "send_subscribe_pre_payment";
-
-    private static final String SUBMIT_SUBSCRIBE_PAY_ORDER = "submit_subscribe_pay_order";
-
-    private static final String QUERY_SUBSCRIBE_CONTRACT = "query_subscribe_contract";
-
-    private static final String CANCEL_SUBSCRIBE_CONTRACT = "cancel_subscribe_contract";
-
-    private static final String DOWNLOAD_BILL = "download_bill";
-
-    private static final String START_UPLOAD_GOODS = "start_upload_goods";
-
-    private static final String QUERY_UPLOAD_GOODS = "query_upload_goods";
-
-    private static final String START_PUBLISH_GOODS = "start_publish_goods";
-
-    private static final String QUERY_PUBLISH_GOODS = "query_publish_goods";
-
-    private static final String QUERY_BIZ_BALANCE = "query_biz_balance";
-
-    private static final String QUERY_TRANSFER_ACCOUNT = "query_transfer_account";
-
-    private static final String QUERY_ADVER_FUNDS = "query_adver_funds";
-
-    private static final String CREATE_FUNDS_BILL = "create_funds_bill";
-
-    private static final String BIND_TRANSFER_ACCOUT = "bind_transfer_accout";
-
-    private static final String QUERY_FUNDS_BILL = "query_funds_bill";
-
-    private static final String QUERY_RECOVER_BILL = "query_recover_bill";
-
-    private static final String GET_COMPLAINT_LIST = "get_complaint_list";
-
-    private static final String GET_COMPLAINT_DETAIL = "get_complaint_detail";
-
-    private static final String GET_NEGOTIATION_HISTORY = "get_negotiation_history";
-
-    private static final String RESPONSE_COMPLAINT = "response_complaint";
-
-    private static final String COMPLETE_COMPLAINT = "complete_complaint";
-
-    private static final String UPLOAD_VP_FILE = "upload_vp_file";
-
-    private static final String GET_UPLOAD_FILE_SIGN = "get_upload_file_sign";
-
-    private static final String DOWNLOAD_ADVERFUNDS_ORDER = "download_adverfunds_order";
-
-    private static final String START_DOWNLOAD_ORDER = "start_download_order";
-
-    private static final String QUERY_DOWNLOAD_ORDER = "query_download_order";
-
-    private static final String DOWNLOAD_IOS_SETTLEMENT_BILL = "download_ios_settlement_bill";
-
-    private static final String QUERY_PUNISHMENT_REASONS = "query_punishment_reasons";
-
     private final WechatAccessTokenService accessTokenService;
 
     private final WechatVirtualPaymentConfigProvider provider;
@@ -141,93 +65,93 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse queryUserBalance(WechatQueryUserBalanceRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, QUERY_USER_BALANCE, true, true, true);
-        requireNotBlank(request.getOpenid(), QUERY_USER_BALANCE, "openid");
-        requireNotBlank(request.getUserIp(), QUERY_USER_BALANCE, "user_ip");
-        return execute(QUERY_USER_BALANCE, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, true, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireNotBlank(request.getUserIp(), getAction(request), "user_ip");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse currencyPay(WechatCurrencyPayRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, CURRENCY_PAY, true, true, true);
-        return execute(CURRENCY_PAY, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, true, true);
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryOrder(WechatQueryOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, QUERY_ORDER, true, false, true);
-        requireNotBlank(request.getOpenid(), QUERY_ORDER, "openid");
-        requireOneOf(request.getOrderId(), request.getWxOrderId(), QUERY_ORDER, "order_id 或 wx_order_id");
-        return execute(QUERY_ORDER, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireOneOf(request.getOrderId(), request.getWxOrderId(), getAction(request), "order_id 或 wx_order_id");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse cancelCurrencyPay(WechatCancelCurrencyPayRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, CANCEL_CURRENCY_PAY, true, true, true);
-        requireNotBlank(request.getOpenid(), CANCEL_CURRENCY_PAY, "openid");
-        requireNotBlank(request.getUserIp(), CANCEL_CURRENCY_PAY, "user_ip");
-        requireNotBlank(request.getPayOrderId(), CANCEL_CURRENCY_PAY, "pay_order_id");
-        requireNotBlank(request.getOrderId(), CANCEL_CURRENCY_PAY, "order_id");
-        requirePositive(request.getAmount(), CANCEL_CURRENCY_PAY, "amount");
-        return execute(CANCEL_CURRENCY_PAY, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, true, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireNotBlank(request.getUserIp(), getAction(request), "user_ip");
+        requireNotBlank(request.getPayOrderId(), getAction(request), "pay_order_id");
+        requireNotBlank(request.getOrderId(), getAction(request), "order_id");
+        requirePositive(request.getAmount(), getAction(request), "amount");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public void notifyProvideGoods(WechatNotifyProvideGoodsRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, NOTIFY_PROVIDE_GOODS, true, false, false);
-        requireOneOf(request.getOrderId(), request.getWxOrderId(), NOTIFY_PROVIDE_GOODS,
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, false);
+        requireOneOf(request.getOrderId(), request.getWxOrderId(), getAction(request),
                 "order_id 或 wx_order_id");
-        execute(NOTIFY_PROVIDE_GOODS, request, config, true);
+        execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse presentCurrency(WechatPresentCurrencyRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, PRESENT_CURRENCY, true, false, false);
-        requireNotBlank(request.getOpenid(), PRESENT_CURRENCY, "openid");
-        requireNotBlank(request.getOrderId(), PRESENT_CURRENCY, "order_id");
-        requirePositive(request.getAmount(), PRESENT_CURRENCY, "amount");
-        return execute(PRESENT_CURRENCY, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, false);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireNotBlank(request.getOrderId(), getAction(request), "order_id");
+        requirePositive(request.getAmount(), getAction(request), "amount");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse refundOrder(WechatRefundOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, REFUND_ORDER, true, false, true);
-        requireNotBlank(request.getOpenid(), REFUND_ORDER, "openid");
-        requireOneOf(request.getOrderId(), request.getWxOrderId(), REFUND_ORDER, "order_id 或 wx_order_id");
-        requireNotBlank(request.getRefundOrderId(), REFUND_ORDER, "refund_order_id");
-        requirePositive(request.getLeftFee(), REFUND_ORDER, "left_fee");
-        requirePositive(request.getRefundFee(), REFUND_ORDER, "refund_fee");
-        requireNotBlank(request.getReqFrom(), REFUND_ORDER, "req_from");
-        return execute(REFUND_ORDER, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireOneOf(request.getOrderId(), request.getWxOrderId(), getAction(request), "order_id 或 wx_order_id");
+        requireNotBlank(request.getRefundOrderId(), getAction(request), "refund_order_id");
+        requirePositive(request.getLeftFee(), getAction(request), "left_fee");
+        requirePositive(request.getRefundFee(), getAction(request), "refund_fee");
+        requireNotBlank(request.getReqFrom(), getAction(request), "req_from");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse createWithdrawOrder(WechatCreateWithdrawOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, CREATE_WITHDRAW_ORDER, true, false, true);
-        requireNotBlank(request.getWithdrawNo(), CREATE_WITHDRAW_ORDER, "withdraw_no");
-        return execute(CREATE_WITHDRAW_ORDER, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        requireNotBlank(request.getWithdrawNo(), getAction(request), "withdraw_no");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryWithdrawOrder(WechatQueryWithdrawOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, QUERY_WITHDRAW_ORDER, true, false, true);
-        requireNotBlank(request.getWithdrawNo(), QUERY_WITHDRAW_ORDER, "withdraw_no");
-        return execute(QUERY_WITHDRAW_ORDER, request, config, true);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        requireNotBlank(request.getWithdrawNo(), getAction(request), "withdraw_no");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse sendSubscribePrePayment(WechatSendSubscribePrePaymentRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, SEND_SUBSCRIBE_PRE_PAYMENT, false, false, true);
-        requireNotBlank(request.getOpenid(), SEND_SUBSCRIBE_PRE_PAYMENT, "openid");
-        requirePositive(request.getDeductPrice(), SEND_SUBSCRIBE_PRE_PAYMENT, "deduct_price");
-        requireNotBlank(request.getProductId(), SEND_SUBSCRIBE_PRE_PAYMENT, "product_id");
-        requireNotBlank(request.getOutContractCode(), SEND_SUBSCRIBE_PRE_PAYMENT, "out_contract_code");
-        return execute(SEND_SUBSCRIBE_PRE_PAYMENT, request, config, false);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), false, false, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requirePositive(request.getDeductPrice(), getAction(request), "deduct_price");
+        requireNotBlank(request.getProductId(), getAction(request), "product_id");
+        requireNotBlank(request.getOutContractCode(), getAction(request), "out_contract_code");
+        return execute(getAction(request), request, config, false);
     }
 
     @Override
     public WechatVirtualPaymentResponse submitSubscribePayOrder(WechatSubmitSubscribePayOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, SUBMIT_SUBSCRIBE_PAY_ORDER, true, false, false);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, false);
         if (isBlank(request.getOfferId())) {
             request.setOfferId(config.getOfferId());
         }
@@ -237,198 +161,198 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
         if (request.getBuyQuantity() == null) {
             request.setBuyQuantity(1);
         }
-        requireNotBlank(request.getOpenid(), SUBMIT_SUBSCRIBE_PAY_ORDER, "openid");
-        requireNotBlank(request.getOfferId(), SUBMIT_SUBSCRIBE_PAY_ORDER, "offer_id");
-        requireNotBlank(request.getCurrencyType(), SUBMIT_SUBSCRIBE_PAY_ORDER, "currency_type");
-        requireNotBlank(request.getProductId(), SUBMIT_SUBSCRIBE_PAY_ORDER, "product_id");
-        requirePositive(request.getDeductPrice(), SUBMIT_SUBSCRIBE_PAY_ORDER, "deduct_price");
-        requireNotBlank(request.getOrderId(), SUBMIT_SUBSCRIBE_PAY_ORDER, "order_id");
-        return execute(SUBMIT_SUBSCRIBE_PAY_ORDER, request, config, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireNotBlank(request.getOfferId(), getAction(request), "offer_id");
+        requireNotBlank(request.getCurrencyType(), getAction(request), "currency_type");
+        requireNotBlank(request.getProductId(), getAction(request), "product_id");
+        requirePositive(request.getDeductPrice(), getAction(request), "deduct_price");
+        requireNotBlank(request.getOrderId(), getAction(request), "order_id");
+        return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse querySubscribeContract(WechatQuerySubscribeContractRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, QUERY_SUBSCRIBE_CONTRACT, false, false, true);
-        requireNotBlank(request.getOpenid(), QUERY_SUBSCRIBE_CONTRACT, "openid");
-        requireNotBlank(request.getProductId(), QUERY_SUBSCRIBE_CONTRACT, "product_id");
-        requireNotBlank(request.getOutContractCode(), QUERY_SUBSCRIBE_CONTRACT, "out_contract_code");
-        return execute(QUERY_SUBSCRIBE_CONTRACT, request, config, false);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), false, false, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireNotBlank(request.getProductId(), getAction(request), "product_id");
+        requireNotBlank(request.getOutContractCode(), getAction(request), "out_contract_code");
+        return execute(getAction(request), request, config, false);
     }
 
     @Override
     public WechatVirtualPaymentResponse cancelSubscribeContract(WechatCancelSubscribeContractRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, CANCEL_SUBSCRIBE_CONTRACT, false, false, true);
-        requireNotBlank(request.getOpenid(), CANCEL_SUBSCRIBE_CONTRACT, "openid");
-        requireNotBlank(request.getTerminationReason(), CANCEL_SUBSCRIBE_CONTRACT, "termination_reason");
-        requireNotBlank(request.getProductId(), CANCEL_SUBSCRIBE_CONTRACT, "product_id");
-        requireNotBlank(request.getOutContractCode(), CANCEL_SUBSCRIBE_CONTRACT, "out_contract_code");
-        return execute(CANCEL_SUBSCRIBE_CONTRACT, request, config, false);
+        WechatVirtualPaymentConfig config = prepare(request, getAction(request), false, false, true);
+        requireNotBlank(request.getOpenid(), getAction(request), "openid");
+        requireNotBlank(request.getTerminationReason(), getAction(request), "termination_reason");
+        requireNotBlank(request.getProductId(), getAction(request), "product_id");
+        requireNotBlank(request.getOutContractCode(), getAction(request), "out_contract_code");
+        return execute(getAction(request), request, config, false);
     }
 
     @Override
     public WechatVirtualPaymentResponse downloadBill(WechatDownloadBillRequest request) {
         if (request != null) {
-            requirePositive(request.getBeginDs(), DOWNLOAD_BILL, "begin_ds");
-            requirePositive(request.getEndDs(), DOWNLOAD_BILL, "end_ds");
+            requirePositive(request.getBeginDs(), getAction(request), "begin_ds");
+            requirePositive(request.getEndDs(), getAction(request), "end_ds");
         }
-        return executeAdditional(DOWNLOAD_BILL, request, false, false);
+        return executeAdditional(getAction(request), request, false, false);
     }
 
     @Override
     public WechatVirtualPaymentResponse startUploadGoods(WechatStartUploadGoodsRequest request) {
         if (request != null) {
-            requireList(request.getUploadItem(), START_UPLOAD_GOODS, "upload_item");
+            requireList(request.getUploadItem(), getAction(request), "upload_item");
         }
-        return executeAdditional(START_UPLOAD_GOODS, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryUploadGoods(WechatQueryUploadGoodsRequest request) {
-        return executeAdditional(QUERY_UPLOAD_GOODS, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse startPublishGoods(WechatStartPublishGoodsRequest request) {
         if (request != null) {
-            requireList(request.getPublishItem(), START_PUBLISH_GOODS, "publish_item");
+            requireList(request.getPublishItem(), getAction(request), "publish_item");
         }
-        return executeAdditional(START_PUBLISH_GOODS, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryPublishGoods(WechatQueryPublishGoodsRequest request) {
-        return executeAdditional(QUERY_PUBLISH_GOODS, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryBizBalance(WechatQueryBizBalanceRequest request) {
-        return executeAdditional(QUERY_BIZ_BALANCE, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryTransferAccount(WechatQueryTransferAccountRequest request) {
-        return executeAdditionalWithoutPaySignature(QUERY_TRANSFER_ACCOUNT, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryAdverFunds(WechatQueryAdverFundsRequest request) {
-        return executeAdditionalWithoutPaySignature(QUERY_ADVER_FUNDS, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse createFundsBill(WechatCreateFundsBillRequest request) {
-        return executeAdditionalWithoutPaySignature(CREATE_FUNDS_BILL, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse bindTransferAccount(WechatBindTransferAccountRequest request) {
-        return executeAdditionalWithoutPaySignature(BIND_TRANSFER_ACCOUT, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryFundsBill(WechatQueryFundsBillRequest request) {
-        return executeAdditionalWithoutPaySignature(QUERY_FUNDS_BILL, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryRecoverBill(WechatQueryRecoverBillRequest request) {
-        return executeAdditionalWithoutPaySignature(QUERY_RECOVER_BILL, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse getComplaintList(WechatGetComplaintListRequest request) {
-        return executeAdditional(GET_COMPLAINT_LIST, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse getComplaintDetail(WechatGetComplaintDetailRequest request) {
         if (request != null) {
-            requireNotBlank(request.getComplaintId(), GET_COMPLAINT_DETAIL, "complaint_id");
+            requireNotBlank(request.getComplaintId(), getAction(request), "complaint_id");
         }
-        return executeAdditional(GET_COMPLAINT_DETAIL, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse getNegotiationHistory(WechatGetNegotiationHistoryRequest request) {
         if (request != null) {
-            requireNotBlank(request.getComplaintId(), GET_NEGOTIATION_HISTORY, "complaint_id");
+            requireNotBlank(request.getComplaintId(), getAction(request), "complaint_id");
         }
-        return executeAdditional(GET_NEGOTIATION_HISTORY, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse responseComplaint(WechatResponseComplaintRequest request) {
         if (request != null) {
-            requireNotBlank(request.getComplaintId(), RESPONSE_COMPLAINT, "complaint_id");
-            requireNotBlank(request.getResponseContent(), RESPONSE_COMPLAINT, "response_content");
-            requireList(request.getResponseImages(), RESPONSE_COMPLAINT, "response_images");
+            requireNotBlank(request.getComplaintId(), getAction(request), "complaint_id");
+            requireNotBlank(request.getResponseContent(), getAction(request), "response_content");
+            requireList(request.getResponseImages(), getAction(request), "response_images");
         }
-        return executeAdditional(RESPONSE_COMPLAINT, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse completeComplaint(WechatCompleteComplaintRequest request) {
         if (request != null) {
-            requireNotBlank(request.getComplaintId(), COMPLETE_COMPLAINT, "complaint_id");
+            requireNotBlank(request.getComplaintId(), getAction(request), "complaint_id");
         }
-        return executeAdditional(COMPLETE_COMPLAINT, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse uploadVpFile(WechatUploadVpFileRequest request) {
         if (request != null) {
-            requireNotBlank(request.getFileName(), UPLOAD_VP_FILE, "file_name");
+            requireNotBlank(request.getFileName(), getAction(request), "file_name");
             if (isBlank(request.getBase64Img()) && isBlank(request.getImgUrl())) {
                 log.error("DefaultWechatVirtualPaymentService.{} 缺少图片内容，base64_img 和 img_url 均为空",
-                        UPLOAD_VP_FILE);
+                        getAction(request));
                 throw new WechatVirtualPaymentException("base64_img 和 img_url 至少需要填写一个");
             }
         }
-        return executeAdditional(UPLOAD_VP_FILE, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse getUploadFileSign(WechatGetUploadFileSignRequest request) {
         if (request != null) {
-            requireNotBlank(request.getWxpayUrl(), GET_UPLOAD_FILE_SIGN, "wxpay_url");
-            requireNotBlank(request.getComplaintId(), GET_UPLOAD_FILE_SIGN, "complaint_id");
+            requireNotBlank(request.getWxpayUrl(), getAction(request), "wxpay_url");
+            requireNotBlank(request.getComplaintId(), getAction(request), "complaint_id");
         }
-        return executeAdditional(GET_UPLOAD_FILE_SIGN, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse downloadAdverFundsOrder(WechatDownloadAdverfundsOrderRequest request) {
         if (request != null) {
-            requireNotBlank(request.getFundId(), DOWNLOAD_ADVERFUNDS_ORDER, "fund_id");
+            requireNotBlank(request.getFundId(), getAction(request), "fund_id");
         }
-        return executeAdditionalWithoutPaySignature(DOWNLOAD_ADVERFUNDS_ORDER, request, true, true);
+        return executeAdditionalWithoutPaySignature(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse startDownloadOrder(WechatStartDownloadOrderRequest request) {
-        return executeAdditional(START_DOWNLOAD_ORDER, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryDownloadOrder(WechatQueryDownloadOrderRequest request) {
         if (request != null) {
-            requireNotBlank(request.getTaskId(), QUERY_DOWNLOAD_ORDER, "task_id");
+            requireNotBlank(request.getTaskId(), getAction(request), "task_id");
         }
-        return executeAdditional(QUERY_DOWNLOAD_ORDER, request, true, true);
+        return executeAdditional(getAction(request), request, true, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse downloadIosSettlementBill(WechatDownloadIosSettlementBillRequest request) {
         if (request != null) {
-            requireNotBlank(request.getStartMonth(), DOWNLOAD_IOS_SETTLEMENT_BILL, "start_month");
-            requireNotBlank(request.getEndMonth(), DOWNLOAD_IOS_SETTLEMENT_BILL, "end_month");
+            requireNotBlank(request.getStartMonth(), getAction(request), "start_month");
+            requireNotBlank(request.getEndMonth(), getAction(request), "end_month");
         }
-        return executeAdditional(DOWNLOAD_IOS_SETTLEMENT_BILL, request, false, false);
+        return executeAdditional(getAction(request), request, false, false);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryPunishmentReasons(WechatQueryPunishmentReasonsRequest request) {
-        return executeAdditional(QUERY_PUNISHMENT_REASONS, request, false, false);
+        return executeAdditional(getAction(request), request, false, false);
     }
 
     private WechatVirtualPaymentResponse executeAdditional(String action, WechatVirtualPaymentRequest request,
@@ -450,11 +374,15 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
             log.error("DefaultWechatVirtualPaymentService.{} 请求参数为空", action);
             throw new WechatVirtualPaymentException("请求参数不能为空");
         }
+        if (request.getRequestApi() == null) {
+            log.error("DefaultWechatVirtualPaymentService.{} 请求参数未绑定虚拟支付接口", action);
+            throw new WechatVirtualPaymentException("请求参数未绑定微信虚拟支付接口");
+        }
         if (isBlank(request.getRequestUrl())) {
-            request.setRequestUrl(XPAY_URL + action);
+            request.setRequestUrl(request.getRequestApi().getRequestUrl());
         }
         if (request.getRequestMethod() == null) {
-            request.setRequestMethod(WechatHttpMethod.POST);
+            request.setRequestMethod(request.getRequestApi().getRequestMethod());
         }
         WechatVirtualPaymentConfig config = provider.getConfig();
         if (config == null) {
@@ -557,6 +485,10 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
                     action, abbreviate(responseBody), e);
             throw new WechatVirtualPaymentException("解析微信虚拟支付响应失败", e);
         }
+    }
+
+    private String getAction(WechatVirtualPaymentRequest request) {
+        return request == null || request.getRequestApi() == null ? "unknown" : request.getRequestApi().getAction();
     }
 
     private void requireNotBlank(String value, String action, String fieldName) {

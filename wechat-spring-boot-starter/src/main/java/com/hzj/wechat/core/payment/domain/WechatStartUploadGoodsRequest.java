@@ -1,5 +1,7 @@
 package com.hzj.wechat.core.payment.domain;
 
+import com.hzj.wechat.core.payment.enums.WechatVirtualPaymentApi;
+
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,6 +14,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class WechatStartUploadGoodsRequest extends WechatVirtualPaymentRequest {
+    public WechatStartUploadGoodsRequest() { super(WechatVirtualPaymentApi.START_UPLOAD_GOODS); }
 
     /**
      * 待上传道具列表。

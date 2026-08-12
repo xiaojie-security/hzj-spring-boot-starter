@@ -3,6 +3,7 @@ package com.hzj.wechat.core.payment.domain;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import com.hzj.wechat.core.payment.enums.WechatVirtualPaymentApi;
 
 /**
  * 扣减用户代币请求。
@@ -10,6 +11,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class WechatCurrencyPayRequest extends WechatVirtualPaymentRequest {
+    public WechatCurrencyPayRequest() { super(WechatVirtualPaymentApi.CURRENCY_PAY); }
 
     /**
      * 用户 openid。
