@@ -63,10 +63,10 @@ public class DefaultWechatPaymentCallbackService implements WechatPaymentCallbac
     private WechatPaymentConfig getConfig() {
         WechatPaymentConfig config = provider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("未获取到微信商户配置");
+            throw new IllegalStateException("未获取到微信支付配置");
         }
         if (config.getApiV3Secret() == null || config.getApiV3Secret().trim().isEmpty()) {
-            throw new IllegalStateException("微信商户配置缺少APIv3密钥");
+            throw new IllegalStateException("微信支付配置缺少 APIv3 密钥");
         }
         return config;
     }

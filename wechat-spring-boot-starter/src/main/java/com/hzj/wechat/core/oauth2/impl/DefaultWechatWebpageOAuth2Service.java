@@ -211,7 +211,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
     private WechatAccessConfig getConfig() {
         WechatAccessConfig config = provider.getConfig();
         if (config == null) {
-            throw new WechatOAuth2Exception("未获取到微信商户配置");
+            throw new WechatOAuth2Exception("未获取到微信网页 OAuth2 配置");
         }
         return config;
     }

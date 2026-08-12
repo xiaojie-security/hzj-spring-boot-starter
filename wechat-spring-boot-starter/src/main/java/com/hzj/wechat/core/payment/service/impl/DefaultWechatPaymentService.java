@@ -320,7 +320,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
     private WechatPaymentConfig getConfig() {
         WechatPaymentConfig config = provider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("未获取到微信商户配置");
+            throw new IllegalStateException("未获取到微信支付配置");
         }
         return config;
     }

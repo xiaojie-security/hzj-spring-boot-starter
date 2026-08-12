@@ -333,7 +333,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
     private WechatTransferConfig getConfig() {
         WechatTransferConfig config = provider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("未获取到微信商户配置");
+            throw new IllegalStateException("未获取到微信转账配置");
         }
         return config;
     }

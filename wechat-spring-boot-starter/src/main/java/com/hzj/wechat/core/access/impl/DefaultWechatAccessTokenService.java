@@ -35,7 +35,7 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
     /**
      * 使用默认 OkHttp 客户端创建服务。
      *
-     * @param provider 微信商户配置提供者
+     * @param provider 微信接口调用凭据配置提供者
      */
     public DefaultWechatAccessTokenService(WechatAccessConfigProvider provider) {
         this(provider, new OkHttpClient.Builder().build());
@@ -44,12 +44,12 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
     /**
      * 创建微信稳定版接口调用凭据服务。
      *
-     * @param provider 微信商户配置提供者
+     * @param provider 微信接口调用凭据配置提供者
      * @param client HTTP 客户端
      */
     public DefaultWechatAccessTokenService(WechatAccessConfigProvider provider, OkHttpClient client) {
         if (provider == null) {
-            throw new IllegalArgumentException("WechatMerchantConfigProvider 不能为空");
+            throw new IllegalArgumentException("WechatAccessConfigProvider 不能为空");
         }
         if (client == null) {
             throw new IllegalArgumentException("OkHttpClient 不能为空");
@@ -128,16 +128,16 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
     private WechatAccessConfig getConfig() {
         WechatAccessConfig config = provider.getConfig();
         if (config == null) {
-            log.error("DefaultWechatAccessTokenService.getStableAccessToken 未获取到微信商户配置");
-            throw new WechatAccessTokenException("未获取到微信商户配置");
+            log.error("DefaultWechatAccessTokenService.getConfig 未获取到微信接口调用凭据配置");
+            throw new WechatAccessTokenException("未获取到微信接口调用凭据配置");
         }
         return config;
     }
 
     private void requireNotBlank(String value, String fieldName) {
         if (isBlank(value)) {
-            log.error("DefaultWechatAccessTokenService.getStableAccessToken 微信商户配置缺少必要参数，fieldName={}", fieldName);
-            throw new WechatAccessTokenException("微信商户配置不能为空: " + fieldName);
+            log.error("DefaultWechatAccessTokenService.requireNotBlank 微信接口调用凭据配置缺少必要参数，fieldName={}", fieldName);
+            throw new WechatAccessTokenException("微信接口调用凭据配置不能为空: " + fieldName);
         }
     }
 
