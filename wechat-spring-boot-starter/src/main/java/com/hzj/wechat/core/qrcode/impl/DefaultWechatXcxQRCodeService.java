@@ -157,8 +157,7 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
             throw new WechatXcxQRCodeException("page 不能以 / 开头，且不能携带参数");
         }
         if (request.getEnvVersion() == null) {
-            log.error("DefaultWechatXcxQRCodeService.getUnlimitedQRCode envVersion 不符合微信接口要求，envVersion={}",
-                    request.getEnvVersion());
+            log.error("DefaultWechatXcxQRCodeService.getUnlimitedQRCode envVersion 不符合微信接口要求");
             throw new WechatXcxQRCodeException("envVersion 只能是 release、trial 或 develop");
         }
         if (request.getWidth() == null || request.getWidth() < 280 || request.getWidth() > 1280) {

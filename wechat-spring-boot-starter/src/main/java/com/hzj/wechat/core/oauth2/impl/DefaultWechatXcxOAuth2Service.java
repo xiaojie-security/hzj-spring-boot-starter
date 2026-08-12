@@ -133,7 +133,7 @@ public class DefaultWechatXcxOAuth2Service implements WechatXcxOAuth2Service {
     private WechatAccessConfig getConfig() {
         WechatAccessConfig config = provider.getConfig();
         if (config == null) {
-            throw new WechatXcxOAuth2Exception("未获取到微信商户配置");
+            throw new WechatXcxOAuth2Exception("未获取到微信认证配置");
         }
         return config;
     }
