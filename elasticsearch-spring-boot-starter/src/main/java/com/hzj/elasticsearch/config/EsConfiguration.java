@@ -16,15 +16,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * Elasticsearch 索引和文档服务自动配置。
- *
- * <p>客户端仍由 {@code AbstractElasticsearchService.CLIENT} 统一持有，本配置不注册
- * {@code ElasticsearchClient} Spring Bean。</p>
+ * Elasticsearch 客户端自动配置。
  */
 @AutoConfiguration
 @EnableConfigurationProperties(ElasticsearchProperties.class)
 public class EsConfiguration {
-
 
     /**
      * 注册基于配置属性的 Elasticsearch 配置提供者。
@@ -38,7 +34,17 @@ public class EsConfiguration {
         return new PropertiesElasticsearchConfigProvider(properties);
     }
 
+    /**
+     * 注册 Elasticsearch Java 客户端。
+     *
+     * <p>客户端由 {@link ElasticsearchConfigProvider} 提供初始配置；动态配置变更后，
+     * 可通过 {@code ElasticsearchClientService#refreshClient()} 替换该单例。</p>
+     *
+     * @param configProvider Elasticsearch 动态配置提供者
+     * @return Elasticsearch 客户端
+     */
     @Bean(name = AbstractElasticsearchClientService.ES_SERVICE_BEAN_NAME)
+    @ConditionalOnMissingBean(name = AbstractElasticsearchClientService.ES_SERVICE_BEAN_NAME)
     public ElasticsearchClient elasticsearchClient(ElasticsearchConfigProvider configProvider) {
         return AbstractElasticsearchClientService.assembly(configProvider.getConfig());
     }
@@ -51,10 +57,10 @@ public class EsConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(ElasticsearchIndexClientService.class)
-    public ElasticsearchIndexClientService elasticsearchIndexService(
+    public ElasticsearchIndexClientService elasticsearchIndexClientService(
             ElasticsearchConfigProvider configProvider,
             ConfigurableListableBeanFactory beanFactory) {
-        return new DefaultElasticsearchIndexClientService( beanFactory, configProvider);
+        return new DefaultElasticsearchIndexClientService(beanFactory, configProvider);
     }
 
     /**
@@ -65,9 +71,9 @@ public class EsConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(ElasticsearchDocumentClientService.class)
-    public ElasticsearchDocumentClientService elasticsearchDocumentService(
+    public ElasticsearchDocumentClientService elasticsearchDocumentClientService(
             ElasticsearchConfigProvider configProvider,
             ConfigurableListableBeanFactory beanFactory) {
-        return new DefaultElasticsearchDocumentClientService( beanFactory, configProvider);
+        return new DefaultElasticsearchDocumentClientService(beanFactory, configProvider);
     }
 }
