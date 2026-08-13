@@ -1,6 +1,5 @@
 package com.hzj.wechat.provider.wechat.payment.entity;
 
-import com.hzj.wechat.core.qrcode.enums.WechatXcxEnvVersion;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -68,18 +67,4 @@ public class WechatPaymentConfig {
      */
     private String paymentNotifyUrl;
 
-    /**
-     * 商家转账异步通知地址
-     */
-    private String transferNotifyUrl;
-
-    /**
-     * 免确认收款授权结果通知
-     */
-    private String authorizationNotifyUrl;
-
-    /**
-     * 小程序二维码激活版本
-     */
-    private WechatXcxEnvVersion envVersion;
 }

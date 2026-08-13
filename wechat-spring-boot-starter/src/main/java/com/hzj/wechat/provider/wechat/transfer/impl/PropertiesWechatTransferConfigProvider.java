@@ -47,7 +47,6 @@ public class PropertiesWechatTransferConfigProvider implements WechatTransferCon
         config.setWechatPayPublicKeyId(properties.getWechatPayPublicKeyId());
         config.setApiV3Secret(properties.getApiV3Secret());
         config.setPaymentNotifyUrl(properties.getPaymentNotifyUrl());
-        config.setEnvVersion(properties.getEnvVersion());
     }
 
     /**

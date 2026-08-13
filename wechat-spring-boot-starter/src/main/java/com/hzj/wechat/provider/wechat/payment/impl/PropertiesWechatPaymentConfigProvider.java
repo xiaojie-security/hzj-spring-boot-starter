@@ -34,9 +34,6 @@ public class PropertiesWechatPaymentConfigProvider implements WechatPaymentConfi
         config.setWechatPayPublicKeyId(properties.getWechatPayPublicKeyId());
         config.setApiV3Secret(properties.getApiV3Secret());
         config.setPaymentNotifyUrl(properties.getPaymentNotifyUrl());
-        config.setTransferNotifyUrl(properties.getTransferNotifyUrl());
-        config.setAuthorizationNotifyUrl(properties.getAuthorizationNotifyUrl());
-        config.setEnvVersion(properties.getEnvVersion());
         return config;
     }
 

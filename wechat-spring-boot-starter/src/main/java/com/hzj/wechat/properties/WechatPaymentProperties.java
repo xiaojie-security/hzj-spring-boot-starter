@@ -1,6 +1,5 @@
 package com.hzj.wechat.properties;
 
-import com.hzj.wechat.core.qrcode.enums.WechatXcxEnvVersion;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -29,10 +28,4 @@ public class WechatPaymentProperties {
     private String apiV3Secret;
     /** 微信支付异步通知地址。 */
     private String paymentNotifyUrl;
-    /** 商家转账异步通知地址。 */
-    private String transferNotifyUrl;
-    /** 免确认收款授权结果通知地址。 */
-    private String authorizationNotifyUrl;
-    /** 小程序二维码激活版本。 */
-    private WechatXcxEnvVersion envVersion;
 }
