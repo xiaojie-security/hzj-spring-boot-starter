@@ -85,7 +85,7 @@ public final class ConfigStringLoader {
                 }
             }
         } catch (Exception e) {
-//            log.debug("ConfigStringLoader.getAbsolutePath 无法获取绝对路径，source={}", trimmedSource, e);
+            log.debug("ConfigStringLoader.getAbsolutePath 无法获取绝对路径，source={}", trimmedSource, e);
         }
         return Optional.empty();
     }
