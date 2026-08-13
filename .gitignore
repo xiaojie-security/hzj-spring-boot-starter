@@ -26,6 +26,6 @@ replay_pid*
 # IntelliJ IDEA 工程目录
 .idea/
 !.idea/.gitignore
-*/test/
+test/
 */target/
 .mvn
