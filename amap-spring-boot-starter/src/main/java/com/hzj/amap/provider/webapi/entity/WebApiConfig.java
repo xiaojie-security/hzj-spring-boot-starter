@@ -10,4 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class WebApiConfig {
 
+    /**
+     * 高德 Web服务 API 密钥（key）
+     */
+    private String secretKey;
 }
