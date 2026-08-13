@@ -4,10 +4,12 @@ import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
 import com.hzj.elasticsearch.core.document.impl.DefaultElasticsearchDocumentService;
 import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
 import com.hzj.elasticsearch.core.index.impl.DefaultElasticsearchIndexService;
+import com.hzj.elasticsearch.properties.ElasticsearchProperties;
 import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
+import com.hzj.elasticsearch.provider.es.impl.PropertiesElasticsearchConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
@@ -19,8 +21,20 @@ import java.io.IOException;
  * {@code ElasticsearchClient} Spring Bean。</p>
  */
 @AutoConfiguration
-@ConditionalOnBean(ElasticsearchConfigProvider.class)
+@EnableConfigurationProperties(ElasticsearchProperties.class)
 public class EsConfiguration {
+
+    /**
+     * 注册基于配置属性的 Elasticsearch 配置提供者。
+     *
+     * @param properties Elasticsearch 配置属性
+     * @return Elasticsearch 配置提供者
+     */
+    @Bean
+    @ConditionalOnMissingBean(ElasticsearchConfigProvider.class)
+    public ElasticsearchConfigProvider elasticsearchConfigProvider(ElasticsearchProperties properties) {
+        return new PropertiesElasticsearchConfigProvider(properties);
+    }
 
     /**
      * 注册索引级操作服务。
