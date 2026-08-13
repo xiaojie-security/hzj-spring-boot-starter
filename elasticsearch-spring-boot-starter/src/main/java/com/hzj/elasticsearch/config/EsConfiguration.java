@@ -1,18 +1,19 @@
 package com.hzj.elasticsearch.config;
 
-import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
-import com.hzj.elasticsearch.core.document.impl.DefaultElasticsearchDocumentService;
-import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
-import com.hzj.elasticsearch.core.index.impl.DefaultElasticsearchIndexService;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
+import com.hzj.elasticsearch.core.document.ElasticsearchDocumentClientService;
+import com.hzj.elasticsearch.core.document.impl.DefaultElasticsearchDocumentClientService;
+import com.hzj.elasticsearch.core.index.ElasticsearchIndexClientService;
+import com.hzj.elasticsearch.core.index.impl.DefaultElasticsearchIndexClientService;
 import com.hzj.elasticsearch.properties.ElasticsearchProperties;
 import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
 import com.hzj.elasticsearch.provider.es.impl.PropertiesElasticsearchConfigProvider;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-
-import java.io.IOException;
 
 /**
  * Elasticsearch 索引和文档服务自动配置。
@@ -23,6 +24,7 @@ import java.io.IOException;
 @AutoConfiguration
 @EnableConfigurationProperties(ElasticsearchProperties.class)
 public class EsConfiguration {
+
 
     /**
      * 注册基于配置属性的 Elasticsearch 配置提供者。
@@ -36,20 +38,23 @@ public class EsConfiguration {
         return new PropertiesElasticsearchConfigProvider(properties);
     }
 
+    @Bean(name = AbstractElasticsearchClientService.ES_SERVICE_BEAN_NAME)
+    public ElasticsearchClient elasticsearchClient(ElasticsearchConfigProvider configProvider) {
+        return AbstractElasticsearchClientService.assembly(configProvider.getConfig());
+    }
+
     /**
      * 注册索引级操作服务。
      *
      * @param configProvider Elasticsearch 动态配置提供者
      * @return 索引级操作服务
-     * @throws IOException Elasticsearch 客户端装配异常
      */
     @Bean
-    @ConditionalOnMissingBean(ElasticsearchIndexService.class)
-    public ElasticsearchIndexService elasticsearchIndexService(ElasticsearchConfigProvider configProvider)
-            throws IOException {
-        DefaultElasticsearchIndexService service = new DefaultElasticsearchIndexService();
-        service.assembly(configProvider.getConfig());
-        return service;
+    @ConditionalOnMissingBean(ElasticsearchIndexClientService.class)
+    public ElasticsearchIndexClientService elasticsearchIndexService(
+            ElasticsearchConfigProvider configProvider,
+            ConfigurableListableBeanFactory beanFactory) {
+        return new DefaultElasticsearchIndexClientService( beanFactory, configProvider);
     }
 
     /**
@@ -57,14 +62,12 @@ public class EsConfiguration {
      *
      * @param configProvider Elasticsearch 动态配置提供者
      * @return 文档级操作服务
-     * @throws IOException Elasticsearch 客户端装配异常
      */
     @Bean
-    @ConditionalOnMissingBean(ElasticsearchDocumentService.class)
-    public ElasticsearchDocumentService elasticsearchDocumentService(ElasticsearchConfigProvider configProvider)
-            throws IOException {
-        DefaultElasticsearchDocumentService service = new DefaultElasticsearchDocumentService();
-        service.assembly(configProvider.getConfig());
-        return service;
+    @ConditionalOnMissingBean(ElasticsearchDocumentClientService.class)
+    public ElasticsearchDocumentClientService elasticsearchDocumentService(
+            ElasticsearchConfigProvider configProvider,
+            ConfigurableListableBeanFactory beanFactory) {
+        return new DefaultElasticsearchDocumentClientService( beanFactory, configProvider);
     }
 }

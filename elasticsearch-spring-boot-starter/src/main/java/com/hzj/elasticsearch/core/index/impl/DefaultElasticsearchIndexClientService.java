@@ -1,41 +1,19 @@
 package com.hzj.elasticsearch.core.index.impl;
 
-import co.elastic.clients.elasticsearch.indices.CloseIndexRequest;
-import co.elastic.clients.elasticsearch.indices.CloseIndexResponse;
-import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
-import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
-import co.elastic.clients.elasticsearch.indices.DeleteAliasRequest;
-import co.elastic.clients.elasticsearch.indices.DeleteAliasResponse;
-import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
-import co.elastic.clients.elasticsearch.indices.DeleteIndexResponse;
-import co.elastic.clients.elasticsearch.indices.ExistsAliasRequest;
-import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
-import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
-import co.elastic.clients.elasticsearch.indices.GetIndicesSettingsRequest;
-import co.elastic.clients.elasticsearch.indices.GetIndicesSettingsResponse;
-import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
-import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
-import co.elastic.clients.elasticsearch.indices.OpenRequest;
-import co.elastic.clients.elasticsearch.indices.OpenResponse;
-import co.elastic.clients.elasticsearch.indices.PutAliasRequest;
-import co.elastic.clients.elasticsearch.indices.PutAliasResponse;
-import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsRequest;
-import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsResponse;
-import co.elastic.clients.elasticsearch.indices.PutMappingRequest;
-import co.elastic.clients.elasticsearch.indices.PutMappingResponse;
-import co.elastic.clients.elasticsearch.indices.RefreshRequest;
-import co.elastic.clients.elasticsearch.indices.RefreshResponse;
-import co.elastic.clients.transport.endpoints.BooleanResponse;
+import co.elastic.clients.elasticsearch.indices.*;
 import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.util.WithJsonObjectBuilderBase;
-import com.hzj.elasticsearch.core.AbstractElasticsearchService;
-import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
-import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
+import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
+import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
+import com.hzj.elasticsearch.core.index.ElasticsearchIndexClientService;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexAliasRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexCreateRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexMappingRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexSettingsRequest;
+import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -49,8 +27,14 @@ import java.util.Objects;
  *
  * <p>官方请求和响应只在实现内部使用，公开层统一使用 Starter 自定义对象。</p>
  */
-public class DefaultElasticsearchIndexService extends AbstractElasticsearchService
-        implements ElasticsearchIndexService {
+public class DefaultElasticsearchIndexClientService
+    extends AbstractElasticsearchClientService
+        implements ElasticsearchIndexClientService {
+
+
+    public DefaultElasticsearchIndexClientService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
+        super(beanFactory, configProvider);
+    }
 
     /**
      * 创建索引。
@@ -82,7 +66,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         }
         CreateIndexRequest.Builder builder = new CreateIndexRequest.Builder().index(indexName);
         applyJsonBody(builder, body);
-        CreateIndexResponse response = requireClient().indices().create(builder.build());
+        CreateIndexResponse response = getClient().indices().create(builder.build());
         return acknowledgedResponse(response.acknowledged(), response.shardsAcknowledged(),
                 ElasticsearchOperation.CREATE_INDEX, "创建索引成功", indexName);
     }
@@ -109,7 +93,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<Void> deleteIndex(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        DeleteIndexResponse response = requireClient().indices().delete(DeleteIndexRequest.of(request -> request
+        DeleteIndexResponse response = getClient().indices().delete(DeleteIndexRequest.of(request -> request
                 .index(validatedIndexName)));
         return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.DELETE_INDEX,
                 "删除索引成功", validatedIndexName);
@@ -125,7 +109,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<Boolean> existsIndex(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        BooleanResponse response = requireClient().indices().exists(ExistsRequestFactory.of(validatedIndexName));
+        BooleanResponse response = getClient().indices().exists(ExistsRequestFactory.of(validatedIndexName));
         return ElasticsearchResponse.<Boolean>builder()
                 .success(true)
                 .operation(ElasticsearchOperation.EXISTS_INDEX)
@@ -146,7 +130,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<String> getIndex(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        GetIndexResponse response = requireClient().indices().get(GetIndexRequest.of(request -> request
+        GetIndexResponse response = getClient().indices().get(GetIndexRequest.of(request -> request
                 .index(validatedIndexName)));
         return ElasticsearchResponse.<String>builder()
                 .success(true)
@@ -167,7 +151,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<Void> refreshIndex(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        RefreshResponse response = requireClient().indices().refresh(RefreshRequest.of(request -> request
+        RefreshResponse response = getClient().indices().refresh(RefreshRequest.of(request -> request
                 .index(validatedIndexName)));
         return shardResponse(response.shards().successful().intValue() > 0, ElasticsearchOperation.REFRESH_INDEX,
                 "刷新索引完成", validatedIndexName);
@@ -183,7 +167,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<Void> openIndex(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        OpenResponse response = requireClient().indices().open(OpenRequest.of(request -> request
+        OpenResponse response = getClient().indices().open(OpenRequest.of(request -> request
                 .index(validatedIndexName)));
         return acknowledgedResponse(response.acknowledged(), response.shardsAcknowledged(),
                 ElasticsearchOperation.OPEN_INDEX, "打开索引成功", validatedIndexName);
@@ -199,7 +183,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<Void> closeIndex(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        CloseIndexResponse response = requireClient().indices().close(CloseIndexRequest.of(request -> request
+        CloseIndexResponse response = getClient().indices().close(CloseIndexRequest.of(request -> request
                 .index(validatedIndexName)));
         return acknowledgedResponse(response.acknowledged(), response.shardsAcknowledged(),
                 ElasticsearchOperation.CLOSE_INDEX, "关闭索引成功", validatedIndexName);
@@ -218,7 +202,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         String indexName = requireIndexName(request.getIndexName());
         PutMappingRequest.Builder builder = new PutMappingRequest.Builder().index(indexName);
         applyJsonBody(builder, request.getMappings());
-        PutMappingResponse response = requireClient().indices().putMapping(builder.build());
+        PutMappingResponse response = getClient().indices().putMapping(builder.build());
         return acknowledgedResponse(response.acknowledged(), null,
                 ElasticsearchOperation.PUT_MAPPING, "更新索引 Mapping 成功", indexName);
     }
@@ -233,7 +217,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<String> getMapping(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        GetMappingResponse response = requireClient().indices().getMapping(GetMappingRequest.of(request -> request
+        GetMappingResponse response = getClient().indices().getMapping(GetMappingRequest.of(request -> request
                 .index(validatedIndexName)));
         return ElasticsearchResponse.<String>builder()
                 .success(true)
@@ -257,7 +241,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         String indexName = requireIndexName(request.getIndexName());
         PutIndicesSettingsRequest.Builder builder = new PutIndicesSettingsRequest.Builder().index(indexName);
         applyJsonBody(builder, request.getSettings());
-        PutIndicesSettingsResponse response = requireClient().indices().putSettings(builder.build());
+        PutIndicesSettingsResponse response = getClient().indices().putSettings(builder.build());
         return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.PUT_SETTINGS,
                 "更新索引 Settings 成功", indexName);
     }
@@ -272,7 +256,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     @Override
     public ElasticsearchResponse<String> getSettings(String indexName) throws IOException {
         final String validatedIndexName = requireIndexName(indexName);
-        GetIndicesSettingsResponse response = requireClient().indices().getSettings(GetIndicesSettingsRequest.of(request -> request
+        GetIndicesSettingsResponse response = getClient().indices().getSettings(GetIndicesSettingsRequest.of(request -> request
                 .index(validatedIndexName)));
         return ElasticsearchResponse.<String>builder()
                 .success(true)
@@ -295,7 +279,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         Objects.requireNonNull(request, "创建索引别名请求不能为空");
         String indexName = requireIndexName(request.getIndexName());
         String aliasName = requireIndexName(request.getAliasName());
-        PutAliasResponse response = requireClient().indices().putAlias(PutAliasRequest.of(aliasRequest -> aliasRequest
+        PutAliasResponse response = getClient().indices().putAlias(PutAliasRequest.of(aliasRequest -> aliasRequest
                 .index(indexName)
                 .name(aliasName)));
         return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.PUT_ALIAS,
@@ -314,7 +298,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         Objects.requireNonNull(request, "删除索引别名请求不能为空");
         String indexName = requireIndexName(request.getIndexName());
         String aliasName = requireIndexName(request.getAliasName());
-        DeleteAliasResponse response = requireClient().indices().deleteAlias(DeleteAliasRequest.of(aliasRequest -> aliasRequest
+        DeleteAliasResponse response = getClient().indices().deleteAlias(DeleteAliasRequest.of(aliasRequest -> aliasRequest
                 .index(indexName)
                 .name(aliasName)));
         return acknowledgedResponse(response.acknowledged(), null, ElasticsearchOperation.DELETE_ALIAS,
@@ -333,7 +317,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
         Objects.requireNonNull(request, "判断索引别名存在性请求不能为空");
         String indexName = requireIndexName(request.getIndexName());
         String aliasName = requireIndexName(request.getAliasName());
-        BooleanResponse response = requireClient().indices().existsAlias(ExistsAliasRequest.of(aliasRequest -> aliasRequest
+        BooleanResponse response = getClient().indices().existsAlias(ExistsAliasRequest.of(aliasRequest -> aliasRequest
                 .index(indexName)
                 .name(aliasName)));
         return ElasticsearchResponse.<Boolean>builder()
@@ -355,7 +339,7 @@ public class DefaultElasticsearchIndexService extends AbstractElasticsearchServi
     }
 
     private String toJson(Object value) throws IOException {
-        JsonpMapper mapper = requireClient()._transport().jsonpMapper();
+        JsonpMapper mapper = getClient()._transport().jsonpMapper();
         StringWriter writer = new StringWriter();
         var generator = mapper.jsonProvider().createGenerator(writer);
         mapper.serialize(value == null ? Map.of() : value, generator);

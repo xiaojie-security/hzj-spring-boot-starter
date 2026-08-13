@@ -1,6 +1,6 @@
 package com.hzj.elasticsearch.core.document;
 
-import com.hzj.elasticsearch.core.ElasticsearchService;
+import com.hzj.elasticsearch.core.client.ElasticsearchClientService;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentBulkRequest;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentDeleteByQueryRequest;
 import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentGetRequest;
@@ -20,7 +20,7 @@ import java.util.List;
  *
  * <p>公开接口只使用 Starter 自定义请求和响应，不暴露 ES Java Client 的 Request 或 Response。</p>
  */
-public interface ElasticsearchDocumentService extends ElasticsearchService {
+public interface ElasticsearchDocumentClientService extends ElasticsearchClientService {
 
     /**
      * 新增或覆盖文档，并回读 ES 中的完整实体。

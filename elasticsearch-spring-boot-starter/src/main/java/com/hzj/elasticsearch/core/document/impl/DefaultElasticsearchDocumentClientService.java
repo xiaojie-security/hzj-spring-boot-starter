@@ -2,58 +2,24 @@ package com.hzj.elasticsearch.core.document.impl;
 
 import co.elastic.clients.elasticsearch._types.Conflicts;
 import co.elastic.clients.elasticsearch._types.Script;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.CountRequest;
-import co.elastic.clients.elasticsearch.core.CountResponse;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryResponse;
-import co.elastic.clients.elasticsearch.core.DeleteRequest;
-import co.elastic.clients.elasticsearch.core.DeleteResponse;
-import co.elastic.clients.elasticsearch.core.ExistsRequest;
-import co.elastic.clients.elasticsearch.core.GetRequest;
-import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
-import co.elastic.clients.elasticsearch.core.MgetRequest;
-import co.elastic.clients.elasticsearch.core.MgetResponse;
-import co.elastic.clients.elasticsearch.core.SearchRequest;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
-import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
-import co.elastic.clients.elasticsearch.core.UpdateRequest;
-import co.elastic.clients.elasticsearch.core.UpdateResponse;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem;
-import co.elastic.clients.elasticsearch._types.SortOrder;
-import co.elastic.clients.json.JsonData;
 import co.elastic.clients.elasticsearch.core.search.TrackHits;
-import com.hzj.elasticsearch.core.AbstractElasticsearchService;
-import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchBulkItemResponse;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchBulkOperation;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentBulkRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentDeleteByQueryRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentGetRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentHit;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentMgetRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentSearchRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentScript;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentSort;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateByQueryRequest;
-import com.hzj.elasticsearch.core.document.entity.ElasticsearchDocumentUpdateRequest;
-import com.hzj.elasticsearch.core.document.enums.ElasticsearchBulkOperationType;
-import com.hzj.elasticsearch.core.document.enums.ElasticsearchConflictPolicy;
-import com.hzj.elasticsearch.core.document.enums.ElasticsearchDocumentSortOrder;
-import com.hzj.elasticsearch.core.document.enums.ElasticsearchDocumentWriteResult;
-import com.hzj.elasticsearch.core.document.enums.ElasticsearchScriptLanguage;
+import co.elastic.clients.json.JsonData;
+import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
+import com.hzj.elasticsearch.core.document.ElasticsearchDocumentClientService;
+import com.hzj.elasticsearch.core.document.entity.*;
+import com.hzj.elasticsearch.core.document.enums.*;
+import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.enums.ElasticsearchRefreshPolicy;
-import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
+import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
 import com.hzj.elasticsearch.utils.ElasticsearchQueryConverter;
 import com.hzj.elasticsearch.utils.ElasticsearchResponseMapper;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,8 +33,12 @@ import java.util.stream.Collectors;
  *
  * <p>ES 官方 Request 和 Response 只在该实现内部使用，公开层只返回 Starter 自定义响应。</p>
  */
-public class DefaultElasticsearchDocumentService extends AbstractElasticsearchService
-        implements ElasticsearchDocumentService {
+public class DefaultElasticsearchDocumentClientService extends AbstractElasticsearchClientService
+        implements ElasticsearchDocumentClientService {
+
+    public DefaultElasticsearchDocumentClientService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
+        super(beanFactory, configProvider);
+    }
 
     /**
      * 新增或覆盖文档，并回读完整实体。
@@ -80,7 +50,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
      */
     @Override
     public <T> ElasticsearchResponse<T> saveDocument(ElasticsearchDocumentRequest<T> request) throws IOException {
-        IndexResponse response = requireClient().index(buildIndexRequest(request, false));
+        IndexResponse response = getClient().index(buildIndexRequest(request, false));
         T document = readAfterWrite(response.index(), response.id(), request.getDocumentClass(), request.getDocument());
         return ElasticsearchResponseMapper.write(response, document, ElasticsearchOperation.SAVE_DOCUMENT);
     }
@@ -95,7 +65,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
      */
     @Override
     public <T> ElasticsearchResponse<T> createDocument(ElasticsearchDocumentRequest<T> request) throws IOException {
-        IndexResponse response = requireClient().index(buildIndexRequest(request, true));
+        IndexResponse response = getClient().index(buildIndexRequest(request, true));
         T document = readAfterWrite(response.index(), response.id(), request.getDocumentClass(), request.getDocument());
         return ElasticsearchResponseMapper.write(response, document, ElasticsearchOperation.CREATE_DOCUMENT);
     }
@@ -134,7 +104,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     @Override
     public <T> ElasticsearchResponse<T> getDocument(ElasticsearchDocumentGetRequest request, Class<T> documentClass)
             throws IOException {
-        GetResponse<T> response = requireClient().get(buildGetRequest(request), requireDocumentClass(documentClass));
+        GetResponse<T> response = getClient().get(buildGetRequest(request), requireDocumentClass(documentClass));
         return ElasticsearchResponseMapper.get(response, ElasticsearchOperation.GET_DOCUMENT);
     }
 
@@ -167,7 +137,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
      */
     @Override
     public ElasticsearchResponse<Void> existsDocument(String indexName, String documentId) throws IOException {
-        boolean exists = requireClient().exists(ExistsRequest.of(request -> request
+        boolean exists = getClient().exists(ExistsRequest.of(request -> request
                 .index(requireIndexName(indexName))
                 .id(requireDocumentId(documentId)))).value();
         return ElasticsearchResponse.<Void>builder()
@@ -190,7 +160,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
      */
     @Override
     public ElasticsearchResponse<Void> deleteDocument(String indexName, String documentId) throws IOException {
-        DeleteResponse response = requireClient().delete(DeleteRequest.of(request -> request
+        DeleteResponse response = getClient().delete(DeleteRequest.of(request -> request
                 .index(requireIndexName(indexName))
                 .id(requireDocumentId(documentId))));
         return ElasticsearchResponseMapper.delete(response);
@@ -209,7 +179,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     @Override
     public <T, R> ElasticsearchResponse<R> updateDocument(ElasticsearchDocumentUpdateRequest<T> request,
                                                             Class<R> documentClass) throws IOException {
-        UpdateResponse<R> response = requireClient().update(buildUpdateRequest(request), requireDocumentClass(documentClass));
+        UpdateResponse<R> response = getClient().update(buildUpdateRequest(request), requireDocumentClass(documentClass));
         R document = readAfterWrite(response.index(), response.id(), documentClass, null);
         return ElasticsearchResponseMapper.write(response, document, ElasticsearchOperation.UPDATE_DOCUMENT);
     }
@@ -249,7 +219,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
     @Override
     public <T> ElasticsearchResponse<List<ElasticsearchDocumentHit<T>>> searchDocuments(
             ElasticsearchDocumentSearchRequest request, Class<T> documentClass) throws IOException {
-        SearchResponse<T> response = requireClient().search(buildSearchRequest(request), requireDocumentClass(documentClass));
+        SearchResponse<T> response = getClient().search(buildSearchRequest(request), requireDocumentClass(documentClass));
         return ElasticsearchResponseMapper.search(response, ElasticsearchOperation.SEARCH_DOCUMENTS);
     }
 
@@ -266,7 +236,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         List<String> indexes = requireIndexes(request);
         builder.index(indexes);
         builder.query(ElasticsearchQueryConverter.convert(request.getQuery()));
-        CountResponse response = requireClient().count(builder.build());
+        CountResponse response = getClient().count(builder.build());
         return ElasticsearchResponse.<Long>builder()
                 .success(true)
                 .operation(ElasticsearchOperation.COUNT_DOCUMENTS)
@@ -297,7 +267,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
             builder.index(request.getIndexName());
         }
         builder.refresh(ElasticsearchQueryConverter.convertRefresh(request.getRefreshPolicy()));
-        BulkResponse response = requireClient().bulk(builder.build());
+        BulkResponse response = getClient().bulk(builder.build());
         List<ElasticsearchBulkItemResponse> items = response.items().stream()
                 .map(this::convertBulkItem)
                 .toList();
@@ -333,7 +303,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         } else {
             builder.conflicts(Conflicts.Abort);
         }
-        DeleteByQueryResponse response = requireClient().deleteByQuery(builder.build());
+        DeleteByQueryResponse response = getClient().deleteByQuery(builder.build());
         return ElasticsearchResponse.<Long>builder()
                 .success(response.failures() == null || response.failures().isEmpty())
                 .operation(ElasticsearchOperation.DELETE_DOCUMENTS_BY_QUERY)
@@ -366,7 +336,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
             builder.conflicts(Conflicts.Abort);
         }
         builder.script(buildScript(request.getScript()));
-        UpdateByQueryResponse response = requireClient().updateByQuery(builder.build());
+        UpdateByQueryResponse response = getClient().updateByQuery(builder.build());
         return ElasticsearchResponse.<Long>builder()
                 .success(response.failures() == null || response.failures().isEmpty())
                 .operation(ElasticsearchOperation.UPDATE_DOCUMENTS_BY_QUERY)
@@ -402,7 +372,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         if (request.getSourceExcludes() != null) {
             builder.sourceExcludes(request.getSourceExcludes());
         }
-        MgetResponse<T> response = requireClient().mget(builder.build(), requireDocumentClass(documentClass));
+        MgetResponse<T> response = getClient().mget(builder.build(), requireDocumentClass(documentClass));
         List<ElasticsearchDocumentHit<T>> documents = new ArrayList<>();
         for (MultiGetResponseItem<T> item : response.docs()) {
             if (item.isResult()) {
@@ -616,7 +586,7 @@ public class DefaultElasticsearchDocumentService extends AbstractElasticsearchSe
         if (documentClass == null || !hasText(indexName) || !hasText(documentId)) {
             return fallback;
         }
-        GetResponse<T> response = requireClient().get(GetRequest.of(request -> request
+        GetResponse<T> response = getClient().get(GetRequest.of(request -> request
                 .index(indexName)
                 .id(documentId)), documentClass);
         return response.found() ? response.source() : fallback;
