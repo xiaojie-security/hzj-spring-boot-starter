@@ -1,4 +1,4 @@
-package com.hzj.redis.core;
+package com.hzj.redis.core.cache;
 
 @FunctionalInterface
 public interface CacheLoader<T> {
