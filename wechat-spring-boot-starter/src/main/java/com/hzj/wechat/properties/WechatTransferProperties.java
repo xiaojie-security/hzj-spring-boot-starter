@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ConfigurationProperties(prefix = "wechat.transfer")
-public class WechatTransferProperties extends WechatPaymentProperties {
+public class WechatTransferProperties extends WechatMerchantProperties {
 
     /** 商家转账异步通知地址。 */
     private String transferNotifyUrl;
