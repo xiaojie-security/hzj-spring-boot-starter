@@ -170,24 +170,35 @@ public abstract class AbstractElasticsearchClientService implements Elasticsearc
         if (!REFRESH_LOCK.tryLock()) {
             throw new RuntimeException("正在执行ES客户端刷新操作，请稍后重试");
         }
+        ElasticsearchClient newClient = null;
         try {
             ElasticsearchConfig config = configProvider.getConfig();
-            if (beanFactory.containsSingleton(ES_SERVICE_BEAN_NAME)) {
-                ElasticsearchClient client = beanFactory.getBean(ES_SERVICE_BEAN_NAME, ElasticsearchClient.class);
-                client.close();
-                beanFactory.destroySingleton(ES_SERVICE_BEAN_NAME);
-            }
-            ElasticsearchClient client = assembly(config);
-            // 启动健康检查
+            newClient = assembly(config);
+
+            // 候选客户端验证通过前，持续保留当前客户端。
             if (config.isHealthCheckAtStartup()) {
-                boolean ping = client.ping().value();
+                boolean ping = newClient.ping().value();
                 if (!ping) {
                     throw new RuntimeException("ES连接健康检查失败，请检查ES服务与配置");
                 }
                 log.info("AbstractElasticsearchService.refreshClient  Elasticsearch 连接成功！");
             }
-            beanFactory.registerSingleton(ES_SERVICE_BEAN_NAME, client);
+
+            ElasticsearchClient oldClient = null;
+            if (beanFactory.containsSingleton(ES_SERVICE_BEAN_NAME)) {
+                oldClient = beanFactory.getBean(ES_SERVICE_BEAN_NAME, ElasticsearchClient.class);
+                beanFactory.destroySingleton(ES_SERVICE_BEAN_NAME);
+            }
+            beanFactory.registerSingleton(ES_SERVICE_BEAN_NAME, newClient);
+            newClient = null;
+
+            if (oldClient != null) {
+                oldClient.close();
+            }
         } finally {
+            if (newClient != null) {
+                newClient.close();
+            }
             REFRESH_LOCK.unlock();
         }
     }
