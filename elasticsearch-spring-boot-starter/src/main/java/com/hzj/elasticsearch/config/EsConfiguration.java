@@ -2,10 +2,12 @@ package com.hzj.elasticsearch.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
-import com.hzj.elasticsearch.core.document.ElasticsearchDocumentClientService;
-import com.hzj.elasticsearch.core.document.impl.DefaultElasticsearchDocumentClientService;
-import com.hzj.elasticsearch.core.index.ElasticsearchIndexClientService;
-import com.hzj.elasticsearch.core.index.impl.DefaultElasticsearchIndexClientService;
+import com.hzj.elasticsearch.core.complete.ElasticsearchService;
+import com.hzj.elasticsearch.core.complete.impl.DefaultElasticsearchService;
+import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
+import com.hzj.elasticsearch.core.document.impl.DefaultElasticsearchDocumentService;
+import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
+import com.hzj.elasticsearch.core.index.impl.DefaultElasticsearchIndexService;
 import com.hzj.elasticsearch.properties.ElasticsearchProperties;
 import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
 import com.hzj.elasticsearch.provider.es.impl.PropertiesElasticsearchConfigProvider;
@@ -56,11 +58,11 @@ public class EsConfiguration {
      * @return 索引级操作服务
      */
     @Bean
-    @ConditionalOnMissingBean(ElasticsearchIndexClientService.class)
-    public ElasticsearchIndexClientService elasticsearchIndexClientService(
+    @ConditionalOnMissingBean(ElasticsearchIndexService.class)
+    public ElasticsearchIndexService elasticsearchIndexClientService(
             ElasticsearchConfigProvider configProvider,
             ConfigurableListableBeanFactory beanFactory) {
-        return new DefaultElasticsearchIndexClientService(beanFactory, configProvider);
+        return new DefaultElasticsearchIndexService(beanFactory, configProvider);
     }
 
     /**
@@ -70,10 +72,26 @@ public class EsConfiguration {
      * @return 文档级操作服务
      */
     @Bean
-    @ConditionalOnMissingBean(ElasticsearchDocumentClientService.class)
-    public ElasticsearchDocumentClientService elasticsearchDocumentClientService(
+    @ConditionalOnMissingBean(ElasticsearchDocumentService.class)
+    public ElasticsearchDocumentService elasticsearchDocumentClientService(
             ElasticsearchConfigProvider configProvider,
             ConfigurableListableBeanFactory beanFactory) {
-        return new DefaultElasticsearchDocumentClientService(beanFactory, configProvider);
+        return new DefaultElasticsearchDocumentService(beanFactory, configProvider);
+    }
+
+    /**
+     * 注册聚合层操作服务。
+     *
+     * @param indexService 索引级操作服务
+     * @param documentService 文档级操作服务
+     * @return 聚合层操作服务。
+     */
+    @Bean
+    @ConditionalOnMissingBean(ElasticsearchService.class)
+    public ElasticsearchService elasticsearchCompleteService(
+            ElasticsearchIndexService indexService,
+            ElasticsearchDocumentService documentService
+            ) {
+        return new DefaultElasticsearchService(indexService, documentService);
     }
 }

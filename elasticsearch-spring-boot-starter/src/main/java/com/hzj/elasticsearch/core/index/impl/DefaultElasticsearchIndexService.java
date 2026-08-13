@@ -7,7 +7,7 @@ import co.elastic.clients.util.WithJsonObjectBuilderBase;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
-import com.hzj.elasticsearch.core.index.ElasticsearchIndexClientService;
+import com.hzj.elasticsearch.core.index.ElasticsearchIndexService;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexAliasRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexCreateRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexMappingRequest;
@@ -27,12 +27,12 @@ import java.util.Objects;
  *
  * <p>官方请求和响应只在实现内部使用，公开层统一使用 Starter 自定义对象。</p>
  */
-public class DefaultElasticsearchIndexClientService
+public class DefaultElasticsearchIndexService
     extends AbstractElasticsearchClientService
-        implements ElasticsearchIndexClientService {
+        implements ElasticsearchIndexService {
 
 
-    public DefaultElasticsearchIndexClientService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
+    public DefaultElasticsearchIndexService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
         super(beanFactory, configProvider);
     }
 

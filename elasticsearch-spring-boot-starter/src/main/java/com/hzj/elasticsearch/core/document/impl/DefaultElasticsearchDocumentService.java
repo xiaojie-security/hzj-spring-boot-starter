@@ -10,7 +10,7 @@ import co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem;
 import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import co.elastic.clients.json.JsonData;
 import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
-import com.hzj.elasticsearch.core.document.ElasticsearchDocumentClientService;
+import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
 import com.hzj.elasticsearch.core.document.entity.*;
 import com.hzj.elasticsearch.core.document.enums.*;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
@@ -33,10 +33,10 @@ import java.util.stream.Collectors;
  *
  * <p>ES 官方 Request 和 Response 只在该实现内部使用，公开层只返回 Starter 自定义响应。</p>
  */
-public class DefaultElasticsearchDocumentClientService extends AbstractElasticsearchClientService
-        implements ElasticsearchDocumentClientService {
+public class DefaultElasticsearchDocumentService extends AbstractElasticsearchClientService
+        implements ElasticsearchDocumentService {
 
-    public DefaultElasticsearchDocumentClientService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
+    public DefaultElasticsearchDocumentService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
         super(beanFactory, configProvider);
     }
 

@@ -14,7 +14,7 @@ import java.io.IOException;
  *
  * <p>ES8 中索引直接对应业务表，不存在 type 中间层；公开接口不暴露 ES 官方请求和响应类型。</p>
  */
-public interface ElasticsearchIndexClientService extends ElasticsearchClientService {
+public interface ElasticsearchIndexService extends ElasticsearchClientService {
 
     /**
      * 创建索引。
