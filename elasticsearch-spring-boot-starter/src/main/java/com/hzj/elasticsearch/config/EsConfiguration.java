@@ -1,7 +1,7 @@
 package com.hzj.elasticsearch.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientService;
+import com.hzj.elasticsearch.core.client.AbstractElasticsearchClientManager;
 import com.hzj.elasticsearch.core.complete.ElasticsearchService;
 import com.hzj.elasticsearch.core.complete.impl.DefaultElasticsearchService;
 import com.hzj.elasticsearch.core.document.ElasticsearchDocumentService;
@@ -45,10 +45,10 @@ public class EsConfiguration {
      * @param configProvider Elasticsearch 动态配置提供者
      * @return Elasticsearch 客户端
      */
-    @Bean(name = AbstractElasticsearchClientService.ES_SERVICE_BEAN_NAME)
-    @ConditionalOnMissingBean(name = AbstractElasticsearchClientService.ES_SERVICE_BEAN_NAME)
+    @Bean(name = AbstractElasticsearchClientManager.ES_SERVICE_BEAN_NAME)
+    @ConditionalOnMissingBean(name = AbstractElasticsearchClientManager.ES_SERVICE_BEAN_NAME)
     public ElasticsearchClient elasticsearchClient(ElasticsearchConfigProvider configProvider) {
-        return AbstractElasticsearchClientService.assembly(configProvider.getConfig());
+        return AbstractElasticsearchClientManager.assembly(configProvider.getConfig());
     }
 
     /**

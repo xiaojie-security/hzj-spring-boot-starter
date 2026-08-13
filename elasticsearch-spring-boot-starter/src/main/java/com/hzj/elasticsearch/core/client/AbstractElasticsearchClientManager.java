@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
-public abstract class AbstractElasticsearchClientService implements ElasticsearchClientService, ApplicationContextAware {
+public abstract class AbstractElasticsearchClientManager implements ElasticsearchClientService, ApplicationContextAware {
 
     @Setter
     protected ApplicationContext applicationContext;
@@ -50,9 +50,9 @@ public abstract class AbstractElasticsearchClientService implements Elasticsearc
 
     private static final ReentrantLock REFRESH_LOCK = new ReentrantLock(true);
 
-    protected static final Logger log = LoggerFactory.getLogger(AbstractElasticsearchClientService.class);
+    protected static final Logger log = LoggerFactory.getLogger(AbstractElasticsearchClientManager.class);
 
-    public AbstractElasticsearchClientService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
+    public AbstractElasticsearchClientManager(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
         this.beanFactory = (DefaultListableBeanFactory) beanFactory;
         this.configProvider = configProvider;
     }
