@@ -1,6 +1,6 @@
 package com.hzj.wechat.provider.wechat.transfer;
 
-import com.hzj.wechat.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferConfig;
 
 /**

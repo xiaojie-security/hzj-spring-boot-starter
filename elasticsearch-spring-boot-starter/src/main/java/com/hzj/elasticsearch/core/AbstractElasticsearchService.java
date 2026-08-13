@@ -9,7 +9,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.hzj.elasticsearch.provider.es.enums.ElasticsearchMode;
 import com.hzj.elasticsearch.provider.es.enums.ElasticsearchScheme;
 import com.hzj.elasticsearch.provider.es.entity.ElasticsearchConfig;
-import com.hzj.elasticsearch.utils.ConfigStringLoader;
+import com.hzj.common.utils.ConfigStringLoader;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;

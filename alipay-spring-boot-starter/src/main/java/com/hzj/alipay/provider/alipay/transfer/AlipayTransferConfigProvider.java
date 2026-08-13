@@ -1,6 +1,6 @@
 package com.hzj.alipay.provider.alipay.transfer;
 
-import com.hzj.alipay.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 import com.hzj.alipay.provider.alipay.transfer.entity.AlipayTransferConfig;
 
 /**

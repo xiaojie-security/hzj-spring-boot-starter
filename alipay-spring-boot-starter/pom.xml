@@ -13,8 +13,6 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spring.boot.starter.version>3.2.4</spring.boot.starter.version>
-    <hutool-all.version>5.8.24</hutool-all.version>
-    <lombok.version>1.18.42</lombok.version>
     <alipay-sdk-java.version>4.40.771.ALL</alipay-sdk-java.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
   </properties>
@@ -33,15 +31,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>cn.hutool</groupId>
-      <artifactId>hutool-all</artifactId>
-      <version>${hutool-all.version}</version>
+      <groupId>com.hzj.common</groupId>
+      <artifactId>hzj-common</artifactId>
+      <version>1.0.0</version>
     </dependency>
 
     <dependency>

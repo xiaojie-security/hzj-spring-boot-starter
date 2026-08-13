@@ -1,22 +1,21 @@
-package com.hzj.elasticsearch.utils;
+package com.hzj.common.utils;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.util.ResourceUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 /**
@@ -86,7 +85,7 @@ public final class ConfigStringLoader {
                 }
             }
         } catch (Exception e) {
-            log.debug("ConfigStringLoader.getAbsolutePath 无法获取绝对路径，source={}", trimmedSource, e);
+//            log.debug("ConfigStringLoader.getAbsolutePath 无法获取绝对路径，source={}", trimmedSource, e);
         }
         return Optional.empty();
     }
@@ -110,7 +109,7 @@ public final class ConfigStringLoader {
      * @return true 表示是文件路径
      */
     public static boolean isFilePathSource(String source) {
-        if (!StringUtils.hasText(source)) {
+        if (StrUtil.isEmpty(source)) {
             return false;
         }
         String trimmedSource = source.trim();
@@ -126,7 +125,7 @@ public final class ConfigStringLoader {
      * @return 路径类型
      */
     public static PathType getPathType(String source) {
-        if (!StringUtils.hasText(source)) {
+        if (StrUtil.isEmpty(source)) {
             return PathType.DIRECT_TEXT;
         }
         String trimmedSource = source.trim();
@@ -154,7 +153,7 @@ public final class ConfigStringLoader {
      * @return true 表示文件存在
      */
     public static boolean exists(String source) {
-        if (!StringUtils.hasText(source)) {
+        if (StrUtil.isEmpty(source)) {
             return false;
         }
         String trimmedSource = source.trim();
@@ -178,7 +177,7 @@ public final class ConfigStringLoader {
 
 
     private static void validateSource(String source) {
-        if (!StringUtils.hasText(source)) {
+        if (StrUtil.isEmpty(source)) {
             throw new IllegalArgumentException("配置项不能为空");
         }
     }

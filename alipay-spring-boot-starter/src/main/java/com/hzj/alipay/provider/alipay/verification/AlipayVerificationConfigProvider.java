@@ -1,6 +1,6 @@
 package com.hzj.alipay.provider.alipay.verification;
 
-import com.hzj.alipay.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 import com.hzj.alipay.provider.alipay.verification.entity.AlipayVerificationConfig;
 
 /**

@@ -26,8 +26,6 @@
         <sts20150401.version>1.1.6</sts20150401.version>
         <alipay-sdk-java.version>4.40.771.ALL</alipay-sdk-java.version>
         <dysmsapi20170525.version>4.5.1</dysmsapi20170525.version>
-        <hutool-all.version>5.8.24</hutool-all.version>
-        <lombok.version>1.18.42</lombok.version>
     </properties>
 
     <dependencies>
@@ -45,15 +43,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>${hutool-all.version}</version>
+            <groupId>com.hzj.common</groupId>
+            <artifactId>hzj-common</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>

@@ -1,6 +1,6 @@
 package com.hzj.alipay.provider.alipay.oauth2;
 
-import com.hzj.alipay.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 import com.hzj.alipay.provider.alipay.oauth2.entity.AlipayOAuth2Config;
 
 /**

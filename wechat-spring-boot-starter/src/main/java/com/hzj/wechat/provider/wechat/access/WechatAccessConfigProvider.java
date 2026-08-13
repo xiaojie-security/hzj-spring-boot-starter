@@ -1,6 +1,6 @@
 package com.hzj.wechat.provider.wechat.access;
 
-import com.hzj.wechat.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 import com.hzj.wechat.provider.wechat.access.entity.WechatAccessConfig;
 
 

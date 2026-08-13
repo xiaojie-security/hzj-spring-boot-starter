@@ -5,7 +5,7 @@ import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayRequest;
 import com.alipay.api.AlipayResponse;
 import com.alipay.api.DefaultAlipayClient;
-import com.hzj.alipay.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 import com.hzj.alipay.provider.alipay.entity.AlipayBaseConfig;
 
 public abstract class AbstractAlipayService<T extends AlipayBaseConfig> {

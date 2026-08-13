@@ -1,7 +1,7 @@
 package com.hzj.aliyun.provider.aliyun.global;
 
 import com.hzj.aliyun.provider.aliyun.global.entity.AliyunGlobalConfig;
-import com.hzj.aliyun.provider.ConfigProvider;
+import com.hzj.common.provider.ConfigProvider;
 
 /**
  * 阿里云全局凭证配置提供者。
