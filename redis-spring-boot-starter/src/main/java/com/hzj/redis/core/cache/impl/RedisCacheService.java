@@ -92,6 +92,7 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
      * @return 缓存数据或加载结果，数据不存在时返回 null
      * @throws InterruptedException 等待分布式锁过程中线程被中断
      */
+    @Override
     public <T> T getOrLoad(String key, CacheLoader<T> loader, long cacheTtl, TimeUnit timeUnit)
             throws InterruptedException {
         return getOrLoadWithBreakdownProtection(key, loader, cacheTtl, cacheTtl, timeUnit);
@@ -108,6 +109,7 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
      * @param <T> 数据类型
      * @return 缓存数据或加载结果，数据不存在时返回 null
      */
+    @Override
     public <T> T getOrLoadWithPenetrationProtection(String key, CacheLoader<T> loader,
                                                      long cacheTtl, long nullCacheTtl, TimeUnit timeUnit) {
         validateArguments(key, loader);
@@ -134,6 +136,7 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
      * @param <T> 数据类型
      * @return 缓存数据或加载结果，数据不存在时返回 null
      */
+    @Override
     public <T> T getOrLoadWithPenetrationProtection(String key, CacheLoader<T> loader,
                                                      long cacheTtl, TimeUnit timeUnit) {
         return getOrLoadWithPenetrationProtection(key, loader, cacheTtl, cacheTtl, timeUnit);
@@ -151,6 +154,7 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
      * @return 缓存数据或加载结果，数据不存在时返回 null
      * @throws InterruptedException 等待分布式锁过程中线程被中断
      */
+    @Override
     public <T> T getOrLoadWithBreakdownProtection(String key, CacheLoader<T> loader,
                                                    long cacheTtl, long nullCacheTtl, TimeUnit timeUnit)
             throws InterruptedException {
@@ -199,6 +203,7 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
      * @return 缓存数据或加载结果，数据不存在时返回 null
      * @throws InterruptedException 等待分布式锁过程中线程被中断
      */
+    @Override
     public <T> T getOrLoadWithBreakdownProtection(String key, CacheLoader<T> loader,
                                                    long cacheTtl, TimeUnit timeUnit)
             throws InterruptedException {
