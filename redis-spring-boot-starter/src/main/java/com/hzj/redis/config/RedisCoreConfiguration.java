@@ -2,6 +2,7 @@ package com.hzj.redis.config;
 
 import com.hzj.redis.provider.connection.RedisConnectionFactoryProvider;
 import com.hzj.redis.provider.connection.impl.LettuceRedisConnectionFactoryProvider;
+import com.hzj.redis.core.cache.RedisCacheService;
 import com.hzj.redis.core.lock.RedisLockService;
 import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
@@ -16,7 +17,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -33,9 +33,11 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisCoreConfiguration {
 
 
-    @Bean
-    public RedisTemplate<String,Object> redisTemplate(RedisConnectionFactoryProvider connectionFactoryProvider){
-        RedisTemplate<String,Object> redisTemplate = new RedisTemplate<>();
+    @Bean(name = {"redisTemplate", "redisCacheService"})
+    @ConditionalOnMissingBean(RedisCacheService.class)
+    public RedisCacheService redisTemplate(RedisConnectionFactoryProvider connectionFactoryProvider,
+                                           RedisLockService redisLockService){
+        RedisCacheService redisTemplate = new RedisCacheService(redisLockService);
         redisTemplate.setConnectionFactory(connectionFactoryProvider.getRedisConnectionFactory());
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
         redisTemplate.setKeySerializer(stringRedisSerializer);
