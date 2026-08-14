@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +22,8 @@ public class RedisCacheService implements RedisOperations<String, Object> {
 
     private static final String EMPTY_PLACEHOLDER = "::NULL_PLACEHOLDER::";
     private static final String BREAKDOWN_LOCK_PREFIX = "redis:cache:breakdown:";
+    private static final String ONCE_CREDENTIAL_PREFIX = "redis:credential:";
+    private static final SecureRandom CREDENTIAL_RANDOM = new SecureRandom();
 
     private final RedisLockService lockService;
 
@@ -28,7 +32,48 @@ public class RedisCacheService implements RedisOperations<String, Object> {
 
     public RedisCacheService(RedisLockService lockService, RedisTemplate<String,Object> redisTemplate) {
         this.lockService = Objects.requireNonNull(lockService, "RedisLockService 不能为空");
-        this.redisTemplate = redisTemplate;
+        this.redisTemplate = Objects.requireNonNull(redisTemplate, "RedisTemplate 不能为空");
+    }
+
+    /**
+     * 获取一次性凭证。
+     * <p>
+     * 凭证只在指定有效期内有效，消费成功后对应 Redis 记录会被立即删除。
+     * {@code key} 用于隔离不同业务场景，例如用户编号、订单编号或业务类型。
+     * </p>
+     *
+     * @param key 业务隔离键
+     * @param ttl 凭证有效时间
+     * @param timeUnit 时间单位
+     * @return 一次性凭证
+     */
+    public String getOnceCredential(String key, long ttl, TimeUnit timeUnit) {
+        validateCredentialArguments(key, ttl, timeUnit);
+        byte[] randomBytes = new byte[32];
+        CREDENTIAL_RANDOM.nextBytes(randomBytes);
+        String credential = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        redisTemplate.opsForValue().set(buildCredentialKey(key, credential), Boolean.TRUE, ttl, timeUnit);
+        return credential;
+    }
+
+    /**
+     * 消费一次性凭证。
+     * <p>
+     * Redis 的删除操作本身具备原子性，因此同一凭证并发消费时只有一个请求能够删除记录并返回成功。
+     * </p>
+     *
+     * @param key 业务隔离键
+     * @param credential 一次性凭证
+     * @return 是否消费成功；凭证不存在、已过期或已消费时返回 false
+     */
+    public boolean consumeOnceCredential(String key, String credential) {
+        if (!org.springframework.util.StringUtils.hasText(key)) {
+            throw new IllegalArgumentException("凭证业务键不能为空");
+        }
+        if (!org.springframework.util.StringUtils.hasText(credential)) {
+            throw new IllegalArgumentException("一次性凭证不能为空");
+        }
+        return Boolean.TRUE.equals(redisTemplate.delete(buildCredentialKey(key, credential)));
     }
 
     /**
@@ -183,6 +228,18 @@ public class RedisCacheService implements RedisOperations<String, Object> {
         if (ttl <= 0) {
             throw new IllegalArgumentException(fieldName + " 必须大于0");
         }
+    }
+
+    private void validateCredentialArguments(String key, long ttl, TimeUnit timeUnit) {
+        if (!org.springframework.util.StringUtils.hasText(key)) {
+            throw new IllegalArgumentException("凭证业务键不能为空");
+        }
+        validateTtl(ttl, "ttl");
+        Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
+    }
+
+    private String buildCredentialKey(String key, String credential) {
+        return ONCE_CREDENTIAL_PREFIX + key + ":" + credential;
     }
 
     private record CacheReadResult<T>(boolean hit, T value) {
