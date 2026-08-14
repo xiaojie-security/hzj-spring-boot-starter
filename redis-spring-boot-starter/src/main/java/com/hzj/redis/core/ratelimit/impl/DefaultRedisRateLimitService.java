@@ -1,11 +1,12 @@
 package com.hzj.redis.core.ratelimit.impl;
 
+import com.hzj.redis.core.ratelimit.RedisIpRateLimiter;
 import com.hzj.redis.core.ratelimit.RedisRateLimitService;
+import com.hzj.redis.core.ratelimit.RedisUserIdRateLimiter;
 import com.hzj.redis.core.ratelimit.entity.RateLimitResult;
 import com.hzj.redis.provider.ratelimit.RedisRateLimitConfigProvider;
 import com.hzj.redis.provider.ratelimit.entity.RedisRateLimitConfig;
 import org.redisson.api.RedissonClient;
-import org.springframework.util.StringUtils;
 
 import java.util.Objects;
 
@@ -14,15 +15,15 @@ import java.util.Objects;
  */
 public class DefaultRedisRateLimitService implements RedisRateLimitService {
 
-    private static final String USER_KEY_PREFIX = "user:";
-
-    private static final String IP_KEY_PREFIX = "ip:";
-
     private final RedisRateLimitConfigProvider configProvider;
 
     private final FixedWindowRedisRateLimiter fixedWindowRateLimiter;
 
     private final SlidingWindowRedisRateLimiter slidingWindowRateLimiter;
+
+    private final RedisIpRateLimiter ipRateLimiter;
+
+    private final RedisUserIdRateLimiter userIdRateLimiter;
 
     /**
      * 创建Redis统一限流服务。
@@ -32,9 +33,29 @@ public class DefaultRedisRateLimitService implements RedisRateLimitService {
      */
     public DefaultRedisRateLimitService(RedissonClient client,
                                         RedisRateLimitConfigProvider configProvider) {
+        this(client,
+                configProvider,
+                new DefaultRedisIpRateLimiter(client, configProvider),
+                new DefaultRedisUserIdRateLimiter(client, configProvider));
+    }
+
+    /**
+     * 创建Redis统一限流服务。
+     *
+     * @param client Redisson客户端
+     * @param configProvider 限流配置提供者
+     * @param ipRateLimiter IP限流器
+     * @param userIdRateLimiter 用户ID限流器
+     */
+    public DefaultRedisRateLimitService(RedissonClient client,
+                                        RedisRateLimitConfigProvider configProvider,
+                                        RedisIpRateLimiter ipRateLimiter,
+                                        RedisUserIdRateLimiter userIdRateLimiter) {
         this.configProvider = Objects.requireNonNull(configProvider, "RedisRateLimitConfigProvider 不能为空");
         this.fixedWindowRateLimiter = new FixedWindowRedisRateLimiter(client, configProvider);
         this.slidingWindowRateLimiter = new SlidingWindowRedisRateLimiter(client, configProvider);
+        this.ipRateLimiter = Objects.requireNonNull(ipRateLimiter, "RedisIpRateLimiter 不能为空");
+        this.userIdRateLimiter = Objects.requireNonNull(userIdRateLimiter, "RedisUserIdRateLimiter 不能为空");
     }
 
     /**
@@ -84,8 +105,7 @@ public class DefaultRedisRateLimitService implements RedisRateLimitService {
      */
     @Override
     public RateLimitResult tryAcquireByUserId(String userId, long permits) {
-        validateDimension(userId, "用户ID");
-        return tryAcquire(USER_KEY_PREFIX + userId.trim(), permits);
+        return userIdRateLimiter.tryAcquire(userId, permits);
     }
 
     /**
@@ -108,8 +128,7 @@ public class DefaultRedisRateLimitService implements RedisRateLimitService {
      */
     @Override
     public RateLimitResult tryAcquireByIp(String ipAddress, long permits) {
-        validateDimension(ipAddress, "IP地址");
-        return tryAcquire(IP_KEY_PREFIX + ipAddress.trim(), permits);
+        return ipRateLimiter.tryAcquire(ipAddress, permits);
     }
 
     private RedisRateLimitConfig requireConfig() {
@@ -121,9 +140,4 @@ public class DefaultRedisRateLimitService implements RedisRateLimitService {
         return config;
     }
 
-    private void validateDimension(String value, String name) {
-        if (!StringUtils.hasText(value)) {
-            throw new IllegalArgumentException(name + "不能为空");
-        }
-    }
 }

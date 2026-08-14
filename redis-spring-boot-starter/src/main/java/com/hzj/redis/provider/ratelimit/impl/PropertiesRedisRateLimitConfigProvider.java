@@ -22,6 +22,7 @@ public class PropertiesRedisRateLimitConfigProvider implements RedisRateLimitCon
     public RedisRateLimitConfig getConfig() {
         RedisRateLimitConfig config = new RedisRateLimitConfig();
         config.setAlgorithm(properties.getAlgorithm());
+        config.setEnabledDimensions(properties.getEnabledDimensions());
         config.setLimit(properties.getLimit());
         config.setWindow(properties.getWindow());
         config.setTimeUnit(properties.getTimeUnit());

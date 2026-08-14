@@ -4,10 +4,17 @@ import com.hzj.redis.core.cache.impl.RedisCacheService;
 import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.core.lock.RedisLockService;
 import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
-import com.hzj.redis.core.ratelimit.RedisRateLimitService;
-import com.hzj.redis.core.ratelimit.impl.DefaultRedisRateLimitService;
 import com.hzj.redis.core.queue.RedisDelayQueueService;
 import com.hzj.redis.core.queue.impl.DefaultRedisDelayQueueService;
+import com.hzj.redis.core.ratelimit.RedisDimensionRateLimiter;
+import com.hzj.redis.core.ratelimit.RedisIpRateLimiter;
+import com.hzj.redis.core.ratelimit.RedisRateLimitManager;
+import com.hzj.redis.core.ratelimit.RedisRateLimitService;
+import com.hzj.redis.core.ratelimit.RedisUserIdRateLimiter;
+import com.hzj.redis.core.ratelimit.impl.DefaultRedisIpRateLimiter;
+import com.hzj.redis.core.ratelimit.impl.DefaultRedisRateLimitManager;
+import com.hzj.redis.core.ratelimit.impl.DefaultRedisRateLimitService;
+import com.hzj.redis.core.ratelimit.impl.DefaultRedisUserIdRateLimiter;
 import com.hzj.redis.provider.connection.RedisConnectionFactoryProvider;
 import com.hzj.redis.provider.connection.impl.LettuceRedisConnectionFactoryProvider;
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
@@ -28,6 +35,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.util.List;
 
 
 /**
@@ -153,6 +162,42 @@ public class RedisCoreConfiguration {
     }
 
     /**
+     * 注册基于IP地址的限流器。
+     *
+     * @param redissonClient Redisson客户端
+     * @param configProvider Redis限流配置提供者
+     * @return IP限流器
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisIpRateLimiter.class)
+    @ConditionalOnBean(RedissonClient.class)
+    @ConditionalOnProperty(prefix = "spring.redis.rate-limit", name = "enabled",
+            havingValue = "true", matchIfMissing = true)
+    public RedisIpRateLimiter redisIpRateLimiter(
+            RedissonClient redissonClient,
+            RedisRateLimitConfigProvider configProvider) {
+        return new DefaultRedisIpRateLimiter(redissonClient, configProvider);
+    }
+
+    /**
+     * 注册基于用户ID的限流器。
+     *
+     * @param redissonClient Redisson客户端
+     * @param configProvider Redis限流配置提供者
+     * @return 用户ID限流器
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisUserIdRateLimiter.class)
+    @ConditionalOnBean(RedissonClient.class)
+    @ConditionalOnProperty(prefix = "spring.redis.rate-limit", name = "enabled",
+            havingValue = "true", matchIfMissing = true)
+    public RedisUserIdRateLimiter redisUserIdRateLimiter(
+            RedissonClient redissonClient,
+            RedisRateLimitConfigProvider configProvider) {
+        return new DefaultRedisUserIdRateLimiter(redissonClient, configProvider);
+    }
+
+    /**
      * 注册 Redis 统一限流服务。
      * <p>限流服务复用 RedissonClient，并根据动态配置选择固定窗口或滑动窗口算法。</p>
      *
@@ -167,8 +212,28 @@ public class RedisCoreConfiguration {
             havingValue = "true", matchIfMissing = true)
     public RedisRateLimitService redisRateLimitService(
             RedissonClient redissonClient,
-            RedisRateLimitConfigProvider configProvider) {
-        return new DefaultRedisRateLimitService(redissonClient, configProvider);
+            RedisRateLimitConfigProvider configProvider,
+            RedisIpRateLimiter ipRateLimiter,
+            RedisUserIdRateLimiter userIdRateLimiter) {
+        return new DefaultRedisRateLimitService(
+                redissonClient, configProvider, ipRateLimiter, userIdRateLimiter);
+    }
+
+    /**
+     * 注册 Redis 批量限流管理器。
+     * <p>Spring 会自动注入所有已注册的维度限流器，管理器负责统一遍历执行。</p>
+     *
+     * @param rateLimiters Spring容器中的维度限流器集合
+     * @return Redis批量限流管理器
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisRateLimitManager.class)
+    @ConditionalOnBean(RedissonClient.class)
+    @ConditionalOnProperty(prefix = "spring.redis.rate-limit", name = "enabled",
+            havingValue = "true", matchIfMissing = true)
+    public RedisRateLimitManager redisRateLimitManager(
+            List<RedisDimensionRateLimiter> rateLimiters) {
+        return new DefaultRedisRateLimitManager(rateLimiters);
     }
 
     /**
