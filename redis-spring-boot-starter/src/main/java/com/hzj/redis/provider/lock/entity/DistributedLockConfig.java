@@ -4,6 +4,10 @@ import lombok.Data;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Redisson分布式锁全局配置
+ * 支持部署模式：单机 / 主从 / 哨兵 / Redis集群
+ */
 @Data
 public class DistributedLockConfig {
 

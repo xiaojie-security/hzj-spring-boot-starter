@@ -1,6 +1,7 @@
 package com.hzj.redis.core.lock;
 
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
+import com.hzj.redis.provider.lock.entity.DistributedLockConfig;
 import lombok.Setter;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -9,6 +10,9 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+
+import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractRedisLockClientManager implements RedisLockService, ApplicationContextAware {
 
@@ -21,6 +25,7 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     public static final String REDISSON_SERVICE_BEAN_NAME = "RedissonClient";
 
+    private static final ReentrantLock REFRESH_LOCK = new ReentrantLock(true);
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractRedisLockClientManager.class);
 
@@ -31,11 +36,20 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
     }
 
 
-    protected RedissonClient getClient(){
+    public RedissonClient getClient(){
         if (applicationContext == null) {
             log.error("AbstractRedisLockClientManager.getClient ApplicationContext容器不存在");
             throw new RuntimeException("获取客户端失败");
         }
         return applicationContext.getBean(REDISSON_SERVICE_BEAN_NAME, RedissonClient.class);
+    }
+
+    @Override
+    public void refreshClient() throws IOException {
+
+    }
+
+    public static RedissonClient assembly(DistributedLockConfig config) {
+
     }
 }
