@@ -4,11 +4,16 @@ import com.hzj.redis.core.cache.impl.RedisCacheService;
 import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.core.lock.RedisLockService;
 import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
+import com.hzj.redis.core.ratelimit.RedisRateLimitService;
+import com.hzj.redis.core.ratelimit.impl.DefaultRedisRateLimitService;
 import com.hzj.redis.core.queue.RedisDelayQueueService;
 import com.hzj.redis.core.queue.impl.DefaultRedisDelayQueueService;
 import com.hzj.redis.provider.connection.RedisConnectionFactoryProvider;
 import com.hzj.redis.provider.connection.impl.LettuceRedisConnectionFactoryProvider;
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
+import com.hzj.redis.provider.ratelimit.RedisRateLimitConfigProvider;
+import com.hzj.redis.provider.ratelimit.impl.PropertiesRedisRateLimitConfigProvider;
+import com.hzj.redis.provider.ratelimit.properties.RedisRateLimitProperties;
 import com.hzj.redis.provider.redis.RedisConfigProvider;
 import com.hzj.redis.provider.redis.impl.PropertiesRedisConfigProvider;
 import org.redisson.api.RedissonClient;
@@ -16,6 +21,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +39,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * </p>
  */
 @AutoConfiguration
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class, RedisRateLimitProperties.class})
 public class RedisCoreConfiguration {
 
     /**
@@ -132,6 +138,37 @@ public class RedisCoreConfiguration {
             DistributedLockConfigProvider distributedLockConfigProvider,
             RedisConfigProvider redisConfigProvider) {
         return new DefaultRedisLockService(beanFactory, distributedLockConfigProvider, redisConfigProvider);
+    }
+
+    /**
+     * 注册基于 Spring Boot Properties 的默认 Redis 限流配置提供者。
+     *
+     * @param properties Redis限流属性
+     * @return Redis限流配置提供者
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisRateLimitConfigProvider.class)
+    public RedisRateLimitConfigProvider redisRateLimitConfigProvider(RedisRateLimitProperties properties) {
+        return new PropertiesRedisRateLimitConfigProvider(properties);
+    }
+
+    /**
+     * 注册 Redis 统一限流服务。
+     * <p>限流服务复用 RedissonClient，并根据动态配置选择固定窗口或滑动窗口算法。</p>
+     *
+     * @param redissonClient Redisson客户端
+     * @param configProvider Redis限流配置提供者
+     * @return Redis限流服务
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisRateLimitService.class)
+    @ConditionalOnBean(RedissonClient.class)
+    @ConditionalOnProperty(prefix = "spring.redis.rate-limit", name = "enabled",
+            havingValue = "true", matchIfMissing = true)
+    public RedisRateLimitService redisRateLimitService(
+            RedissonClient redissonClient,
+            RedisRateLimitConfigProvider configProvider) {
+        return new DefaultRedisRateLimitService(redissonClient, configProvider);
     }
 
     /**
