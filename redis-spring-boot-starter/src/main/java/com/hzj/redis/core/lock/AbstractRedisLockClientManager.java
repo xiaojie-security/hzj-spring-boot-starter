@@ -1,8 +1,17 @@
 package com.hzj.redis.core.lock;
 
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
+import com.hzj.redis.provider.lock.entity.DistributedLockConfig;
+import com.hzj.redis.provider.redis.RedisConfigProvider;
+import com.hzj.redis.provider.redis.entity.RedisConfig;
 import lombok.Setter;
 import org.redisson.api.RedissonClient;
+import org.redisson.config.ClusterServersConfig;
+import org.redisson.config.Config;
+import org.redisson.config.ReadMode;
+import org.redisson.config.SentinelServersConfig;
+import org.redisson.config.SingleServerConfig;
+import org.redisson.config.SubscriptionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -20,6 +29,8 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     protected final DistributedLockConfigProvider configProvider;
 
+    protected final RedisConfigProvider redisConfigProvider;
+
     protected final DefaultListableBeanFactory beanFactory;
 
     public static final String REDISSON_SERVICE_BEAN_NAME = "RedissonClient";
@@ -29,9 +40,12 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
     protected static final Logger log = LoggerFactory.getLogger(AbstractRedisLockClientManager.class);
 
 
-    public AbstractRedisLockClientManager(ConfigurableListableBeanFactory beanFactory, DistributedLockConfigProvider configProvider) {
+    public AbstractRedisLockClientManager(ConfigurableListableBeanFactory beanFactory,
+                                         DistributedLockConfigProvider configProvider,
+                                         RedisConfigProvider redisConfigProvider) {
         this.beanFactory = (DefaultListableBeanFactory) beanFactory;
         this.configProvider = configProvider;
+        this.redisConfigProvider = redisConfigProvider;
     }
 
 
@@ -45,10 +59,149 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     @Override
     public void refreshClient() throws IOException {
-
+        if (!REFRESH_LOCK.tryLock()) {
+            throw new IllegalStateException("正在执行 Redisson 客户端刷新操作，请稍后重试");
+        }
+        RedissonClient newClient = null;
+        try {
+            newClient = assembly(configProvider.getConfig(), redisConfigProvider.getConfig());
+            RedissonClient oldClient = null;
+            if (beanFactory.containsSingleton(REDISSON_SERVICE_BEAN_NAME)) {
+                oldClient = beanFactory.getBean(REDISSON_SERVICE_BEAN_NAME, RedissonClient.class);
+                beanFactory.destroySingleton(REDISSON_SERVICE_BEAN_NAME);
+            }
+            beanFactory.registerSingleton(REDISSON_SERVICE_BEAN_NAME, newClient);
+            newClient = null;
+            if (oldClient != null) {
+                oldClient.shutdown();
+            }
+        } finally {
+            if (newClient != null) {
+                newClient.shutdown();
+            }
+            REFRESH_LOCK.unlock();
+        }
     }
 
-//    public static RedissonClient assembly(DistributedLockConfig config) {
-//
-//    }
+    public static RedissonClient assembly(DistributedLockConfig distributedLockConfig, RedisConfig redisConfig) {
+        if (distributedLockConfig == null) {
+            throw new IllegalArgumentException("分布式锁配置不能为空");
+        }
+        if (redisConfig == null) {
+            throw new IllegalArgumentException("Redis 配置不能为空");
+        }
+        if (redisConfig.getDeployMode() == null) {
+            throw new IllegalArgumentException("Redis 部署模式不能为空");
+        }
+
+        Config config = new Config();
+        config.setLockWatchdogTimeout(distributedLockConfig.getLockWatchdogTimeout());
+        switch (redisConfig.getDeployMode()) {
+            case SINGLE -> configureSingle(config.useSingleServer(), redisConfig);
+            case SENTINEL -> configureSentinel(config.useSentinelServers(), redisConfig);
+            case CLUSTER -> configureCluster(config.useClusterServers(), redisConfig);
+            default -> throw new IllegalArgumentException("不支持的 Redis 部署模式: " + redisConfig.getDeployMode());
+        }
+        return org.redisson.Redisson.create(config);
+    }
+
+    private static void configureSingle(SingleServerConfig serverConfig, RedisConfig redisConfig) {
+        if (redisConfig.getSingle() == null || redisConfig.getSingle().getAddress() == null) {
+            throw new IllegalArgumentException("Redis 单机模式地址不能为空");
+        }
+        serverConfig.setAddress(toAddress(redisConfig.getSingle().getAddress().getHost(),
+                redisConfig.getSingle().getAddress().getPort(), redisConfig.isSsl()));
+        serverConfig.setDatabase(redisConfig.getDatabase());
+        serverConfig.setTimeout(toInt(redisConfig.getTimeoutMs(), "timeoutMs"));
+        serverConfig.setConnectTimeout(toInt(redisConfig.getConnectTimeoutMs(), "connectTimeoutMs"));
+        serverConfig.setIdleConnectionTimeout(toInt(redisConfig.getIdleTimeoutMs(), "idleTimeoutMs"));
+        serverConfig.setConnectionMinimumIdleSize(redisConfig.getIdleConnectionSize());
+        serverConfig.setConnectionPoolSize(redisConfig.getMaxConnectionSize());
+        setPassword(serverConfig, redisConfig.getPassword());
+    }
+
+    private static void configureSentinel(SentinelServersConfig serverConfig, RedisConfig redisConfig) {
+        if (redisConfig.getSentinel() == null) {
+            throw new IllegalArgumentException("Redis 哨兵模式配置不能为空");
+        }
+        if (!org.springframework.util.StringUtils.hasText(redisConfig.getSentinel().getMasterName())) {
+            throw new IllegalArgumentException("Redis 哨兵主节点名称不能为空");
+        }
+        serverConfig.setMasterName(redisConfig.getSentinel().getMasterName());
+        if (redisConfig.getSentinel().getSentinels() == null || redisConfig.getSentinel().getSentinels().isEmpty()) {
+            throw new IllegalArgumentException("Redis 哨兵节点不能为空");
+        }
+        redisConfig.getSentinel().getSentinels().forEach(node -> serverConfig.addSentinelAddress(
+                toAddress(node.getHost(), node.getPort(), redisConfig.isSsl())));
+        serverConfig.setReadMode(defaultValue(redisConfig.getSentinel().getReadMode(), ReadMode.MASTER));
+        serverConfig.setSubscriptionMode(defaultValue(redisConfig.getSentinel().getSubscriptionMode(), SubscriptionMode.MASTER));
+        serverConfig.setDatabase(redisConfig.getDatabase());
+        serverConfig.setTimeout(toInt(redisConfig.getTimeoutMs(), "timeoutMs"));
+        serverConfig.setConnectTimeout(toInt(redisConfig.getConnectTimeoutMs(), "connectTimeoutMs"));
+        serverConfig.setIdleConnectionTimeout(toInt(redisConfig.getIdleTimeoutMs(), "idleTimeoutMs"));
+        serverConfig.setMasterConnectionMinimumIdleSize(redisConfig.getIdleConnectionSize());
+        serverConfig.setSlaveConnectionMinimumIdleSize(redisConfig.getIdleConnectionSize());
+        serverConfig.setMasterConnectionPoolSize(redisConfig.getMaxConnectionSize());
+        serverConfig.setSlaveConnectionPoolSize(redisConfig.getMaxConnectionSize());
+        setPassword(serverConfig, redisConfig.getPassword());
+        if (org.springframework.util.StringUtils.hasText(redisConfig.getSentinel().getSentinelPassword())) {
+            serverConfig.setSentinelPassword(redisConfig.getSentinel().getSentinelPassword());
+        }
+    }
+
+    private static void configureCluster(ClusterServersConfig serverConfig, RedisConfig redisConfig) {
+        if (redisConfig.getCluster() == null || redisConfig.getCluster().getNodes() == null
+                || redisConfig.getCluster().getNodes().isEmpty()) {
+            throw new IllegalArgumentException("Redis 集群节点不能为空");
+        }
+        redisConfig.getCluster().getNodes().forEach(node -> serverConfig.addNodeAddress(
+                toAddress(node.getHost(), node.getPort(), redisConfig.isSsl())));
+        serverConfig.setReadMode(defaultValue(redisConfig.getCluster().getReadMode(), ReadMode.MASTER));
+        serverConfig.setSubscriptionMode(defaultValue(redisConfig.getCluster().getSubscriptionMode(), SubscriptionMode.MASTER));
+        serverConfig.setTimeout(toInt(redisConfig.getTimeoutMs(), "timeoutMs"));
+        serverConfig.setConnectTimeout(toInt(redisConfig.getConnectTimeoutMs(), "connectTimeoutMs"));
+        serverConfig.setIdleConnectionTimeout(toInt(redisConfig.getIdleTimeoutMs(), "idleTimeoutMs"));
+        serverConfig.setMasterConnectionMinimumIdleSize(redisConfig.getIdleConnectionSize());
+        serverConfig.setSlaveConnectionMinimumIdleSize(redisConfig.getIdleConnectionSize());
+        serverConfig.setMasterConnectionPoolSize(redisConfig.getMaxConnectionSize());
+        serverConfig.setSlaveConnectionPoolSize(redisConfig.getMaxConnectionSize());
+        serverConfig.setRetryAttempts(redisConfig.getCluster().getMaxRedirects());
+        setPassword(serverConfig, redisConfig.getPassword());
+    }
+
+    private static void setPassword(SingleServerConfig config, String password) {
+        if (org.springframework.util.StringUtils.hasText(password)) {
+            config.setPassword(password);
+        }
+    }
+
+    private static void setPassword(SentinelServersConfig config, String password) {
+        if (org.springframework.util.StringUtils.hasText(password)) {
+            config.setPassword(password);
+        }
+    }
+
+    private static void setPassword(ClusterServersConfig config, String password) {
+        if (org.springframework.util.StringUtils.hasText(password)) {
+            config.setPassword(password);
+        }
+    }
+
+    private static String toAddress(String host, Integer port, boolean ssl) {
+        if (!org.springframework.util.StringUtils.hasText(host) || port == null || port <= 0) {
+            throw new IllegalArgumentException("Redis 节点地址不合法");
+        }
+        return (ssl ? "rediss://" : "redis://") + host + ":" + port;
+    }
+
+    private static int toInt(long value, String fieldName) {
+        if (value < 0 || value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(fieldName + " 超出有效范围: " + value);
+        }
+        return (int) value;
+    }
+
+    private static <T> T defaultValue(T value, T defaultValue) {
+        return value == null ? defaultValue : value;
+    }
 }
