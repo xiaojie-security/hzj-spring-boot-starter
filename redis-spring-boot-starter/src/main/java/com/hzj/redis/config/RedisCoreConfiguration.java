@@ -4,6 +4,8 @@ import com.hzj.redis.core.cache.impl.RedisCacheService;
 import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.core.lock.RedisLockService;
 import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
+import com.hzj.redis.core.queue.RedisDelayQueueService;
+import com.hzj.redis.core.queue.impl.DefaultRedisDelayQueueService;
 import com.hzj.redis.provider.connection.RedisConnectionFactoryProvider;
 import com.hzj.redis.provider.connection.impl.LettuceRedisConnectionFactoryProvider;
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
@@ -130,6 +132,22 @@ public class RedisCoreConfiguration {
             DistributedLockConfigProvider distributedLockConfigProvider,
             RedisConfigProvider redisConfigProvider) {
         return new DefaultRedisLockService(beanFactory, distributedLockConfigProvider, redisConfigProvider);
+    }
+
+    /**
+     * 注册 Redis 延迟队列服务。
+     * <p>
+     * 延迟队列服务复用自动配置的 RedissonClient，并统一管理生产者、消费者、消息序列化和主题前缀。
+     * </p>
+     *
+     * @param redissonClient Redisson客户端
+     * @return Redis延迟队列服务
+     */
+    @Bean
+    @ConditionalOnMissingBean(RedisDelayQueueService.class)
+    @ConditionalOnBean(RedissonClient.class)
+    public RedisDelayQueueService redisDelayQueueService(RedissonClient redissonClient) {
+        return new DefaultRedisDelayQueueService(redissonClient);
     }
 
 }
