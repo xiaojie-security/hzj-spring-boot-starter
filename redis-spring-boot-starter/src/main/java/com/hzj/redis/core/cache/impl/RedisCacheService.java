@@ -6,7 +6,6 @@ import com.hzj.redis.core.cache.RedisCredentialService;
 import com.hzj.redis.core.lock.RedisLockService;
 import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.security.SecureRandom;
@@ -61,6 +60,26 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
     }
 
     /**
+     * 获取一次性凭证并存储凭证载体。
+     *
+     * @param key 业务隔离键
+     * @param carrier 凭证载体
+     * @param ttl 凭证有效时间
+     * @param timeUnit 时间单位
+     * @return 一次性凭证
+     */
+    @Override
+    public String getOnceCredential(String key, Object carrier, long ttl, TimeUnit timeUnit) {
+        validateCredentialArguments(key, ttl, timeUnit);
+        Objects.requireNonNull(carrier, "凭证载体不能为空");
+        byte[] randomBytes = new byte[32];
+        CREDENTIAL_RANDOM.nextBytes(randomBytes);
+        String credential = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        redisTemplate.opsForValue().set(buildCredentialKey(key, credential), carrier, ttl, timeUnit);
+        return credential;
+    }
+
+    /**
      * 消费一次性凭证。
      * <p>
      * Redis 的删除操作本身具备原子性，因此同一凭证并发消费时只有一个请求能够删除记录并返回成功。
@@ -78,7 +97,7 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
         if (!org.springframework.util.StringUtils.hasText(credential)) {
             throw new IllegalArgumentException("一次性凭证不能为空");
         }
-        return Boolean.TRUE.equals(redisTemplate.delete(buildCredentialKey(key, credential)));
+        return redisTemplate.delete(buildCredentialKey(key, credential));
     }
 
     /**

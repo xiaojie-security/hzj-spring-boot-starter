@@ -21,6 +21,17 @@ public interface RedisCredentialService {
     String getOnceCredential(String key, long ttl, TimeUnit timeUnit);
 
     /**
+     * 获取一次性凭证并存储凭证载体。
+     *
+     * @param key 业务隔离键
+     * @param carrier 凭证载体
+     * @param ttl 凭证有效时间
+     * @param timeUnit 时间单位
+     * @return 一次性凭证
+     */
+    String getOnceCredential(String key, Object carrier, long ttl, TimeUnit timeUnit);
+
+    /**
      * 消费一次性凭证。
      *
      * @param key 业务隔离键
