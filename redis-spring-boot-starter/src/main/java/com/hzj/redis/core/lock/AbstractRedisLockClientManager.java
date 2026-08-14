@@ -21,6 +21,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +43,8 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
     private static final ReentrantLock REFRESH_LOCK = new ReentrantLock(true);
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractRedisLockClientManager.class);
+
+    private final ThreadLocal<Map<String, RLock>> currentThreadLocks = ThreadLocal.withInitial(HashMap::new);
 
 
     public AbstractRedisLockClientManager(ConfigurableListableBeanFactory beanFactory,
@@ -66,9 +70,10 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         DistributedLockConfig config = getLockConfig();
         if (config.getDefaultLeaseTime() > 0) {
             lock.lock(config.getDefaultLeaseTime(), getTimeUnit(config));
-            return;
+        } else {
+            lock.lock();
         }
-        lock.lock();
+        rememberLock(lockName, lock);
     }
 
     @Override
@@ -84,9 +89,13 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         long waitTime = config.getDefaultWaitTime();
         validateDuration(waitTime, "defaultWaitTime");
         TimeUnit timeUnit = getTimeUnit(config);
+        RLock lock = getLock(lockName);
         boolean acquired = config.getDefaultLeaseTime() > 0
-                ? getLock(lockName).tryLock(waitTime, config.getDefaultLeaseTime(), timeUnit)
-                : getLock(lockName).tryLock(waitTime, timeUnit);
+                ? lock.tryLock(waitTime, config.getDefaultLeaseTime(), timeUnit)
+                : lock.tryLock(waitTime, timeUnit);
+        if (acquired) {
+            rememberLock(lockName, lock);
+        }
         return handleLockResult(lockName, acquired, config);
     }
 
@@ -94,7 +103,11 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
     public boolean tryLock(String lockName, long waitTime, TimeUnit timeUnit) throws InterruptedException {
         validateDuration(waitTime, "waitTime");
         Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
-        boolean acquired = getLock(lockName).tryLock(waitTime, timeUnit);
+        RLock lock = getLock(lockName);
+        boolean acquired = lock.tryLock(waitTime, timeUnit);
+        if (acquired) {
+            rememberLock(lockName, lock);
+        }
         return handleLockResult(lockName, acquired, getLockConfig());
     }
 
@@ -104,24 +117,41 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         validateDuration(waitTime, "waitTime");
         validateDuration(leaseTime, "leaseTime");
         Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
+        RLock lock = getLock(lockName);
         boolean acquired = leaseTime > 0
-                ? getLock(lockName).tryLock(waitTime, leaseTime, timeUnit)
-                : getLock(lockName).tryLock(waitTime, timeUnit);
+                ? lock.tryLock(waitTime, leaseTime, timeUnit)
+                : lock.tryLock(waitTime, timeUnit);
+        if (acquired) {
+            rememberLock(lockName, lock);
+        }
         return handleLockResult(lockName, acquired, getLockConfig());
     }
 
     @Override
     public void unlock(String lockName) {
-        RLock lock = getLock(lockName);
+        RLock lock = currentThreadLocks.get().get(lockName);
+        if (lock == null) {
+            lock = getLock(lockName);
+        }
         DistributedLockConfig config = getLockConfig();
         if (!config.isSafeUnlockCheck() || lock.isHeldByCurrentThread()) {
             lock.unlock();
+            if (!lock.isHeldByCurrentThread()) {
+                forgetLock(lockName);
+            }
+        } else {
+            forgetLock(lockName);
         }
     }
 
     @Override
     public boolean forceUnlock(String lockName) {
-        return getLock(lockName).forceUnlock();
+        RLock lock = currentThreadLocks.get().get(lockName);
+        boolean unlocked = (lock == null ? getLock(lockName) : lock).forceUnlock();
+        if (unlocked) {
+            forgetLock(lockName);
+        }
+        return unlocked;
     }
 
     @Override
@@ -131,7 +161,8 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     @Override
     public boolean isHeldByCurrentThread(String lockName) {
-        return getLock(lockName).isHeldByCurrentThread();
+        RLock lock = currentThreadLocks.get().get(lockName);
+        return (lock == null ? getLock(lockName) : lock).isHeldByCurrentThread();
     }
 
     /**
@@ -158,6 +189,18 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     private TimeUnit getTimeUnit(DistributedLockConfig config) {
         return Objects.requireNonNull(config.getTimeUnit(), "分布式锁时间单位不能为空");
+    }
+
+    private void rememberLock(String lockName, RLock lock) {
+        currentThreadLocks.get().put(lockName, lock);
+    }
+
+    private void forgetLock(String lockName) {
+        Map<String, RLock> locks = currentThreadLocks.get();
+        locks.remove(lockName);
+        if (locks.isEmpty()) {
+            currentThreadLocks.remove();
+        }
     }
 
     private boolean handleLockResult(String lockName, boolean acquired, DistributedLockConfig config) {
