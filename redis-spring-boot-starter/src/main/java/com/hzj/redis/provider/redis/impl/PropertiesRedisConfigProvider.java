@@ -1,4 +1,4 @@
-package com.hzj.redis.provider.redis.enums.impl;
+package com.hzj.redis.provider.redis.impl;
 
 import com.hzj.redis.provider.redis.RedisConfigProvider;
 import com.hzj.redis.provider.redis.entity.RedisClusterConfig;
