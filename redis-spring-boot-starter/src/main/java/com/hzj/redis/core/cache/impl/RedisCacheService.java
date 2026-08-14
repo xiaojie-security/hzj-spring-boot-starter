@@ -101,6 +101,28 @@ public class RedisCacheService implements CacheService, RedisCredentialService {
     }
 
     /**
+     * 消费带载体的一次性凭证并返回凭证载体。
+     *
+     * @param key 业务隔离键
+     * @param credential 一次性凭证
+     * @param carrierType 凭证载体类型
+     * @param <T> 凭证载体类型
+     * @return 凭证载体；凭证不存在、已过期或已消费时返回 null
+     */
+    @Override
+    public <T> T consumeOnceCredential(String key, String credential, Class<T> carrierType) {
+        if (!org.springframework.util.StringUtils.hasText(key)) {
+            throw new IllegalArgumentException("凭证业务键不能为空");
+        }
+        if (!org.springframework.util.StringUtils.hasText(credential)) {
+            throw new IllegalArgumentException("一次性凭证不能为空");
+        }
+        Objects.requireNonNull(carrierType, "凭证载体类型不能为空");
+        Object carrier = redisTemplate.opsForValue().getAndDelete(buildCredentialKey(key, credential));
+        return carrier == null ? null : carrierType.cast(carrier);
+    }
+
+    /**
      * 查询缓存，未命中时加载数据并缓存结果。
      *
      * @param key 缓存键

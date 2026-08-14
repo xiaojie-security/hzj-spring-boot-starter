@@ -39,4 +39,15 @@ public interface RedisCredentialService {
      * @return 是否消费成功
      */
     boolean consumeOnceCredential(String key, String credential);
+
+    /**
+     * 消费带载体的一次性凭证并返回凭证载体。
+     *
+     * @param key 业务隔离键
+     * @param credential 一次性凭证
+     * @param carrierType 凭证载体类型
+     * @param <T> 凭证载体类型
+     * @return 凭证载体；凭证不存在、已过期或已消费时返回 null
+     */
+    <T> T consumeOnceCredential(String key, String credential, Class<T> carrierType);
 }
