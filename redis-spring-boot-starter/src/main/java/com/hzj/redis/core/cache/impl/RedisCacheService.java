@@ -2,7 +2,7 @@ package com.hzj.redis.core.cache.impl;
 
 import com.hzj.redis.core.cache.CacheLoader;
 import com.hzj.redis.core.cache.CacheService;
-import com.hzj.redis.core.cache.RedisCredentialService;
+import com.hzj.redis.core.cache.CredentialService;
 import com.hzj.redis.core.lock.RedisLockService;
 import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * </p>
  */
 @Slf4j
-public class RedisCacheService implements CacheService, RedisCredentialService {
+public class RedisCacheService implements CacheService, CredentialService {
 
     private static final String EMPTY_PLACEHOLDER = "::NULL_PLACEHOLDER::";
     private static final String BREAKDOWN_LOCK_PREFIX = "redis:cache:breakdown:";

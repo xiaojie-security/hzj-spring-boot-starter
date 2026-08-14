@@ -1,9 +1,10 @@
 package com.hzj.redis.core.queue.impl;
 
+import com.hzj.common.utils.ThreadPoolUtils;
 import com.hzj.redis.core.queue.RedisDelayQueueHandler;
-import com.hzj.redis.core.queue.RedisDelayQueueMessage;
-import com.hzj.redis.core.queue.RedisDelayQueueNaming;
 import com.hzj.redis.core.queue.RedisDelayQueueService;
+import com.hzj.redis.core.queue.entity.RedisDelayQueueMessage;
+import com.hzj.redis.core.queue.entity.RedisDelayQueueNaming;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RDelayedQueue;
@@ -11,13 +12,12 @@ import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.Codec;
 import org.redisson.codec.JsonJacksonCodec;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +36,7 @@ public abstract class AbstractRedisDelayQueueService implements RedisDelayQueueS
 
     private final Codec codec;
 
-    private final ExecutorService consumerExecutor;
+    private final ThreadPoolTaskExecutor consumerExecutor;
 
     private final ConcurrentMap<String, RBlockingQueue<RedisDelayQueueMessage>> blockingQueues = new ConcurrentHashMap<>();
 
@@ -64,11 +64,7 @@ public abstract class AbstractRedisDelayQueueService implements RedisDelayQueueS
     protected AbstractRedisDelayQueueService(RedissonClient client, Codec codec) {
         this.client = Objects.requireNonNull(client, "RedissonClient 不能为空");
         this.codec = Objects.requireNonNull(codec, "延迟队列Codec 不能为空");
-        this.consumerExecutor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "redis-delay-queue-consumer");
-            thread.setDaemon(true);
-            return thread;
-        });
+        this.consumerExecutor = ThreadPoolUtils.createBatchExecutor("redis-delay-queue-consumer-");
     }
 
     /**
@@ -165,7 +161,7 @@ public abstract class AbstractRedisDelayQueueService implements RedisDelayQueueS
                 registration.future.cancel(true);
             }
         });
-        consumerExecutor.shutdownNow();
+        ThreadPoolUtils.safeShutdown(consumerExecutor);
     }
 
     /**

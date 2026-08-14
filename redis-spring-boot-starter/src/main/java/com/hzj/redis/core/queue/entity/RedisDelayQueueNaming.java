@@ -1,4 +1,4 @@
-package com.hzj.redis.core.queue;
+package com.hzj.redis.core.queue.entity;
 
 import org.springframework.util.StringUtils;
 

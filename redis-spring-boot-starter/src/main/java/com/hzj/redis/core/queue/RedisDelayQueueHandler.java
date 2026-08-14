@@ -1,5 +1,7 @@
 package com.hzj.redis.core.queue;
 
+import com.hzj.redis.core.queue.entity.RedisDelayQueueMessage;
+
 /**
  * Redis延迟队列消息处理器。
  *

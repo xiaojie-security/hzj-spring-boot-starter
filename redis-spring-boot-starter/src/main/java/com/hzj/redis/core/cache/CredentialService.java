@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
  * 用于生成带有效期的一次性凭证，并在业务消费成功后立即使凭证失效。
  * </p>
  */
-public interface RedisCredentialService {
+public interface CredentialService {
 
     /**
      * 获取一次性凭证。

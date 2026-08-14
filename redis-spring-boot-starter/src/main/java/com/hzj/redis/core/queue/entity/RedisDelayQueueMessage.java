@@ -1,4 +1,4 @@
-package com.hzj.redis.core.queue;
+package com.hzj.redis.core.queue.entity;
 
 /**
  * Redis延迟队列统一消息信封。
