@@ -11,12 +11,12 @@ import com.hzj.redis.provider.redis.RedisConfigProvider;
 import com.hzj.redis.provider.redis.impl.PropertiesRedisConfigProvider;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -30,7 +30,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * RedisTemplate，避免重复维护连接工厂和序列化器配置。
  * </p>
  */
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(RedisProperties.class)
 public class RedisCoreConfiguration {
 
