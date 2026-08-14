@@ -53,11 +53,6 @@ public class RedisConfig {
     private RedisSingleConfig single;
 
     /**
-     * 主从模式配置
-     */
-    private RedisMasterSlaveConfig masterSlave;
-
-    /**
      * 哨兵模式配置
      */
     private RedisSentinelConfig sentinel;

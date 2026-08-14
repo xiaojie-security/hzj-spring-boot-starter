@@ -36,8 +36,6 @@ public class LettuceRedisConnectionFactoryProvider implements RedisConnectionFac
             case SINGLE -> createStandalone(config);
             case SENTINEL -> createSentinel(config);
             case CLUSTER -> createCluster(config);
-            case MASTER_SLAVE ->
-                    throw new UnsupportedOperationException("Lettuce 不支持单独主从部署模式，请使用哨兵模式");
         };
 
         LettuceClientConfiguration clientConfiguration = clientBuilder.build();

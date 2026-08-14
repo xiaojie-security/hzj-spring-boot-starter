@@ -1,7 +1,6 @@
 package com.hzj.redis.core.lock;
 
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
-import com.hzj.redis.provider.lock.entity.DistributedLockConfig;
 import lombok.Setter;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -49,7 +48,7 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     }
 
-    public static RedissonClient assembly(DistributedLockConfig config) {
-
-    }
+//    public static RedissonClient assembly(DistributedLockConfig config) {
+//
+//    }
 }

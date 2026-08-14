@@ -9,10 +9,6 @@ public enum DeployMode {
      */
     SINGLE,
     /**
-     * 主从复制
-     */
-    MASTER_SLAVE,
-    /**
      * 哨兵模式
      */
     SENTINEL,
