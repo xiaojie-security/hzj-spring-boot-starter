@@ -50,8 +50,9 @@ public class DistributedLockConfig {
     private boolean failFast = true;
 
     /**
-     * 解锁前校验当前线程持有锁，防止误删别人锁
+     * 兼容旧配置项。Redisson 的 unlock 操作本身会校验当前线程持有关系。
      */
+    @Deprecated
     private boolean safeUnlockCheck = true;
 
     /**

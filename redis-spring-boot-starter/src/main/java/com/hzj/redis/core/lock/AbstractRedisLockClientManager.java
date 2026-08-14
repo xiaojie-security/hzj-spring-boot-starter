@@ -21,8 +21,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
@@ -43,8 +41,6 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
     private static final ReentrantLock REFRESH_LOCK = new ReentrantLock(true);
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractRedisLockClientManager.class);
-
-    private final ThreadLocal<Map<String, RLock>> currentThreadLocks = ThreadLocal.withInitial(HashMap::new);
 
 
     public AbstractRedisLockClientManager(ConfigurableListableBeanFactory beanFactory,
@@ -73,7 +69,6 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         } else {
             lock.lock();
         }
-        rememberLock(lockName, lock);
     }
 
     @Override
@@ -93,9 +88,6 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         boolean acquired = config.getDefaultLeaseTime() > 0
                 ? lock.tryLock(waitTime, config.getDefaultLeaseTime(), timeUnit)
                 : lock.tryLock(waitTime, timeUnit);
-        if (acquired) {
-            rememberLock(lockName, lock);
-        }
         return handleLockResult(lockName, acquired, config);
     }
 
@@ -105,9 +97,6 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
         RLock lock = getLock(lockName);
         boolean acquired = lock.tryLock(waitTime, timeUnit);
-        if (acquired) {
-            rememberLock(lockName, lock);
-        }
         return handleLockResult(lockName, acquired, getLockConfig());
     }
 
@@ -121,37 +110,17 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         boolean acquired = leaseTime > 0
                 ? lock.tryLock(waitTime, leaseTime, timeUnit)
                 : lock.tryLock(waitTime, timeUnit);
-        if (acquired) {
-            rememberLock(lockName, lock);
-        }
         return handleLockResult(lockName, acquired, getLockConfig());
     }
 
     @Override
     public void unlock(String lockName) {
-        RLock lock = currentThreadLocks.get().get(lockName);
-        if (lock == null) {
-            lock = getLock(lockName);
-        }
-        DistributedLockConfig config = getLockConfig();
-        if (!config.isSafeUnlockCheck() || lock.isHeldByCurrentThread()) {
-            lock.unlock();
-            if (!lock.isHeldByCurrentThread()) {
-                forgetLock(lockName);
-            }
-        } else {
-            forgetLock(lockName);
-        }
+        getLock(lockName).unlock();
     }
 
     @Override
     public boolean forceUnlock(String lockName) {
-        RLock lock = currentThreadLocks.get().get(lockName);
-        boolean unlocked = (lock == null ? getLock(lockName) : lock).forceUnlock();
-        if (unlocked) {
-            forgetLock(lockName);
-        }
-        return unlocked;
+        return getLock(lockName).forceUnlock();
     }
 
     @Override
@@ -161,8 +130,7 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     @Override
     public boolean isHeldByCurrentThread(String lockName) {
-        RLock lock = currentThreadLocks.get().get(lockName);
-        return (lock == null ? getLock(lockName) : lock).isHeldByCurrentThread();
+        return getLock(lockName).isHeldByCurrentThread();
     }
 
     /**
@@ -189,18 +157,6 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     private TimeUnit getTimeUnit(DistributedLockConfig config) {
         return Objects.requireNonNull(config.getTimeUnit(), "分布式锁时间单位不能为空");
-    }
-
-    private void rememberLock(String lockName, RLock lock) {
-        currentThreadLocks.get().put(lockName, lock);
-    }
-
-    private void forgetLock(String lockName) {
-        Map<String, RLock> locks = currentThreadLocks.get();
-        locks.remove(lockName);
-        if (locks.isEmpty()) {
-            currentThreadLocks.remove();
-        }
     }
 
     private boolean handleLockResult(String lockName, boolean acquired, DistributedLockConfig config) {
