@@ -5,6 +5,7 @@ import com.hzj.redis.provider.lock.entity.DistributedLockConfig;
 import com.hzj.redis.provider.redis.RedisConfigProvider;
 import com.hzj.redis.provider.redis.entity.RedisConfig;
 import lombok.Setter;
+import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
@@ -20,7 +21,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractRedisLockClientManager implements RedisLockService, ApplicationContextAware {
 
@@ -55,6 +58,119 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
             throw new RuntimeException("获取客户端失败");
         }
         return applicationContext.getBean(REDISSON_SERVICE_BEAN_NAME, RedissonClient.class);
+    }
+
+    @Override
+    public void lock(String lockName) {
+        RLock lock = getLock(lockName);
+        DistributedLockConfig config = getLockConfig();
+        if (config.getDefaultLeaseTime() > 0) {
+            lock.lock(config.getDefaultLeaseTime(), getTimeUnit(config));
+            return;
+        }
+        lock.lock();
+    }
+
+    @Override
+    public void lock(String lockName, long leaseTime, TimeUnit timeUnit) {
+        validateDuration(leaseTime, "leaseTime");
+        Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
+        getLock(lockName).lock(leaseTime, timeUnit);
+    }
+
+    @Override
+    public boolean tryLock(String lockName) throws InterruptedException {
+        DistributedLockConfig config = getLockConfig();
+        long waitTime = config.getDefaultWaitTime();
+        validateDuration(waitTime, "defaultWaitTime");
+        TimeUnit timeUnit = getTimeUnit(config);
+        boolean acquired = config.getDefaultLeaseTime() > 0
+                ? getLock(lockName).tryLock(waitTime, config.getDefaultLeaseTime(), timeUnit)
+                : getLock(lockName).tryLock(waitTime, timeUnit);
+        return handleLockResult(lockName, acquired, config);
+    }
+
+    @Override
+    public boolean tryLock(String lockName, long waitTime, TimeUnit timeUnit) throws InterruptedException {
+        validateDuration(waitTime, "waitTime");
+        Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
+        boolean acquired = getLock(lockName).tryLock(waitTime, timeUnit);
+        return handleLockResult(lockName, acquired, getLockConfig());
+    }
+
+    @Override
+    public boolean tryLock(String lockName, long waitTime, long leaseTime, TimeUnit timeUnit)
+            throws InterruptedException {
+        validateDuration(waitTime, "waitTime");
+        validateDuration(leaseTime, "leaseTime");
+        Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
+        boolean acquired = leaseTime > 0
+                ? getLock(lockName).tryLock(waitTime, leaseTime, timeUnit)
+                : getLock(lockName).tryLock(waitTime, timeUnit);
+        return handleLockResult(lockName, acquired, getLockConfig());
+    }
+
+    @Override
+    public void unlock(String lockName) {
+        RLock lock = getLock(lockName);
+        DistributedLockConfig config = getLockConfig();
+        if (!config.isSafeUnlockCheck() || lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean forceUnlock(String lockName) {
+        return getLock(lockName).forceUnlock();
+    }
+
+    @Override
+    public boolean isLocked(String lockName) {
+        return getLock(lockName).isLocked();
+    }
+
+    @Override
+    public boolean isHeldByCurrentThread(String lockName) {
+        return getLock(lockName).isHeldByCurrentThread();
+    }
+
+    /**
+     * 获取当前配置对应的锁实例。
+     *
+     * @param lockName 锁名称
+     * @return 锁实例
+     */
+    protected RLock getLock(String lockName) {
+        if (!org.springframework.util.StringUtils.hasText(lockName)) {
+            throw new IllegalArgumentException("锁名称不能为空");
+        }
+        DistributedLockConfig config = getLockConfig();
+        return config.isFairLock() ? getClient().getFairLock(lockName) : getClient().getLock(lockName);
+    }
+
+    private DistributedLockConfig getLockConfig() {
+        DistributedLockConfig config = configProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("分布式锁配置不能为空");
+        }
+        return config;
+    }
+
+    private TimeUnit getTimeUnit(DistributedLockConfig config) {
+        return Objects.requireNonNull(config.getTimeUnit(), "分布式锁时间单位不能为空");
+    }
+
+    private boolean handleLockResult(String lockName, boolean acquired, DistributedLockConfig config) {
+        if (!acquired && config.isFailFast()) {
+            throw new IllegalStateException("获取分布式锁失败: " + lockName);
+        }
+        return acquired;
+    }
+
+    private void validateDuration(long duration, String fieldName) {
+        if (duration < 0) {
+            throw new IllegalArgumentException(fieldName + " 不能小于0");
+        }
     }
 
     @Override
