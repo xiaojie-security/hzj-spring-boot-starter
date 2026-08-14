@@ -7,11 +7,11 @@ import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
 import com.hzj.redis.provider.connection.RedisConnectionFactoryProvider;
 import com.hzj.redis.provider.connection.impl.LettuceRedisConnectionFactoryProvider;
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
-import com.hzj.redis.provider.lock.entity.DistributedLockConfig;
 import com.hzj.redis.provider.redis.RedisConfigProvider;
 import com.hzj.redis.provider.redis.impl.PropertiesRedisConfigProvider;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -97,17 +97,6 @@ public class RedisCoreConfiguration {
     }
 
     /**
-     * 注册默认分布式锁配置提供者。
-     *
-     * @return 分布式锁配置提供者
-     */
-    @Bean
-    @ConditionalOnMissingBean(DistributedLockConfigProvider.class)
-    public DistributedLockConfigProvider distributedLockConfigProvider() {
-        return DistributedLockConfig::new;
-    }
-
-    /**
      * 注册 RedissonClient 单例。
      *
      * @param redisConfigProvider Redis 配置提供者
@@ -115,7 +104,9 @@ public class RedisCoreConfiguration {
      * @return RedissonClient 单例
      */
     @Bean(name = AbstractRedisLockClientManager.REDISSON_SERVICE_BEAN_NAME)
-    @ConditionalOnMissingBean(name = AbstractRedisLockClientManager.REDISSON_SERVICE_BEAN_NAME)
+    @ConditionalOnMissingBean(
+            name = AbstractRedisLockClientManager.REDISSON_SERVICE_BEAN_NAME )
+    @ConditionalOnBean(DistributedLockConfigProvider.class)
     public RedissonClient redissonClient(
             RedisConfigProvider redisConfigProvider,
             DistributedLockConfigProvider distributedLockConfigProvider) {
@@ -133,6 +124,7 @@ public class RedisCoreConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(RedisLockService.class)
+    @ConditionalOnBean(DistributedLockConfigProvider.class)
     public RedisLockService redisLockService(
             ConfigurableListableBeanFactory beanFactory,
             DistributedLockConfigProvider distributedLockConfigProvider,

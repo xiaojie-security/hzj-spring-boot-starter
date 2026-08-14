@@ -1,7 +1,9 @@
 package com.hzj.redis.core.cache;
 
 import com.hzj.redis.core.lock.RedisLockService;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Objects;
@@ -14,15 +16,19 @@ import java.util.concurrent.TimeUnit;
  * </p>
  */
 @Slf4j
-public class RedisCacheService extends RedisTemplate<String, Object> {
+public class RedisCacheService implements RedisOperations<String, Object> {
 
     private static final String EMPTY_PLACEHOLDER = "::NULL_PLACEHOLDER::";
     private static final String BREAKDOWN_LOCK_PREFIX = "redis:cache:breakdown:";
 
     private final RedisLockService lockService;
 
-    public RedisCacheService(RedisLockService lockService) {
+    @Delegate
+    private final RedisTemplate<String,Object> redisTemplate;
+
+    public RedisCacheService(RedisLockService lockService, RedisTemplate<String,Object> redisTemplate) {
         this.lockService = Objects.requireNonNull(lockService, "RedisLockService 不能为空");
+        this.redisTemplate = redisTemplate;
     }
 
     /**
