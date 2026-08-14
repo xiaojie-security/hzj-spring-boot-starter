@@ -73,7 +73,7 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
 
     @Override
     public void lock(String lockName, long leaseTime, TimeUnit timeUnit) {
-        validateDuration(leaseTime, "leaseTime");
+        validatePositiveDuration(leaseTime, "leaseTime");
         Objects.requireNonNull(timeUnit, "timeUnit 不能为空");
         getLock(lockName).lock(leaseTime, timeUnit);
     }
@@ -170,6 +170,12 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
     private void validateDuration(long duration, String fieldName) {
         if (duration < 0) {
             throw new IllegalArgumentException(fieldName + " 不能小于0");
+        }
+    }
+
+    private void validatePositiveDuration(long duration, String fieldName) {
+        if (duration <= 0) {
+            throw new IllegalArgumentException(fieldName + " 必须大于0");
         }
     }
 
