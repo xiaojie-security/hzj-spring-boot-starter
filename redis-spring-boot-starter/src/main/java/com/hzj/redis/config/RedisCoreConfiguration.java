@@ -1,6 +1,6 @@
 package com.hzj.redis.config;
 
-import com.hzj.redis.core.cache.RedisCacheService;
+import com.hzj.redis.core.cache.impl.RedisCacheService;
 import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.core.lock.RedisLockService;
 import com.hzj.redis.core.lock.impl.DefaultRedisLockService;

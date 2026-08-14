@@ -1,5 +1,8 @@
-package com.hzj.redis.core.cache;
+package com.hzj.redis.core.cache.impl;
 
+import com.hzj.redis.core.cache.CacheLoader;
+import com.hzj.redis.core.cache.CacheService;
+import com.hzj.redis.core.cache.RedisCredentialService;
 import com.hzj.redis.core.lock.RedisLockService;
 import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * </p>
  */
 @Slf4j
-public class RedisCacheService implements RedisOperations<String, Object> {
+public class RedisCacheService implements CacheService, RedisCredentialService {
 
     private static final String EMPTY_PLACEHOLDER = "::NULL_PLACEHOLDER::";
     private static final String BREAKDOWN_LOCK_PREFIX = "redis:cache:breakdown:";
@@ -47,6 +50,7 @@ public class RedisCacheService implements RedisOperations<String, Object> {
      * @param timeUnit 时间单位
      * @return 一次性凭证
      */
+    @Override
     public String getOnceCredential(String key, long ttl, TimeUnit timeUnit) {
         validateCredentialArguments(key, ttl, timeUnit);
         byte[] randomBytes = new byte[32];
@@ -66,6 +70,7 @@ public class RedisCacheService implements RedisOperations<String, Object> {
      * @param credential 一次性凭证
      * @return 是否消费成功；凭证不存在、已过期或已消费时返回 false
      */
+    @Override
     public boolean consumeOnceCredential(String key, String credential) {
         if (!org.springframework.util.StringUtils.hasText(key)) {
             throw new IllegalArgumentException("凭证业务键不能为空");
