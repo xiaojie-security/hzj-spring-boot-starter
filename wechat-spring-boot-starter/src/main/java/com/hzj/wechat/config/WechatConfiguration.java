@@ -1,12 +1,15 @@
 package com.hzj.wechat.config;
 
 import com.hzj.wechat.properties.WechatAccessProperties;
+import com.hzj.wechat.properties.WechatOpenSdkShareProperties;
 import com.hzj.wechat.properties.WechatPaymentProperties;
 import com.hzj.wechat.properties.WechatQrCodeProperties;
 import com.hzj.wechat.properties.WechatTransferProperties;
 import com.hzj.wechat.properties.WechatVirtualPaymentProperties;
 import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
 import com.hzj.wechat.provider.wechat.access.impl.PropertiesWechatAccessConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.share.impl.PropertiesWechatOpenSdkShareConfigProvider;
 import com.hzj.wechat.provider.wechat.payment.WechatPaymentConfigProvider;
 import com.hzj.wechat.provider.wechat.payment.impl.PropertiesWechatPaymentConfigProvider;
 import com.hzj.wechat.provider.wechat.qrcode.WechatQrCodeConfigProvider;
@@ -26,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 @EnableConfigurationProperties({
         WechatAccessProperties.class,
+        WechatOpenSdkShareProperties.class,
         WechatPaymentProperties.class,
         WechatQrCodeProperties.class,
         WechatTransferProperties.class,
@@ -43,6 +47,19 @@ public class WechatConfiguration {
     @ConditionalOnMissingBean(WechatAccessConfigProvider.class)
     public WechatAccessConfigProvider wechatAccessConfigProvider(WechatAccessProperties properties) {
         return new PropertiesWechatAccessConfigProvider(properties);
+    }
+
+    /**
+     * 注册基于配置属性的微信 OpenSDK 分享配置提供者。
+     *
+     * @param properties 微信 OpenSDK 分享配置属性
+     * @return 微信 OpenSDK 分享配置提供者
+     */
+    @Bean
+    @ConditionalOnMissingBean(WechatOpenSdkShareConfigProvider.class)
+    public WechatOpenSdkShareConfigProvider wechatOpenSdkShareConfigProvider(
+            WechatOpenSdkShareProperties properties) {
+        return new PropertiesWechatOpenSdkShareConfigProvider(properties);
     }
 
     /**
