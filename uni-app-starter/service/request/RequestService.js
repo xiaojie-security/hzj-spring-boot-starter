@@ -1,4 +1,5 @@
 import ConfigService from '../config/ConfigService.js'
+import DynamicRequestDataProvider from './DynamicRequestDataProvider.js'
 
 /**
  * uni-app HTTP 请求服务。
@@ -87,17 +88,16 @@ export default class RequestService {
    * @param {Object} [options.header] 请求头。
    * @param {Number} [options.timeout] 超时时间，单位毫秒。
    * @param {Boolean} [options.validateStatus=true] 是否将非 2xx 响应视为异常。
-   * @param {Object} [options.commonHeaderValues] 公共请求头值，支持 timestamp、authorization、nonce、deviceId、refreshToken。
    * @returns {Promise<Object>} uni.request 响应。
    */
-  static request(options) {
+  static async request(options) {
     this.requireObject(options, 'options')
     this.requireText(options.url, 'url')
     if (typeof uni === 'undefined' || typeof uni.request !== 'function') {
       return Promise.reject(new Error('当前运行环境不支持 uni.request'))
     }
-    const mergedOptions = this.mergeOptions(options)
-    const { success, fail, complete, validateStatus, baseUrl, commonHeaderValues, ...requestOptions } = mergedOptions
+    const mergedOptions = await this.mergeOptions(options)
+    const { success, fail, complete, validateStatus, baseUrl, ...requestOptions } = mergedOptions
     this.logRequest(requestOptions)
     return new Promise((resolve, reject) => {
       uni.request({
@@ -166,20 +166,27 @@ export default class RequestService {
    * @param {Object} options 本次请求参数。
    * @returns {Object} 合并后的请求参数。
    */
-  static mergeOptions(options) {
+  static async mergeOptions(options) {
     const defaults = this.getDefaultOptions()
     const timeout = options.timeout ?? defaults.timeout ?? ConfigService.getNumber('REQUEST_TIMEOUT', this.DEFAULT_TIMEOUT)
+    const url = this.resolveUrl(options.url, options.baseUrl ?? defaults.baseUrl)
+    const method = (options.method || 'GET').toUpperCase()
+    const dynamicRequestData = await DynamicRequestDataProvider.getRequestData({
+      url,
+      method,
+      data: options.data
+    })
     return {
       ...defaults,
       ...options,
-      url: this.resolveUrl(options.url, options.baseUrl ?? defaults.baseUrl),
-      method: (options.method || 'GET').toUpperCase(),
+      url,
+      method,
       timeout,
       validateStatus: options.validateStatus ?? defaults.validateStatus ?? true,
       header: {
         ...ConfigService.getJson('REQUEST_HEADERS', {}),
         ...(defaults.header || {}),
-        ...this.createCommonHeaders(options.commonHeaderValues),
+        ...this.createCommonHeaders(dynamicRequestData),
         ...(options.header || {})
       }
     }
