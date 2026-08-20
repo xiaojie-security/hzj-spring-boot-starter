@@ -22,4 +22,11 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <distributionManagement>
+    <repository>
+      <id>local-repo</id>
+      <url>file://${project.basedir}/maven-repository</url>
+    </repository>
+  </distributionManagement>
 </project>
