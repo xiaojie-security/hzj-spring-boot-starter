@@ -29,3 +29,6 @@ replay_pid*
 test/
 */target/
 .mvn
+
+# Maven deploy 生成的模块本地仓库
+**/maven-repository/
