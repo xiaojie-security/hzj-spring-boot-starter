@@ -1,5 +1,6 @@
 com.hzj.wechat.config.WechatConfiguration
 com.hzj.wechat.config.WechatAccessConfiguration
+com.hzj.wechat.config.WechatH5LaunchAppConfiguration
 com.hzj.wechat.config.WechatOpenSdkShareConfiguration
 com.hzj.wechat.config.WechatAdConfiguration
 com.hzj.wechat.config.WechatOAuth2Configuration

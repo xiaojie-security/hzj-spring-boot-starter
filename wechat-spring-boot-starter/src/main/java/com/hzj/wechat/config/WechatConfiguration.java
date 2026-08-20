@@ -1,6 +1,7 @@
 package com.hzj.wechat.config;
 
 import com.hzj.wechat.properties.WechatAccessProperties;
+import com.hzj.wechat.properties.WechatH5LaunchAppProperties;
 import com.hzj.wechat.properties.WechatOpenSdkShareProperties;
 import com.hzj.wechat.properties.WechatPaymentProperties;
 import com.hzj.wechat.properties.WechatQrCodeProperties;
@@ -10,6 +11,8 @@ import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
 import com.hzj.wechat.provider.wechat.access.impl.PropertiesWechatAccessConfigProvider;
 import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareConfigProvider;
 import com.hzj.wechat.provider.wechat.mobile.share.impl.PropertiesWechatOpenSdkShareConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.launch.WechatH5LaunchAppConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.launch.impl.PropertiesWechatH5LaunchAppConfigProvider;
 import com.hzj.wechat.provider.wechat.payment.WechatPaymentConfigProvider;
 import com.hzj.wechat.provider.wechat.payment.impl.PropertiesWechatPaymentConfigProvider;
 import com.hzj.wechat.provider.wechat.qrcode.WechatQrCodeConfigProvider;
@@ -29,6 +32,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 @EnableConfigurationProperties({
         WechatAccessProperties.class,
+        WechatH5LaunchAppProperties.class,
         WechatOpenSdkShareProperties.class,
         WechatPaymentProperties.class,
         WechatQrCodeProperties.class,
@@ -47,6 +51,19 @@ public class WechatConfiguration {
     @ConditionalOnMissingBean(WechatAccessConfigProvider.class)
     public WechatAccessConfigProvider wechatAccessConfigProvider(WechatAccessProperties properties) {
         return new PropertiesWechatAccessConfigProvider(properties);
+    }
+
+    /**
+     * 注册基于配置属性的微信 H5 拉起 App 配置提供者。
+     *
+     * @param properties 微信 H5 拉起 App 配置属性
+     * @return 微信 H5 拉起 App 配置提供者
+     */
+    @Bean
+    @ConditionalOnMissingBean(WechatH5LaunchAppConfigProvider.class)
+    public WechatH5LaunchAppConfigProvider wechatH5LaunchAppConfigProvider(
+            WechatH5LaunchAppProperties properties) {
+        return new PropertiesWechatH5LaunchAppConfigProvider(properties);
     }
 
     /**
