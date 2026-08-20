@@ -87,6 +87,7 @@ export default class RequestService {
    * @param {Object} [options.header] 请求头。
    * @param {Number} [options.timeout] 超时时间，单位毫秒。
    * @param {Boolean} [options.validateStatus=true] 是否将非 2xx 响应视为异常。
+   * @param {Object} [options.commonHeaderValues] 公共请求头值，支持 timestamp、authorization、nonce、deviceId、refreshToken。
    * @returns {Promise<Object>} uni.request 响应。
    */
   static request(options) {
@@ -96,7 +97,8 @@ export default class RequestService {
       return Promise.reject(new Error('当前运行环境不支持 uni.request'))
     }
     const mergedOptions = this.mergeOptions(options)
-    const { success, fail, complete, validateStatus, baseUrl, ...requestOptions } = mergedOptions
+    const { success, fail, complete, validateStatus, baseUrl, commonHeaderValues, ...requestOptions } = mergedOptions
+    this.logRequest(requestOptions)
     return new Promise((resolve, reject) => {
       uni.request({
         ...requestOptions,
@@ -104,14 +106,17 @@ export default class RequestService {
           if (validateStatus && !this.isSuccessStatus(response.statusCode)) {
             const error = new Error(`HTTP 请求失败: ${response.statusCode}`)
             error.response = response
+            this.logResponse(requestOptions, response, error)
             fail?.(error)
             reject(error)
             return
           }
+          this.logResponse(requestOptions, response)
           success?.(response)
           resolve(response)
         },
         fail: (error) => {
+          this.logError(requestOptions, error)
           fail?.(error)
           reject(error)
         },
@@ -142,14 +147,17 @@ export default class RequestService {
    */
   static resolveUrl(url, baseUrl = undefined) {
     this.requireText(url, 'url')
-    if (/^(https?:)?\/\//i.test(url)) {
-      return url
+    if (/^(https?|wss?):\/\//i.test(url)) {
+      return ConfigService.applySslProtocol(url)
     }
-    const resolvedBaseUrl = baseUrl ?? this.getDefaultOptions().baseUrl ?? ConfigService.get('API_BASE_URL', '')
+    const resolvedBaseUrl = ConfigService.applySslProtocol(
+      baseUrl ?? this.getDefaultOptions().baseUrl ?? ConfigService.getRequestBaseUrl()
+    )
+    const requestPath = this.joinPath(ConfigService.getRequestPrefix(), url)
     if (!resolvedBaseUrl) {
-      return url
+      return requestPath
     }
-    return `${resolvedBaseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`
+    return this.joinPath(resolvedBaseUrl, requestPath)
   }
 
   /**
@@ -171,9 +179,118 @@ export default class RequestService {
       header: {
         ...ConfigService.getJson('REQUEST_HEADERS', {}),
         ...(defaults.header || {}),
+        ...this.createCommonHeaders(options.commonHeaderValues),
         ...(options.header || {})
       }
     }
+  }
+
+  /**
+   * 根据配置的请求头名称组装公共请求头。
+   *
+   * @param {Object} [values] 公共请求头值。
+   * @returns {Object} 公共请求头。
+   */
+  static createCommonHeaders(values = {}) {
+    this.requireObject(values, 'commonHeaderValues')
+    const headerNames = ConfigService.getRequestHeaderNames()
+    return Object.entries(headerNames).reduce((headers, [key, headerName]) => {
+      const value = values[key]
+      if (typeof headerName === 'string' && headerName.trim().length > 0 && value !== undefined && value !== null && value !== '') {
+        headers[headerName] = value
+      }
+      return headers
+    }, {})
+  }
+
+  /**
+   * 拼接两个 URL 或路径片段。
+   *
+   * @param {String} first 第一个片段。
+   * @param {String} second 第二个片段。
+   * @returns {String} 拼接后的 URL 或路径。
+   */
+  static joinPath(first, second) {
+    const left = typeof first === 'string' ? first.replace(/\/+$/, '') : ''
+    const right = typeof second === 'string' ? second.replace(/^\/+/, '') : ''
+    if (!left) {
+      return second || ''
+    }
+    if (!right) {
+      return left
+    }
+    return `${left}/${right}`
+  }
+
+  /**
+   * 记录请求日志。
+   *
+   * @param {Object} requestOptions 请求参数。
+   */
+  static logRequest(requestOptions) {
+    if (!ConfigService.isRequestLogEnabled() || typeof console === 'undefined') {
+      return
+    }
+    console.info('[Request]', {
+      method: requestOptions.method,
+      url: requestOptions.url,
+      header: this.maskSensitiveHeaders(requestOptions.header)
+    })
+  }
+
+  /**
+   * 记录响应日志。
+   *
+   * @param {Object} requestOptions 请求参数。
+   * @param {Object} response 响应参数。
+   * @param {Error} [error] 异常对象。
+   */
+  static logResponse(requestOptions, response, error = undefined) {
+    if (!ConfigService.isRequestLogEnabled() || typeof console === 'undefined') {
+      return
+    }
+    const logMethod = error ? console.warn : console.info
+    logMethod('[Response]', {
+      method: requestOptions.method,
+      url: requestOptions.url,
+      statusCode: response.statusCode,
+      error: error?.message
+    })
+  }
+
+  /**
+   * 记录请求异常日志。
+   *
+   * @param {Object} requestOptions 请求参数。
+   * @param {*} error 异常对象。
+   */
+  static logError(requestOptions, error) {
+    if (!ConfigService.isRequestLogEnabled() || typeof console === 'undefined') {
+      return
+    }
+    console.warn('[Request Error]', {
+      method: requestOptions.method,
+      url: requestOptions.url,
+      error
+    })
+  }
+
+  /**
+   * 掩码敏感请求头。
+   *
+   * @param {Object} header 请求头。
+   * @returns {Object} 脱敏后的请求头。
+   */
+  static maskSensitiveHeaders(header = {}) {
+    const configuredHeaders = ConfigService.getRequestHeaderNames()
+    const sensitiveNames = [configuredHeaders.authorization, configuredHeaders.refreshToken]
+      .filter((name) => typeof name === 'string' && name.trim().length > 0)
+      .map((name) => name.toLowerCase())
+    return Object.entries(header).reduce((result, [name, value]) => {
+      const normalizedName = name.toLowerCase()
+      result[name] = sensitiveNames.includes(normalizedName) || /authorization|token/i.test(name) ? '***' : value
+      return result
+    }, {})
   }
 
   /**
