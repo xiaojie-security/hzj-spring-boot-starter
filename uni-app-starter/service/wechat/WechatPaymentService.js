@@ -175,8 +175,8 @@ export default class WechatPaymentService {
    * @param {String} options.mchId 微信支付商户号。
    * @param {String} options.packageInfo 服务端转账受理结果中的 packageInfo。
    * @param {String} [options.appId] 商户 AppID。
-   * @param {String} [options.openId] 收款用户 OpenID。
-   * @param {String} [options.subAppId] 服务商模式下的子商户 AppID。
+   * @param {String} [options.openId] 收款用户 服务商模式下的子商户OpenID。
+   * @param {String} [options.subAppId]  AppID。
    * @param {String} [options.subMchId] 服务商模式下的子商户号。
    * @param {Function} [options.success] 成功回调。
    * @param {Function} [options.fail] 失败回调。
