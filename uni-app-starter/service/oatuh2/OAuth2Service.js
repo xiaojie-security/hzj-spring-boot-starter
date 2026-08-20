@@ -99,6 +99,7 @@ export default class OAuth2Service {
    *
    * @param {Object} [options] 登录参数。
    * @param {Object} [options.preLoginOptions] 预取号参数。
+   * @param {Object} [options.univerifyStyle] 一键登录授权页样式。
    * @param {Number} [options.timeout] 登录超时时间，单位毫秒。
    * @param {Function} [options.success] 登录成功回调。
    * @param {Function} [options.fail] 登录失败回调。
@@ -107,9 +108,15 @@ export default class OAuth2Service {
    */
   static async loginByPhoneNumber(options = {}) {
     this.requireObject(options, 'options')
-    const { preLoginOptions, ...loginOptions } = options
+    const { preLoginOptions, univerifyStyle, ...loginOptions } = options
     await this.preLogin(preLoginOptions || {})
-    return this.login(OAuth2Provider.PHONE_NUMBER, loginOptions)
+    return this.login(OAuth2Provider.PHONE_NUMBER, {
+      ...loginOptions,
+      univerifyStyle: {
+        ...this.requireOptionalObject(univerifyStyle, 'univerifyStyle'),
+        fullScreen: true
+      }
+    })
   }
 
   /**
@@ -202,5 +209,20 @@ export default class OAuth2Service {
     if (value === null || typeof value !== 'object' || Array.isArray(value)) {
       throw new Error(`OAuth 登录参数必须为对象: ${name}`)
     }
+  }
+
+  /**
+   * 校验可选对象参数。
+   *
+   * @param {Object} value 参数值。
+   * @param {String} name 参数名。
+   * @returns {Object} 合法对象或空对象。
+   */
+  static requireOptionalObject(value, name) {
+    if (value === undefined) {
+      return {}
+    }
+    this.requireObject(value, name)
+    return value
   }
 }
