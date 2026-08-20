@@ -1,4 +1,4 @@
-package com.hzj.wechat.core.mobile;
+package com.hzj.wechat.core.mobile.share;
 
 /**
  * 微信 OpenSDK 分享签名异常。

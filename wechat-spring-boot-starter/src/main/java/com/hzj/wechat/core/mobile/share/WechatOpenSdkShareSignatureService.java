@@ -1,7 +1,7 @@
-package com.hzj.wechat.core.mobile;
+package com.hzj.wechat.core.mobile.share;
 
-import com.hzj.wechat.core.mobile.domain.WechatOpenSdkShareSignatureRequest;
-import com.hzj.wechat.core.mobile.domain.WechatOpenSdkShareSignatureResponse;
+import com.hzj.wechat.core.mobile.share.domain.WechatOpenSdkShareSignatureRequest;
+import com.hzj.wechat.core.mobile.share.domain.WechatOpenSdkShareSignatureResponse;
 
 /**
  * 微信 OpenSDK 分享签名服务。

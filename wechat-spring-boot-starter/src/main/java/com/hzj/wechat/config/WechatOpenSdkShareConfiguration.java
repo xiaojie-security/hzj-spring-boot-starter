@@ -1,7 +1,7 @@
 package com.hzj.wechat.config;
 
-import com.hzj.wechat.core.mobile.WechatOpenSdkShareSignatureService;
-import com.hzj.wechat.core.mobile.impl.DefaultWechatOpenSdkShareSignatureService;
+import com.hzj.wechat.core.mobile.share.WechatOpenSdkShareSignatureService;
+import com.hzj.wechat.core.mobile.share.impl.DefaultWechatOpenSdkShareSignatureService;
 import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

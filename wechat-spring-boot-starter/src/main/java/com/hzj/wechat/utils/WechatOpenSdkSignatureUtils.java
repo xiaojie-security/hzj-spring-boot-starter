@@ -1,6 +1,6 @@
 package com.hzj.wechat.utils;
 
-import com.hzj.wechat.core.mobile.enums.WechatOpenSdkSignatureAlgorithm;
+import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkSignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 

@@ -1,6 +1,6 @@
 package com.hzj.wechat.properties;
 
-import com.hzj.wechat.core.mobile.enums.WechatOpenSdkSignatureAlgorithm;
+import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkSignatureAlgorithm;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

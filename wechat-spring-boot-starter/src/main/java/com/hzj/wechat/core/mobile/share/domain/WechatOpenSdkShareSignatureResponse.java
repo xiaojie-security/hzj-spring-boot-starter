@@ -1,6 +1,6 @@
-package com.hzj.wechat.core.mobile.domain;
+package com.hzj.wechat.core.mobile.share.domain;
 
-import com.hzj.wechat.core.mobile.enums.WechatOpenSdkSignatureAlgorithm;
+import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkSignatureAlgorithm;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

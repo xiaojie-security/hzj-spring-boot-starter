@@ -1,6 +1,6 @@
 package com.hzj.wechat.provider.wechat.mobile.share.entity;
 
-import com.hzj.wechat.core.mobile.enums.WechatOpenSdkSignatureAlgorithm;
+import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkSignatureAlgorithm;
 import lombok.Data;
 
 import java.security.PrivateKey;

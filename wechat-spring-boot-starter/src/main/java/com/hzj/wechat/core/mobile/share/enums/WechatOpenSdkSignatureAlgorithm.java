@@ -1,4 +1,4 @@
-package com.hzj.wechat.core.mobile.enums;
+package com.hzj.wechat.core.mobile.share.enums;
 
 /**
  * 微信 OpenSDK 分享签名算法。

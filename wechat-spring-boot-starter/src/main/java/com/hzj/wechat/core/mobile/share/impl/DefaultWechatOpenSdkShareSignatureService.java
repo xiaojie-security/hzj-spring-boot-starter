@@ -1,10 +1,10 @@
-package com.hzj.wechat.core.mobile.impl;
+package com.hzj.wechat.core.mobile.share.impl;
 
-import com.hzj.wechat.core.mobile.WechatOpenSdkShareSignatureException;
-import com.hzj.wechat.core.mobile.WechatOpenSdkShareSignatureService;
-import com.hzj.wechat.core.mobile.domain.WechatOpenSdkShareSignatureRequest;
-import com.hzj.wechat.core.mobile.domain.WechatOpenSdkShareSignatureResponse;
-import com.hzj.wechat.core.mobile.enums.WechatOpenSdkSignatureAlgorithm;
+import com.hzj.wechat.core.mobile.share.WechatOpenSdkShareSignatureException;
+import com.hzj.wechat.core.mobile.share.WechatOpenSdkShareSignatureService;
+import com.hzj.wechat.core.mobile.share.domain.WechatOpenSdkShareSignatureRequest;
+import com.hzj.wechat.core.mobile.share.domain.WechatOpenSdkShareSignatureResponse;
+import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkSignatureAlgorithm;
 import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareConfigProvider;
 import com.hzj.wechat.provider.wechat.mobile.share.entity.WechatOpenSdkShareConfig;
 import lombok.extern.slf4j.Slf4j;

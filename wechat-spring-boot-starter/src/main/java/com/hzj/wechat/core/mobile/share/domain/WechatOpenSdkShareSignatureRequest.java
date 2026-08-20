@@ -1,6 +1,6 @@
-package com.hzj.wechat.core.mobile.domain;
+package com.hzj.wechat.core.mobile.share.domain;
 
-import com.hzj.wechat.core.mobile.enums.WechatOpenSdkShareMessageType;
+import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkShareMessageType;
 import lombok.Data;
 
 /**
