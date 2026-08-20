@@ -88,6 +88,37 @@ export default class ConfigService {
   }
 
   /**
+   * 获取当前运行环境编码。
+   *
+   * @returns {String|undefined} 运行环境编码。
+   */
+  static getOperatingEnvironment() {
+    return this.get('OPERATING_ENVIRONMENT')
+  }
+
+  /**
+   * 判断当前运行环境配置是否合法。
+   *
+   * @returns {Boolean} 当前运行环境是否为受支持的环境编码。
+   */
+  static isOperatingEnvironmentValid() {
+    return isValidOperatingEnvironment(this.getOperatingEnvironment())
+  }
+
+  /**
+   * 校验当前运行环境配置。
+   *
+   * @returns {String} 已校验的运行环境编码。
+   */
+  static requireOperatingEnvironment() {
+    const operatingEnvironment = this.getOperatingEnvironment()
+    if (!isValidOperatingEnvironment(operatingEnvironment)) {
+      throw new Error(`不支持的运行环境: ${operatingEnvironment}`)
+    }
+    return operatingEnvironment
+  }
+
+  /**
    * 是否记录请求日志。
    *
    * @returns {Boolean} 是否记录请求日志。
@@ -236,3 +267,4 @@ export default class ConfigService {
     }
   }
 }
+import { isValidOperatingEnvironment } from './OperatingEnvironment.js'
