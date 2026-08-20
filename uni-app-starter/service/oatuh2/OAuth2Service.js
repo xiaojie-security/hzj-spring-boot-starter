@@ -113,8 +113,8 @@ export default class OAuth2Service {
     return this.login(OAuth2Provider.PHONE_NUMBER, {
       ...loginOptions,
       univerifyStyle: {
-        ...this.requireOptionalObject(univerifyStyle, 'univerifyStyle'),
-        fullScreen: true
+        fullScreen: true,
+        ...this.requireOptionalObject(univerifyStyle, 'univerifyStyle')
       }
     })
   }
