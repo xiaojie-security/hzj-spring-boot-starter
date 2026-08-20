@@ -88,6 +88,89 @@ export default class ConfigService {
   }
 
   /**
+   * 是否记录请求日志。
+   *
+   * @returns {Boolean} 是否记录请求日志。
+   */
+  static isRequestLogEnabled() {
+    return this.getBoolean('REQUEST_LOG_ENABLED', false)
+  }
+
+  /**
+   * 是否启用 SSL。
+   * <p>启用后，HTTP 地址会升级为 HTTPS，WebSocket 地址会升级为 WSS。</p>
+   *
+   * @returns {Boolean} 是否启用 SSL。
+   */
+  static isRequestSslEnabled() {
+    return this.getBoolean('REQUEST_SSL_ENABLED', false)
+  }
+
+  /**
+   * 获取请求基础地址。
+   *
+   * @returns {String} 请求基础地址。
+   */
+  static getRequestBaseUrl() {
+    const baseUrl = this.get('REQUEST_BASE_URL', this.get('API_BASE_URL', ''))
+    if (typeof baseUrl !== 'string' || baseUrl.trim().length === 0) {
+      return ''
+    }
+    const normalizedBaseUrl = baseUrl.trim()
+    if (/^(https?|wss?):\/\//i.test(normalizedBaseUrl)) {
+      return this.applySslProtocol(normalizedBaseUrl)
+    }
+    if (normalizedBaseUrl.startsWith('//')) {
+      return `${this.isRequestSslEnabled() ? 'https:' : 'http:'}${normalizedBaseUrl}`
+    }
+    return `${this.isRequestSslEnabled() ? 'https' : 'http'}://${normalizedBaseUrl}`
+  }
+
+  /**
+   * 获取请求公共前缀。
+   *
+   * @returns {String} 请求公共前缀。
+   */
+  static getRequestPrefix() {
+    const prefix = this.get('REQUEST_PREFIX', '')
+    if (typeof prefix !== 'string' || prefix.trim().length === 0) {
+      return ''
+    }
+    return `/${prefix.trim().replace(/^\/+|\/+$/g, '')}`
+  }
+
+  /**
+   * 获取公共请求头名称。
+   * <p>空配置不会携带对应请求头。</p>
+   *
+   * @returns {Object} 请求头名称映射。
+   */
+  static getRequestHeaderNames() {
+    return {
+      timestamp: this.get('REQUEST_TIMESTAMP_HEADER', ''),
+      authorization: this.get('REQUEST_AUTHORIZATION_HEADER', ''),
+      nonce: this.get('REQUEST_NONCE_HEADER', ''),
+      deviceId: this.get('REQUEST_DEVICE_ID_HEADER', ''),
+      refreshToken: this.get('REQUEST_REFRESH_TOKEN_HEADER', '')
+    }
+  }
+
+  /**
+   * 根据 SSL 开关升级 URL 协议。
+   *
+   * @param {String} url 原始地址。
+   * @returns {String} 处理后的地址。
+   */
+  static applySslProtocol(url) {
+    if (typeof url !== 'string' || url.trim().length === 0 || !this.isRequestSslEnabled()) {
+      return url
+    }
+    return url.trim()
+      .replace(/^http:/i, 'https:')
+      .replace(/^ws:/i, 'wss:')
+  }
+
+  /**
    * 设置运行时配置。运行时配置优先级高于构建环境配置。
    *
    * @param {Object} config 配置对象。
