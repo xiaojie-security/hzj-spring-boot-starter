@@ -1,5 +1,6 @@
 package com.hzj.amap.core.webapi.domain;
 
+import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -21,8 +22,10 @@ public class AMapReverseGeoResponse extends AMapWebApiResponse {
     @Data
     public static class AMapRegeocode {
         /** 格式化地址。 */
+        @SerializedName(value = "formattedAddress", alternate = "formatted_address")
         private String formattedAddress;
         /** 地址组成。 */
+        @SerializedName(value = "addressComponent", alternate = "address_component")
         private AMapAddressComponent addressComponent;
         /** 兴趣点列表。 */
         private List<AMapPoi> pois;
