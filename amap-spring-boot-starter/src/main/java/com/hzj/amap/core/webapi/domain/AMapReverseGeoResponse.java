@@ -61,8 +61,10 @@ public class AMapReverseGeoResponse extends AMapWebApiResponse {
         /** 建筑物。 */
         private AMapNamedLocation building;
         /** 街道和门牌号。 */
+        @SerializedName(value = "streetNumber", alternate = "street_number")
         private AMapStreetNumber streetNumber;
         /** 业务区信息。 */
+        @SerializedName(value = "businessAreas", alternate = "business_areas")
         private List<AMapBusinessArea> businessAreas;
     }
 

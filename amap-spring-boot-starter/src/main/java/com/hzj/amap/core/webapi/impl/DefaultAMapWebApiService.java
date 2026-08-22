@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 import com.hzj.amap.core.enums.AMapHttpMethod;
 import com.hzj.amap.core.webapi.AMapWebApiException;
 import com.hzj.amap.core.webapi.AMapWebApiService;
+import com.hzj.amap.core.webapi.adapter.EmptyArrayAsNullTypeAdapterFactory;
 import com.hzj.amap.core.webapi.adapter.FlexibleStringTypeAdapter;
 import com.hzj.amap.core.webapi.domain.*;
 import com.hzj.amap.provider.webapi.AMapWebApiConfigProvider;
@@ -33,6 +34,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
     private static final Gson GSON = new Gson().newBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .registerTypeAdapter(String.class, new FlexibleStringTypeAdapter())
+            .registerTypeAdapterFactory(new EmptyArrayAsNullTypeAdapterFactory())
             .create();
 
     /**
