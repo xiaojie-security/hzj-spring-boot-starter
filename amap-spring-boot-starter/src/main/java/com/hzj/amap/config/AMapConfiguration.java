@@ -5,6 +5,8 @@ import com.hzj.amap.core.webapi.impl.DefaultAMapWebApiService;
 import com.hzj.amap.properties.AMapWebApiProperties;
 import com.hzj.amap.provider.webapi.AMapWebApiConfigProvider;
 import com.hzj.amap.provider.webapi.impl.PropertiesAMapWebApiConfigProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -37,7 +39,11 @@ public class AMapConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AMapWebApiService.class)
-    public AMapWebApiService amapWebApiService(AMapWebApiConfigProvider provider) {
-        return new DefaultAMapWebApiService(provider);
+    public AMapWebApiService amapWebApiService(AMapWebApiConfigProvider provider,
+                                               ObjectProvider<ObjectMapper> objectMapperProvider) {
+        ObjectMapper objectMapper = objectMapperProvider.getIfAvailable();
+        return objectMapper == null
+                ? new DefaultAMapWebApiService(provider)
+                : new DefaultAMapWebApiService(provider, new okhttp3.OkHttpClient.Builder().build(), objectMapper);
     }
 }

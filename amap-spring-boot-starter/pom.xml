@@ -13,7 +13,6 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <gson.version>2.14.0</gson.version>
     <okhttp.version>4.12.0</okhttp.version>
     <spring.boot.starter.version>3.2.4</spring.boot.starter.version>
     <junit.version>3.8.1</junit.version>
@@ -40,9 +39,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>${gson.version}</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-json</artifactId>
+      <version>${spring.boot.starter.version}</version>
     </dependency>
 
     <dependency>

@@ -1,10 +1,7 @@
 package com.hzj.amap;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.hzj.amap.core.webapi.adapter.EmptyArrayAsNullTypeAdapterFactory;
-import com.hzj.amap.core.webapi.adapter.FlexibleStringTypeAdapter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hzj.amap.core.webapi.adapter.AMapObjectMapperFactory;
 import com.hzj.amap.core.webapi.domain.AMapGeoResponse;
 import com.hzj.amap.core.webapi.domain.AMapRouteResponse;
 import com.hzj.amap.core.webapi.domain.AMapWeatherResponse;
@@ -18,19 +15,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class AMapWebApiResponseCompatibilityTest {
 
-    private final Gson gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .registerTypeAdapter(String.class, new FlexibleStringTypeAdapter())
-            .registerTypeAdapterFactory(new EmptyArrayAsNullTypeAdapterFactory())
-            .create();
+    private final ObjectMapper objectMapper = AMapObjectMapperFactory.create();
 
     @Test
-    void mapsGeocodeOptionalStringArrays() {
+    void mapsGeocodeOptionalStringArrays() throws Exception {
         String json = "{\"count\":\"1\",\"geocodes\":[{"
                 + "\"formatted_address\":\"江西省南昌市红谷滩区\","
                 + "\"district\":[\"红谷滩区\"],\"township\":[],\"adcode\":\"360113\"}]}";
 
-        AMapGeoResponse response = gson.fromJson(json, AMapGeoResponse.class);
+        AMapGeoResponse response = objectMapper.readValue(json, AMapGeoResponse.class);
 
         assertEquals(1, response.getCount());
         assertEquals("红谷滩区", response.getGeocodes().get(0).getDistrict());
@@ -39,22 +32,22 @@ class AMapWebApiResponseCompatibilityTest {
     }
 
     @Test
-    void mapsRouteSnakeCaseFields() {
+    void mapsRouteSnakeCaseFields() throws Exception {
         String json = "{\"route\":{\"paths\":[{\"toll_distance\":\"120\","
                 + "\"steps\":[{\"assistant_action\":\"右转\"}]}]}}";
 
-        AMapRouteResponse response = gson.fromJson(json, AMapRouteResponse.class);
+        AMapRouteResponse response = objectMapper.readValue(json, AMapRouteResponse.class);
 
         assertEquals("120", response.getRoute().getPaths().get(0).getTollDistance());
         assertEquals("右转", response.getRoute().getPaths().get(0).getSteps().get(0).getAssistantAction());
     }
 
     @Test
-    void mapsWeatherOptionalStringArrays() {
+    void mapsWeatherOptionalStringArrays() throws Exception {
         String json = "{\"lives\":[{\"city\":\"南昌市\",\"temperature\":[],"
                 + "\"humidity\":\"68\"}]}";
 
-        AMapWeatherResponse response = gson.fromJson(json, AMapWeatherResponse.class);
+        AMapWeatherResponse response = objectMapper.readValue(json, AMapWeatherResponse.class);
 
         assertEquals("南昌市", response.getLives().get(0).getCity());
         assertNull(response.getLives().get(0).getTemperature());

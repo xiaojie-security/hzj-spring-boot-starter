@@ -1,7 +1,5 @@
 package com.hzj.amap.core.webapi.domain;
 
-import com.google.gson.annotations.JsonAdapter;
-import com.hzj.amap.core.webapi.adapter.FlexibleStringTypeAdapter;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -36,12 +34,10 @@ public class AMapGeoResponse extends AMapWebApiResponse {
         /** 城市编码。 */
         private String citycode;
         /** 行政区。 */
-        @JsonAdapter(FlexibleStringTypeAdapter.class)
         private String district;
         /** 行政区编码。 */
         private String adcode;
         /** 乡镇街道。 */
-        @JsonAdapter(FlexibleStringTypeAdapter.class)
         private String township;
         /** 社区。 */
         private String neighborhood;

@@ -1,9 +1,7 @@
 package com.hzj.amap;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.hzj.amap.core.webapi.adapter.EmptyArrayAsNullTypeAdapterFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hzj.amap.core.webapi.adapter.AMapObjectMapperFactory;
 import com.hzj.amap.core.webapi.domain.AMapReverseGeoResponse;
 import org.junit.jupiter.api.Test;
 
@@ -16,19 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 class AMapReverseGeoResponseTest {
 
-    private final Gson gson = new GsonBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .registerTypeAdapterFactory(new EmptyArrayAsNullTypeAdapterFactory())
-            .create();
+    private final ObjectMapper objectMapper = AMapObjectMapperFactory.create();
 
     @Test
-    void mapsCamelCaseAddressComponent() {
+    void mapsCamelCaseAddressComponent() throws Exception {
         String json = "{\"regeocode\":{\"formatted_address\":\"江西省南昌市红谷滩区\","
                 + "\"addressComponent\":{\"adcode\":\"360113\",\"district\":\"红谷滩区\","
                 + "\"streetNumber\":{\"street\":\"会展路\"},"
                 + "\"businessAreas\":[{\"name\":\"红谷滩中心区\"}]}}}";
 
-        AMapReverseGeoResponse response = gson.fromJson(json, AMapReverseGeoResponse.class);
+        AMapReverseGeoResponse response = objectMapper.readValue(json, AMapReverseGeoResponse.class);
 
         assertNotNull(response.getRegeocode());
         assertNotNull(response.getRegeocode().getAddressComponent());
@@ -40,14 +35,25 @@ class AMapReverseGeoResponseTest {
     }
 
     @Test
-    void treatsMissingAddressComponentArrayAsNull() {
+    void treatsMissingAddressComponentArrayAsNull() throws Exception {
         String json = "{\"regeocode\":{\"formatted_address\":\"江西省南昌市红谷滩区\","
                 + "\"addressComponent\":[]}}";
 
-        AMapReverseGeoResponse response = gson.fromJson(json, AMapReverseGeoResponse.class);
+        AMapReverseGeoResponse response = objectMapper.readValue(json, AMapReverseGeoResponse.class);
 
         assertNotNull(response.getRegeocode());
         assertEquals("江西省南昌市红谷滩区", response.getRegeocode().getFormattedAddress());
         assertNull(response.getRegeocode().getAddressComponent());
+    }
+
+    @Test
+    void mapsReverseGeoDistrictAndTownshipArrays() throws Exception {
+        String json = "{\"regeocode\":{\"formatted_address\":\"江西省南昌市红谷滩区\","
+                + "\"addressComponent\":{\"district\":[\"红谷滩区\"],\"township\":[]}}}";
+
+        AMapReverseGeoResponse response = objectMapper.readValue(json, AMapReverseGeoResponse.class);
+
+        assertEquals("红谷滩区", response.getRegeocode().getAddressComponent().getDistrict());
+        assertNull(response.getRegeocode().getAddressComponent().getTownship());
     }
 }

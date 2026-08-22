@@ -1,15 +1,13 @@
 package com.hzj.amap.core.webapi.impl;
 
 import cn.hutool.core.net.url.UrlBuilder;
-import com.google.gson.Gson;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hzj.amap.core.enums.AMapHttpMethod;
 import com.hzj.amap.core.webapi.AMapWebApiException;
 import com.hzj.amap.core.webapi.AMapWebApiService;
-import com.hzj.amap.core.webapi.adapter.EmptyArrayAsNullTypeAdapterFactory;
-import com.hzj.amap.core.webapi.adapter.FlexibleStringTypeAdapter;
+import com.hzj.amap.core.webapi.adapter.AMapObjectMapperFactory;
 import com.hzj.amap.core.webapi.domain.*;
 import com.hzj.amap.provider.webapi.AMapWebApiConfigProvider;
 import com.hzj.amap.provider.webapi.entity.WebApiConfig;
@@ -28,24 +26,14 @@ import java.util.Map;
 @Slf4j
 public class DefaultAMapWebApiService implements AMapWebApiService {
 
-    /**
-     * JSON 序列化工具。
-     */
-    private static final Gson GSON = new Gson().newBuilder()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .registerTypeAdapter(String.class, new FlexibleStringTypeAdapter())
-            .registerTypeAdapterFactory(new EmptyArrayAsNullTypeAdapterFactory())
-            .create();
-
-    /**
-     * 高德 Web 服务动态配置提供者。
-     */
+    /** 高德 Web 服务动态配置提供者。 */
     private final AMapWebApiConfigProvider provider;
 
-    /**
-     * HTTP 调用客户端。
-     */
+    /** HTTP 调用客户端。 */
     private final OkHttpClient client;
+
+    /** 高德响应解析器。 */
+    private final ObjectMapper objectMapper;
 
     /**
      * 使用默认 HTTP 客户端创建高德 Web 服务 API。
@@ -53,7 +41,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param provider 高德 Web 服务动态配置提供者
      */
     public DefaultAMapWebApiService(AMapWebApiConfigProvider provider) {
-        this(provider, new OkHttpClient.Builder().build());
+        this(provider, new OkHttpClient.Builder().build(), AMapObjectMapperFactory.create());
     }
 
     /**
@@ -63,14 +51,31 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param client OkHttp 调用客户端
      */
     public DefaultAMapWebApiService(AMapWebApiConfigProvider provider, OkHttpClient client) {
+        this(provider, client, AMapObjectMapperFactory.create());
+    }
+
+    /**
+     * 创建高德 Web 服务 API，并复用应用的 ObjectMapper 配置。
+     *
+     * @param provider 高德 Web 服务动态配置提供者
+     * @param client OkHttp 调用客户端
+     * @param objectMapper 应用 ObjectMapper
+     */
+    public DefaultAMapWebApiService(AMapWebApiConfigProvider provider,
+                                    OkHttpClient client,
+                                    ObjectMapper objectMapper) {
         if (provider == null) {
             throw new IllegalArgumentException("AMapWebApiConfigProvider 不能为空");
         }
         if (client == null) {
             throw new IllegalArgumentException("OkHttpClient 不能为空");
         }
+        if (objectMapper == null) {
+            throw new IllegalArgumentException("ObjectMapper 不能为空");
+        }
         this.provider = provider;
         this.client = client;
+        this.objectMapper = AMapObjectMapperFactory.configure(objectMapper);
     }
 
     @Override
@@ -154,7 +159,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
         String url = buildUrl(request, action);
         try (Response response = client.newCall(buildHttpRequest(url, request.getRequestMethod())).execute()) {
             String responseBody = response.body() == null ? "" : response.body().string();
-            JsonObject data = parseJson(responseBody, action, url);
+            JsonNode data = parseJson(responseBody, action, url);
             String status = getString(data, "status");
             String infoCode = getFirstNotBlank(data, "infocode", "errcode");
             String info = getFirstNotBlank(data, "info", "errmsg");
@@ -164,7 +169,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
                 throw new AMapWebApiException("高德接口调用失败: " + info,
                         response.code(), infoCode);
             }
-            T result = GSON.fromJson(data, responseType);
+            T result = objectMapper.treeToValue(data, responseType);
             mapRouteData(data, result);
             result.setHttpStatus(response.code());
             result.setStatus(status);
@@ -174,6 +179,9 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
         } catch (AMapWebApiException e) {
             log.error("{} 调用高德接口异常，url={}", action, sanitizeUrl(url), e);
             throw e;
+        } catch (JsonProcessingException e) {
+            log.error("{} 解析高德接口响应实体失败，url={}", action, sanitizeUrl(url), e);
+            throw new AMapWebApiException("解析高德接口响应实体失败", null, null);
         } catch (IOException e) {
             log.error("{} 调用高德接口异常，url={}", action, sanitizeUrl(url), e);
             throw new AMapWebApiException("调用高德接口异常", null, null);
@@ -223,10 +231,14 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param url 请求地址
      * @return JSON 响应
      */
-    private JsonObject parseJson(String responseBody, String action, String url) {
+    private JsonNode parseJson(String responseBody, String action, String url) {
         try {
-            return JsonParser.parseString(responseBody).getAsJsonObject();
-        } catch (RuntimeException e) {
+            JsonNode node = objectMapper.readTree(responseBody);
+            if (node == null || !node.isObject()) {
+                throw new IllegalArgumentException("高德接口响应不是 JSON 对象");
+            }
+            return node;
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             log.error("{} 解析高德接口响应失败，url={}, responseBody={}", action, sanitizeUrl(url), abbreviate(responseBody), e);
             throw new AMapWebApiException("解析高德接口响应失败", null, null);
         }
@@ -239,8 +251,9 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param name 属性名
      * @return 属性值
      */
-    private String getString(JsonObject object, String name) {
-        return object.has(name) && !object.get(name).isJsonNull() ? object.get(name).getAsString() : "";
+    private String getString(JsonNode object, String name) {
+        JsonNode value = object.get(name);
+        return value == null || value.isNull() ? "" : value.asText("");
     }
 
     /**
@@ -250,7 +263,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param names 属性名列表
      * @return 第一个非空属性值
      */
-    private String getFirstNotBlank(JsonObject object, String... names) {
+    private String getFirstNotBlank(JsonNode object, String... names) {
         for (String name : names) {
             String value = getString(object, name);
             if (!isBlank(value)) {
@@ -267,12 +280,12 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param status V3 接口业务状态
      * @return 是否成功
      */
-    private boolean isSuccess(JsonObject data, String status) {
+    private boolean isSuccess(JsonNode data, String status) {
         if ("1".equals(status)) {
             return true;
         }
-        return data.has("errcode") && !data.get("errcode").isJsonNull()
-                && "0".equals(data.get("errcode").getAsString());
+        return data.has("errcode") && !data.get("errcode").isNull()
+                && "0".equals(data.get("errcode").asText());
     }
 
     /**
@@ -281,16 +294,25 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param data 高德响应 JSON 对象
      * @param response 自定义响应对象
      */
-    private void mapRouteData(JsonObject data, AMapWebApiResponse response) {
+    private void mapRouteData(JsonNode data, AMapWebApiResponse response) {
         if (!(response instanceof AMapRouteResponse routeResponse)
-                || routeResponse.getRoute() != null || !data.has("data") || data.get("data").isJsonNull()) {
+                || routeResponse.getRoute() != null || !data.has("data") || data.get("data").isNull()) {
             return;
         }
-        JsonObject routeData = data.get("data").getAsJsonObject();
-        if (routeData.has("route") && !routeData.get("route").isJsonNull()) {
-            routeData = routeData.getAsJsonObject("route");
+        JsonNode routeData = data.get("data");
+        if (!routeData.isObject()) {
+            return;
         }
-        routeResponse.setRoute(GSON.fromJson(routeData, AMapRouteResponse.AMapRoute.class));
+        if (routeData.has("route") && !routeData.get("route").isNull()) {
+            routeData = routeData.get("route");
+        }
+        if (routeData.isObject()) {
+            try {
+                routeResponse.setRoute(objectMapper.treeToValue(routeData, AMapRouteResponse.AMapRoute.class));
+            } catch (JsonProcessingException e) {
+                throw new AMapWebApiException("解析高德路径规划结果失败", null, null);
+            }
+        }
     }
 
     /**
