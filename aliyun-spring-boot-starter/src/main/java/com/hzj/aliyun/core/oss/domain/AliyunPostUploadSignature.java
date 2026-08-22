@@ -1,5 +1,6 @@
 package com.hzj.aliyun.core.oss.domain;
 
+import cn.hutool.core.util.IdUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -68,5 +69,5 @@ public class AliyunPostUploadSignature {
      * 业务生成ossId（雪花ID，作为x:oss_id表单自定义变量，回调会带回）
      */
     @JsonProperty("ossId")
-    private String ossId;
+    private String ossId = IdUtil.getSnowflake().nextIdStr();
 }

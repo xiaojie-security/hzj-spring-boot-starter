@@ -2,7 +2,6 @@ package com.hzj.aliyun.core.oss.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.common.comm.io.BoundedInputStream;
@@ -642,8 +641,6 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
         byte[] result = hmacsha256(signingKey, stringToSign);
         String signature = BinaryUtil.toHex(result);
 
-        // 构造自定义变量（键必须以 "x:" 开头，值必须为字符串）
-        String ossId = IdUtil.getSnowflake().nextIdStr();
         // 步骤5：设置回调。
         JSONObject jasonCallback = new JSONObject();
         jasonCallback.put("callbackUrl", callback);
@@ -664,7 +661,6 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
         uploadSignature.setDir(directory);
         uploadSignature.setHost("https://" + bucket + "." + endpoint);
         uploadSignature.setCallback(base64CallbackBody);
-        uploadSignature.setOssId(ossId);
         return uploadSignature;
     }
 
