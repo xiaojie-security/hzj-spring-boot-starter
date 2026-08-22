@@ -41,6 +41,7 @@ public class AMapGeoResponse extends AMapWebApiResponse {
         /** 行政区编码。 */
         private String adcode;
         /** 乡镇街道。 */
+        @JsonAdapter(FlexibleStringTypeAdapter.class)
         private String township;
         /** 社区。 */
         private String neighborhood;
