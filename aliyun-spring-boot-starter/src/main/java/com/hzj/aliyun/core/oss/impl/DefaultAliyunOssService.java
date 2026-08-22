@@ -4,22 +4,22 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import com.hzj.aliyun.core.oss.AbstractAliyunOssService;
-import com.hzj.aliyun.core.oss.exception.AliyunOssException;
-import com.hzj.aliyun.core.oss.domain.AliyunMediaUploadDetails;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.common.comm.io.BoundedInputStream;
 import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
-import com.hzj.aliyun.provider.aliyun.oss.AliyunOssConfigProvider;
-import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssConfig;
-import com.hzj.aliyun.provider.aliyun.oss.enums.AliyunOssPermission;
 import com.aliyun.sdk.service.oss2.OSSClient;
 import com.aliyun.sdk.service.oss2.models.*;
 import com.aliyun.sdk.service.oss2.transport.BinaryData;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hzj.aliyun.core.oss.AbstractAliyunOssService;
+import com.hzj.aliyun.core.oss.domain.AliyunMediaUploadDetails;
+import com.hzj.aliyun.core.oss.domain.AliyunPostUploadSignature;
+import com.hzj.aliyun.core.oss.exception.AliyunOssException;
+import com.hzj.aliyun.provider.aliyun.oss.AliyunOssConfigProvider;
+import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssConfig;
+import com.hzj.aliyun.provider.aliyun.oss.enums.AliyunOssPermission;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -28,7 +28,10 @@ import org.codehaus.jettison.json.JSONObject;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -565,7 +568,7 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
 
 
     @Override
-    public Map<String, String> generatePostSignatureForOssUpload(String accessKeyId,String accessKeySecret, String securityToken) throws JsonProcessingException, JSONException {
+    public AliyunPostUploadSignature generatePostSignatureForOssUpload(String accessKeyId, String accessKeySecret, String securityToken) throws JsonProcessingException, JSONException {
         if (StrUtil.isEmpty(accessKeyId) || StrUtil.isEmpty(accessKeySecret) || StrUtil.isEmpty(securityToken)) {
             log.error("AliyunOssMediaService generatePostSignatureForOssUpload 参数错误 accessKeyId:{} accessKeySecret:{} securityToken:{}",
                     accessKeyId, accessKeySecret, securityToken);
@@ -650,19 +653,19 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
         jasonCallback.put("callbackBodyType", "application/x-www-form-urlencoded");
         String base64CallbackBody = BinaryUtil.toBase64String(jasonCallback.toString().getBytes());
 
-        Map<String, String> response = new HashMap<>();
-        // 将数据添加到 map 中
-        response.put("version", "OSS4-HMAC-SHA256");
-        response.put("policy", stringToSign);
-        response.put("x_oss_credential", x_oss_credential);
-        response.put("x_oss_date", x_oss_date);
-        response.put("signature", signature);
-        response.put("security_token", securityToken);
-        response.put("dir", directory);
-        response.put("host", "https://" + bucket + "." + endpoint);
-        response.put("callback", base64CallbackBody);
-        response.put("ossId", ossId);
-        return response;
+
+        AliyunPostUploadSignature uploadSignature = new AliyunPostUploadSignature();
+        uploadSignature.setVersion("OSS4‑HMAC‑SHA256");
+        uploadSignature.setPolicy(stringToSign);
+        uploadSignature.setXOssCredential(x_oss_credential);
+        uploadSignature.setXOssDate(x_oss_date);
+        uploadSignature.setSignature(signature);
+        uploadSignature.setSecurityToken(securityToken);
+        uploadSignature.setDir(directory);
+        uploadSignature.setHost("https://" + bucket + "." + endpoint);
+        uploadSignature.setCallback(base64CallbackBody);
+        uploadSignature.setOssId(ossId);
+        return uploadSignature;
     }
 
 

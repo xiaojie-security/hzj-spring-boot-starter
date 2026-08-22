@@ -1,14 +1,13 @@
 package com.hzj.aliyun.core.oss;
 
 
-
-import com.hzj.aliyun.core.oss.domain.AliyunMediaUploadDetails;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.hzj.aliyun.core.oss.domain.AliyunMediaUploadDetails;
+import com.hzj.aliyun.core.oss.domain.AliyunPostUploadSignature;
 import org.codehaus.jettison.json.JSONException;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 public interface AliyunOssService {
 
@@ -147,7 +146,7 @@ public interface AliyunOssService {
      * 生成POST签名，用于上传文件
      * @return 签名信息
      */
-    Map<String, String> generatePostSignatureForOssUpload(String accessKeyId,String accessKeySecret, String securityToken) throws JsonProcessingException, JSONException;
+    AliyunPostUploadSignature generatePostSignatureForOssUpload(String accessKeyId, String accessKeySecret, String securityToken) throws JsonProcessingException, JSONException;
 
 
     /**
