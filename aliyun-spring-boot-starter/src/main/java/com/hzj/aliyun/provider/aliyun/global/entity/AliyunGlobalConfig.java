@@ -15,8 +15,7 @@ public class AliyunGlobalConfig {
     private String accessKeyId;
     /** 全局 AccessKey Secret。 */
     private String accessKeySecret;
-    /** STS 临时凭证有效期，单位为秒。 */
-    private Long expire = 3600L;
+
 
     /**
      * 判断当前是否使用 STS。
