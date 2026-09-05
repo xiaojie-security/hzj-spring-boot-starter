@@ -2,37 +2,25 @@ package com.hzj.aliyun.config;
 
 import com.hzj.aliyun.core.imm.AliyunImmService;
 import com.hzj.aliyun.core.imm.impl.DefaultAliyunImmService;
-import com.hzj.aliyun.properties.AliyunImmProperties;
 import com.hzj.aliyun.utils.AliyunCredentialRegistry;
 import com.hzj.aliyun.provider.aliyun.imm.AliyunImmConfigProvider;
 import com.hzj.aliyun.provider.aliyun.imm.entity.AliyunImmConfig;
-import com.hzj.aliyun.provider.aliyun.imm.impl.PropertiesAliyunImmConfigProvider;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 /**
  * 阿里云 IMM 配置。
  */
 @AutoConfiguration
-@RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "aliyun.imm", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(AliyunImmConfigProvider.class)
 public class AliyunImmConfiguration extends AliyunBaseConfiguration {
-
-    private final AliyunImmConfigProvider configProvider;
-
-    @Bean
-    @ConditionalOnMissingBean(AliyunImmConfigProvider.class)
-    public AliyunImmConfigProvider aliyunImmConfigProvider(AliyunImmProperties properties) {
-        return new PropertiesAliyunImmConfigProvider(properties);
-    }
-
 
     @Bean
     @ConditionalOnMissingBean(com.aliyun.imm20200930.Client.class)
-    public com.aliyun.imm20200930.Client immClient(AliyunCredentialRegistry credentialRegistry) throws Exception {
+    public com.aliyun.imm20200930.Client immClient(AliyunCredentialRegistry credentialRegistry,
+                                                    AliyunImmConfigProvider configProvider) throws Exception {
         if (configProvider.getConfig() == null) {
             return null;
         }
@@ -47,7 +35,8 @@ public class AliyunImmConfiguration extends AliyunBaseConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(AliyunImmService.class)
-    public AliyunImmService aliyunImmService(com.aliyun.imm20200930.Client immClient) {
+    public AliyunImmService aliyunImmService(AliyunImmConfigProvider configProvider,
+                                             com.aliyun.imm20200930.Client immClient) {
         return new DefaultAliyunImmService(configProvider, immClient);
     }
 }
