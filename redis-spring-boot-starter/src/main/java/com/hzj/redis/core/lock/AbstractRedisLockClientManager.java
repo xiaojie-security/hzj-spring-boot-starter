@@ -2,9 +2,11 @@ package com.hzj.redis.core.lock;
 
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
 import com.hzj.redis.provider.lock.entity.DistributedLockConfig;
-import com.hzj.redis.provider.redis.RedisConfigProvider;
 import com.hzj.redis.provider.redis.entity.RedisConfig;
-import lombok.Setter;
+import com.hzj.redis.provider.redis.entity.RedisClusterConfig;
+import com.hzj.redis.provider.redis.entity.RedisSentinelConfig;
+import com.hzj.redis.provider.redis.entity.RedisSingleConfig;
+import com.hzj.redis.provider.redis.enums.DeployMode;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.ClusterServersConfig;
@@ -13,51 +15,47 @@ import org.redisson.config.ReadMode;
 import org.redisson.config.SentinelServersConfig;
 import org.redisson.config.SingleServerConfig;
 import org.redisson.config.SubscriptionMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.data.redis.connection.RedisNode;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
-import java.io.IOException;
+import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractRedisLockClientManager implements RedisLockService, ApplicationContextAware {
-
-    @Setter
-    private ApplicationContext applicationContext;
+/**
+ * Redis 分布式锁客户端管理器基类。
+ */
+public abstract class AbstractRedisLockClientManager implements RedisLockService {
 
     protected final DistributedLockConfigProvider configProvider;
 
-    protected final RedisConfigProvider redisConfigProvider;
-
-    protected final DefaultListableBeanFactory beanFactory;
+    protected final RedissonClient redissonClient;
 
     public static final String REDISSON_SERVICE_BEAN_NAME = "RedissonClient";
 
-    private static final ReentrantLock REFRESH_LOCK = new ReentrantLock(true);
-
-    protected static final Logger log = LoggerFactory.getLogger(AbstractRedisLockClientManager.class);
-
-
-    public AbstractRedisLockClientManager(ConfigurableListableBeanFactory beanFactory,
-                                         DistributedLockConfigProvider configProvider,
-                                         RedisConfigProvider redisConfigProvider) {
-        this.beanFactory = (DefaultListableBeanFactory) beanFactory;
+    /**
+     * 创建 Redis 分布式锁客户端管理器。
+     *
+     * @param redissonClient Redisson 客户端
+     * @param configProvider 分布式锁配置提供者
+     */
+    public AbstractRedisLockClientManager(RedissonClient redissonClient,
+                                         DistributedLockConfigProvider configProvider) {
+        this.redissonClient = Objects.requireNonNull(redissonClient, "Redisson 客户端不能为空");
         this.configProvider = configProvider;
-        this.redisConfigProvider = redisConfigProvider;
     }
 
 
-    public RedissonClient getClient(){
-        if (applicationContext == null) {
-            log.error("AbstractRedisLockClientManager.getClient ApplicationContext容器不存在");
-            throw new RuntimeException("获取客户端失败");
-        }
-        return applicationContext.getBean(REDISSON_SERVICE_BEAN_NAME, RedissonClient.class);
+    /**
+     * 获取 Redisson 客户端。
+     *
+     * @return Redisson 客户端
+     */
+    @Override
+    public RedissonClient getClient() {
+        return redissonClient;
     }
 
     @Override
@@ -178,30 +176,87 @@ public abstract class AbstractRedisLockClientManager implements RedisLockService
         }
     }
 
-    @Override
-    public void refreshClient() throws IOException {
-        if (!REFRESH_LOCK.tryLock()) {
-            throw new IllegalStateException("正在执行 Redisson 客户端刷新操作，请稍后重试");
+    /**
+     * 根据 Spring Boot RedisProperties 组装 Redisson 客户端。
+     *
+     * @param distributedLockConfig 分布式锁配置
+     * @param redisProperties Spring Boot Redis 配置属性
+     * @return Redisson 客户端
+     */
+    public static RedissonClient assembly(DistributedLockConfig distributedLockConfig,
+                                          RedisProperties redisProperties) {
+        if (redisProperties == null) {
+            throw new IllegalArgumentException("Redis 配置属性不能为空");
         }
-        RedissonClient newClient = null;
+        return assembly(distributedLockConfig, convertRedisConfig(redisProperties));
+    }
+
+    private static RedisConfig convertRedisConfig(RedisProperties properties) {
+        RedisConfig config = new RedisConfig();
+        config.setPassword(properties.getPassword());
+        config.setDatabase(properties.getDatabase());
+        config.setSsl(properties.getSsl().isEnabled());
+        config.setTimeoutMs(getDurationMillis(properties.getTimeout(), config.getTimeoutMs()));
+        config.setConnectTimeoutMs(getDurationMillis(properties.getConnectTimeout(), config.getConnectTimeoutMs()));
+
+        RedisProperties.Lettuce lettuce = properties.getLettuce();
+        if (lettuce != null && lettuce.getPool() != null) {
+            RedisProperties.Pool pool = lettuce.getPool();
+            config.setIdleConnectionSize(pool.getMinIdle());
+            config.setMaxConnectionSize(pool.getMaxActive());
+        }
+
+        if (properties.getCluster() != null && !CollectionUtils.isEmpty(properties.getCluster().getNodes())) {
+            config.setDeployMode(DeployMode.CLUSTER);
+            RedisClusterConfig clusterConfig = new RedisClusterConfig();
+            clusterConfig.setNodes(properties.getCluster().getNodes().stream()
+                    .map(AbstractRedisLockClientManager::parseNode)
+                    .toList());
+            clusterConfig.setMaxRedirects(defaultValue(properties.getCluster().getMaxRedirects(), 3));
+            config.setCluster(clusterConfig);
+            return config;
+        }
+
+        if (properties.getSentinel() != null && StringUtils.hasText(properties.getSentinel().getMaster())) {
+            config.setDeployMode(DeployMode.SENTINEL);
+            RedisSentinelConfig sentinelConfig = new RedisSentinelConfig();
+            sentinelConfig.setMasterName(properties.getSentinel().getMaster());
+            sentinelConfig.setSentinelPassword(properties.getSentinel().getPassword());
+            sentinelConfig.setSentinels(properties.getSentinel().getNodes().stream()
+                    .map(AbstractRedisLockClientManager::parseNode)
+                    .toList());
+            config.setSentinel(sentinelConfig);
+            return config;
+        }
+
+        config.setDeployMode(DeployMode.SINGLE);
+        RedisSingleConfig singleConfig = new RedisSingleConfig();
+        singleConfig.setAddress(new RedisNode(properties.getHost(), properties.getPort()));
+        config.setSingle(singleConfig);
+        return config;
+    }
+
+    private static RedisNode parseNode(String node) {
+        if (!StringUtils.hasText(node)) {
+            throw new IllegalArgumentException("Redis 节点地址不能为空");
+        }
+        String[] parts = node.split(":", -1);
+        if (parts.length != 2 || !StringUtils.hasText(parts[0])) {
+            throw new IllegalArgumentException("Redis 节点格式必须为 host:port，非法值: " + node);
+        }
         try {
-            newClient = assembly(configProvider.getConfig(), redisConfigProvider.getConfig());
-            RedissonClient oldClient = null;
-            if (beanFactory.containsSingleton(REDISSON_SERVICE_BEAN_NAME)) {
-                oldClient = beanFactory.getBean(REDISSON_SERVICE_BEAN_NAME, RedissonClient.class);
-                beanFactory.destroySingleton(REDISSON_SERVICE_BEAN_NAME);
+            int port = Integer.parseInt(parts[1].trim());
+            if (port <= 0) {
+                throw new IllegalArgumentException("Redis 节点端口必须大于0: " + node);
             }
-            beanFactory.registerSingleton(REDISSON_SERVICE_BEAN_NAME, newClient);
-            newClient = null;
-            if (oldClient != null) {
-                oldClient.shutdown();
-            }
-        } finally {
-            if (newClient != null) {
-                newClient.shutdown();
-            }
-            REFRESH_LOCK.unlock();
+            return new RedisNode(parts[0].trim(), port);
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Redis 节点端口非法: " + node, exception);
         }
+    }
+
+    private static long getDurationMillis(Duration duration, long defaultValue) {
+        return duration == null ? defaultValue : duration.toMillis();
     }
 
     public static RedissonClient assembly(DistributedLockConfig distributedLockConfig, RedisConfig redisConfig) {

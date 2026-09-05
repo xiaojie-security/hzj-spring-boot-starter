@@ -6,19 +6,18 @@ import com.hzj.redis.core.lock.RedisLockService;
 import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
 import com.hzj.redis.core.queue.RedisDelayQueueService;
 import com.hzj.redis.core.queue.impl.DefaultRedisDelayQueueService;
-import com.hzj.redis.provider.connection.RedisConnectionFactoryProvider;
-import com.hzj.redis.provider.connection.impl.LettuceRedisConnectionFactoryProvider;
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
-import com.hzj.redis.provider.redis.RedisConfigProvider;
-import com.hzj.redis.provider.redis.impl.PropertiesRedisConfigProvider;
+import com.hzj.redis.provider.lock.impl.PropertiesDistributedLockConfigProvider;
+import com.hzj.redis.provider.lock.properties.RedisLockProperties;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -27,27 +26,27 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 /**
  * Redis 核心自动配置。
  * <p>
- * 负责注册 Redis 配置提供者、Lettuce 连接工厂、RedisTemplate、缓存服务、
- * RedissonClient 以及分布式锁服务。RedisCacheService 复用同一个已完成初始化的
- * RedisTemplate，避免重复维护连接工厂和序列化器配置。
+ * 负责注册 RedisTemplate、缓存服务、RedissonClient 以及分布式锁服务。
+ * Redis 连接工厂和连接参数由 Spring Boot Redis 自动配置负责；本配置只在应用
+ * 启动时根据 RedisProperties 创建 RedissonClient，不提供运行期动态刷新。
  * </p>
  */
-@AutoConfiguration
-@EnableConfigurationProperties({RedisProperties.class})
+@AutoConfiguration(after = RedisAutoConfiguration.class)
+@EnableConfigurationProperties({RedisProperties.class, RedisLockProperties.class})
 public class RedisCoreConfiguration {
 
     /**
      * 注册 RedisTemplate。
      *
-     * @param connectionFactoryProvider Redis 连接工厂提供者
+     * @param connectionFactory Redis 连接工厂
      * @return 已配置连接工厂和序列化器的 RedisTemplate
      */
     @Bean
     @ConditionalOnMissingBean(RedisTemplate.class)
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactoryProvider connectionFactoryProvider) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
 
-        redisTemplate.setConnectionFactory(connectionFactoryProvider.getRedisConnectionFactory());
+        redisTemplate.setConnectionFactory(connectionFactory);
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
         redisTemplate.setKeySerializer(stringRedisSerializer);
         redisTemplate.setHashKeySerializer(stringRedisSerializer);
@@ -75,33 +74,21 @@ public class RedisCoreConfiguration {
     }
 
     /**
-     * 注册基于 Spring Boot RedisProperties 的默认 Redis 配置提供者。
+     * 注册基于 Spring Boot Properties 的默认分布式锁配置提供者。
      *
-     * @param redisProperties Spring Boot Redis 配置属性
-     * @return Redis 配置提供者
+     * @param properties 分布式锁配置属性
+     * @return 分布式锁配置提供者
      */
     @Bean
-    @ConditionalOnMissingBean(RedisConfigProvider.class)
-    public RedisConfigProvider redisConfigProvider(RedisProperties redisProperties) {
-        return new PropertiesRedisConfigProvider(redisProperties);
-    }
-
-    /**
-     * 注册默认 Lettuce Redis 连接工厂提供者。
-     *
-     * @param redisConfigProvider Redis 配置提供者
-     * @return Redis 连接工厂提供者
-     */
-    @Bean
-    @ConditionalOnMissingBean(RedisConnectionFactoryProvider.class)
-    public RedisConnectionFactoryProvider redisConnectionFactoryProvider(RedisConfigProvider redisConfigProvider) {
-        return new LettuceRedisConnectionFactoryProvider(redisConfigProvider);
+    @ConditionalOnMissingBean(DistributedLockConfigProvider.class)
+    public DistributedLockConfigProvider distributedLockConfigProvider(RedisLockProperties properties) {
+        return new PropertiesDistributedLockConfigProvider(properties);
     }
 
     /**
      * 注册 RedissonClient 单例。
      *
-     * @param redisConfigProvider Redis 配置提供者
+     * @param redisProperties Spring Boot Redis 配置属性
      * @param distributedLockConfigProvider 分布式锁配置提供者
      * @return RedissonClient 单例
      */
@@ -110,28 +97,26 @@ public class RedisCoreConfiguration {
             name = AbstractRedisLockClientManager.REDISSON_SERVICE_BEAN_NAME )
     @ConditionalOnBean(DistributedLockConfigProvider.class)
     public RedissonClient redissonClient(
-            RedisConfigProvider redisConfigProvider,
+            RedisProperties redisProperties,
             DistributedLockConfigProvider distributedLockConfigProvider) {
         return AbstractRedisLockClientManager.assembly(
-                distributedLockConfigProvider.getConfig(), redisConfigProvider.getConfig());
+                distributedLockConfigProvider.getConfig(), redisProperties);
     }
 
     /**
      * 注册分布式锁服务。
      *
-     * @param beanFactory Spring Bean 工厂，用于动态替换 RedissonClient 单例
+     * @param redissonClient Redisson 客户端
      * @param distributedLockConfigProvider 分布式锁配置提供者
-     * @param redisConfigProvider Redis 配置提供者
      * @return 分布式锁服务
      */
     @Bean
     @ConditionalOnMissingBean(RedisLockService.class)
     @ConditionalOnBean(DistributedLockConfigProvider.class)
     public RedisLockService redisLockService(
-            ConfigurableListableBeanFactory beanFactory,
-            DistributedLockConfigProvider distributedLockConfigProvider,
-            RedisConfigProvider redisConfigProvider) {
-        return new DefaultRedisLockService(beanFactory, distributedLockConfigProvider, redisConfigProvider);
+            RedissonClient redissonClient,
+            DistributedLockConfigProvider distributedLockConfigProvider) {
+        return new DefaultRedisLockService(redissonClient, distributedLockConfigProvider);
     }
 
 

@@ -2,13 +2,21 @@ package com.hzj.redis.core.lock.impl;
 
 import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
-import com.hzj.redis.provider.redis.RedisConfigProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.redisson.api.RedissonClient;
 
+/**
+ * 默认 Redis 分布式锁服务。
+ */
 public class DefaultRedisLockService extends AbstractRedisLockClientManager {
-    public DefaultRedisLockService(ConfigurableListableBeanFactory beanFactory,
-                                   DistributedLockConfigProvider configProvider,
-                                   RedisConfigProvider redisConfigProvider) {
-        super(beanFactory, configProvider, redisConfigProvider);
+
+    /**
+     * 创建默认分布式锁服务。
+     *
+     * @param redissonClient Redisson 客户端
+     * @param configProvider 分布式锁配置提供者
+     */
+    public DefaultRedisLockService(RedissonClient redissonClient,
+                                   DistributedLockConfigProvider configProvider) {
+        super(redissonClient, configProvider);
     }
 }

@@ -2,9 +2,11 @@ package com.hzj.redis.core.lock;
 
 import org.redisson.api.RedissonClient;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Redis 分布式锁服务。
+ */
 public interface RedisLockService {
 
 
@@ -93,9 +95,4 @@ public interface RedisLockService {
      */
     boolean isHeldByCurrentThread(String lockName);
 
-    /**
-     * 刷新 RedissonClient 客户端
-     * 根据传入的配置信息刷新 RedissonClient 客户端实例。
-     */
-    void refreshClient() throws IOException;
 }
