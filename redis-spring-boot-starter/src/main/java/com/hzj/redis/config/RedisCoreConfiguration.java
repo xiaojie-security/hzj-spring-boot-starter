@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -69,8 +70,16 @@ public class RedisCoreConfiguration {
     @Bean
     @ConditionalOnMissingBean(RedisCacheService.class)
     public RedisCacheService redisCacheService(RedisLockService redisLockService,
-                                               RedisTemplate<String, Object> redisTemplate) {
-        return new RedisCacheService(redisLockService, redisTemplate);
+                                               @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate) {
+        /*
+         * Spring Boot 默认提供的 RedisTemplate 泛型通常为 <Object, Object>，
+         * 而缓存服务内部约定使用 <String, Object>。泛型仅用于编译期，
+         * 此处在自动装配边界进行受控转换，避免因泛型不变导致 Bean 无法注入。
+         */
+        @SuppressWarnings("unchecked")
+        RedisTemplate<String, Object> typedRedisTemplate =
+                (RedisTemplate<String, Object>) (RedisTemplate<?, ?>) redisTemplate;
+        return new RedisCacheService(redisLockService, typedRedisTemplate);
     }
 
     /**
