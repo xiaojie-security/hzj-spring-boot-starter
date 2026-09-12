@@ -43,7 +43,6 @@ public class RedisCoreConfiguration {
      * @return 已配置连接工厂和序列化器的 RedisTemplate
      */
     @Bean
-    @ConditionalOnMissingBean(RedisTemplate.class)
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
 

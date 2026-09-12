@@ -45,6 +45,12 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultAliyunOssService extends AbstractAliyunOssService {
     public static final long EXPIRE_TIME = 60 * 15L;
     public static final long FILE_SIZE_MB = 500L;
+    /**
+     * OSS POST 直传签名算法版本。
+     * 必须使用 ASCII 连字符 '-'，policy 条件与返回给客户端的 x-oss-signature-version 取值必须完全一致，
+     * 历史上这里被写成 U+2011 不换行连字符，导致 OSS 无法识别签名版本而返回 400。
+     */
+    public static final String SIGNATURE_VERSION = "OSS4-HMAC-SHA256";
     private final OSSClient ossV2Client;
     private final OSS ossClient;
     private final AliyunOssConfigProvider configProvider;
@@ -609,7 +615,7 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
         conditions.add(securityTokenCondition);
 
         Map<String, String> signatureVersionCondition = new HashMap<>();
-        signatureVersionCondition.put("x-oss-signature-version", "OSS4-HMAC-SHA256");
+        signatureVersionCondition.put("x-oss-signature-version", SIGNATURE_VERSION);
         conditions.add(signatureVersionCondition);
 
         Map<String, String> credentialCondition = new HashMap<>();
@@ -652,7 +658,7 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
 
 
         AliyunPostUploadSignature uploadSignature = new AliyunPostUploadSignature();
-        uploadSignature.setVersion("OSS4‑HMAC‑SHA256");
+        uploadSignature.setVersion(SIGNATURE_VERSION);
         uploadSignature.setPolicy(stringToSign);
         uploadSignature.setXOssCredential(x_oss_credential);
         uploadSignature.setXOssDate(x_oss_date);
