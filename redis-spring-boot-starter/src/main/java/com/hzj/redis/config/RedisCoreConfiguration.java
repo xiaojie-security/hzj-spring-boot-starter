@@ -31,8 +31,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * Redis 连接工厂和连接参数由 Spring Boot Redis 自动配置负责；本配置只在应用
  * 启动时根据 RedisProperties 创建 RedissonClient，不提供运行期动态刷新。
  * </p>
+ * <p>
+ * 必须在 {@link RedisAutoConfiguration} 之前注册：Spring Boot 自带的
+ * redisTemplate 带 {@code @ConditionalOnMissingBean}，只要本配置的 redisTemplate
+ * 先完成注册，它就会自动退让；反之若排在其后，同名 Bean 会被重复注册，
+ * 在默认的 allow-bean-definition-overriding=false 下直接导致启动失败。
+ * </p>
  */
-@AutoConfiguration(after = RedisAutoConfiguration.class)
+@AutoConfiguration(before = RedisAutoConfiguration.class)
 @EnableConfigurationProperties({RedisProperties.class, RedisLockProperties.class})
 public class RedisCoreConfiguration {
 
@@ -43,6 +49,7 @@ public class RedisCoreConfiguration {
      * @return 已配置连接工厂和序列化器的 RedisTemplate
      */
     @Bean
+    @ConditionalOnMissingBean(name = "redisTemplate")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
 
