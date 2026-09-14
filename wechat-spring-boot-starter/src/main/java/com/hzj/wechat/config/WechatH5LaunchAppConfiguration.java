@@ -7,15 +7,16 @@ import com.hzj.wechat.provider.wechat.mobile.launch.WechatH5LaunchAppConfigProvi
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 /**
  * 微信 H5 JS-SDK 签名与 Launch App 自动装配配置。
+ * <p>
+ * 仅当使用方同时提供了 {@link WechatAccessTokenService} 与
+ * {@link WechatH5LaunchAppConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration(after = WechatAccessConfiguration.class)
-@ConditionalOnBean(WechatAccessTokenService.class)
-@ConditionalOnProperty(prefix = "wechat.mobile.launch", name = "enable", havingValue = "true")
+@ConditionalOnBean({WechatAccessTokenService.class, WechatH5LaunchAppConfigProvider.class})
 public class WechatH5LaunchAppConfiguration {
 
     /**

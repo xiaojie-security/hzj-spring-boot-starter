@@ -4,15 +4,17 @@ import com.hzj.wechat.core.mobile.share.WechatOpenSdkShareSignatureService;
 import com.hzj.wechat.core.mobile.share.impl.DefaultWechatOpenSdkShareSignatureService;
 import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 /**
  * 微信 OpenSDK 分享能力自动装配配置。
+ * <p>
+ * 仅当使用方提供了 {@link WechatOpenSdkShareConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration
-@ConditionalOnProperty(prefix = "wechat.mobile.share", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(WechatOpenSdkShareConfigProvider.class)
 public class WechatOpenSdkShareConfiguration {
 
     /**

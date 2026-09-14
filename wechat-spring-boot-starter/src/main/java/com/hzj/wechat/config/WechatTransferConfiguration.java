@@ -7,16 +7,19 @@ import com.hzj.wechat.core.transfer.service.impl.DefaultWechatAutoApprovalResult
 import com.hzj.wechat.core.transfer.service.impl.DefaultWechatTransferCallbackService;
 import com.hzj.wechat.core.transfer.service.impl.DefaultWechatTransferService;
 import com.hzj.wechat.provider.wechat.transfer.WechatTransferConfigProvider;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 
+/**
+ * 微信商家转账自动装配配置。
+ * <p>
+ * 仅当使用方提供了 {@link WechatTransferConfigProvider} Bean 时才会装配。
+ */
 @AutoConfiguration
-@RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "wechat.transfer", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(WechatTransferConfigProvider.class)
 public class WechatTransferConfiguration {
 
 

@@ -1,6 +1,6 @@
 package com.hzj.wechat.provider.wechat.qrcode.entity;
 
-import com.hzj.wechat.core.qrcode.enums.WechatXcxEnvVersion;
+import com.hzj.wechat.core.xcx.qrcode.enums.WechatXcxEnvVersion;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
