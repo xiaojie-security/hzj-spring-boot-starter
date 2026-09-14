@@ -3,18 +3,18 @@ package com.hzj.alipay.config;
 import com.hzj.alipay.core.oauth2.AliPayOAuth2Service;
 import com.hzj.alipay.core.oauth2.impl.DefaultAliPayOAuth2Service;
 import com.hzj.alipay.provider.alipay.oauth2.AlipayOAuth2ConfigProvider;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 /**
- * 阿里云支付配置。
+ * 支付宝 OAuth2 自动装配配置。
+ * <p>
+ * 仅当使用方提供了 {@link AlipayOAuth2ConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration
-@RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "alipay.oauth2", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(AlipayOAuth2ConfigProvider.class)
 public class AlipayOAuth2Configuration {
 
     /**
