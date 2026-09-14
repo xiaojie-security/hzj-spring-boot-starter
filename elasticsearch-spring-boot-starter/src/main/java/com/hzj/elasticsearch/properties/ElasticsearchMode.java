@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.provider.es.enums;
+package com.hzj.elasticsearch.properties;
 
 import org.springframework.util.StringUtils;
 
@@ -21,14 +21,13 @@ public enum ElasticsearchMode {
     }
 
     /**
-     * 获取协议字符串。
+     * 获取模式字符串。
      *
-     * @return 协议字符串
+     * @return 模式字符串
      */
     public String getValue() {
         return value;
     }
-
 
     /**
      * 判断当前是否为集群模式。

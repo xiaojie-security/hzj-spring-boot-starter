@@ -7,11 +7,9 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.hzj.common.utils.ConfigStringLoader;
-import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
-import com.hzj.elasticsearch.provider.es.entity.ElasticsearchConfig;
-import com.hzj.elasticsearch.provider.es.enums.ElasticsearchMode;
-import com.hzj.elasticsearch.provider.es.enums.ElasticsearchScheme;
-import lombok.Setter;
+import com.hzj.elasticsearch.properties.ElasticsearchMode;
+import com.hzj.elasticsearch.properties.ElasticsearchProperties;
+import com.hzj.elasticsearch.properties.ElasticsearchScheme;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -22,39 +20,42 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 
-public abstract class AbstractElasticsearchClientManager implements ElasticsearchClientService, ApplicationContextAware {
+/**
+ * Elasticsearch 客户端管理器基类。
+ * <p>
+ * 客户端在启动时由 {@link #assembly(ElasticsearchProperties)} 一次性装配后注入，
+ * 不再保留运行期动态刷新能力。
+ */
+public abstract class AbstractElasticsearchClientManager implements ElasticsearchClientService {
 
-    @Setter
-    protected ApplicationContext applicationContext;
-
-    protected final ElasticsearchConfigProvider configProvider;
-
-    protected final DefaultListableBeanFactory beanFactory;
-
+    /**
+     * ElasticsearchClient Bean 名称。
+     */
     public static final String ES_SERVICE_BEAN_NAME = "ElasticsearchClient";
-
-    private static final ReentrantLock REFRESH_LOCK = new ReentrantLock(true);
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractElasticsearchClientManager.class);
 
-    public AbstractElasticsearchClientManager(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
-        this.beanFactory = (DefaultListableBeanFactory) beanFactory;
-        this.configProvider = configProvider;
+    /**
+     * 已装配的 Elasticsearch 客户端。
+     */
+    protected final ElasticsearchClient client;
+
+    /**
+     * 创建 Elasticsearch 客户端管理器。
+     *
+     * @param client Elasticsearch 客户端
+     */
+    protected AbstractElasticsearchClientManager(ElasticsearchClient client) {
+        this.client = Objects.requireNonNull(client, "Elasticsearch 客户端不能为空");
     }
 
     /**
@@ -62,35 +63,32 @@ public abstract class AbstractElasticsearchClientManager implements Elasticsearc
      *
      * @return Elasticsearch 客户端
      */
+    @Override
     public ElasticsearchClient getClient() {
-        if (applicationContext == null) {
-            log.error("AbstractElasticsearchService.getClient ApplicationContext容器不存在");
-            throw new RuntimeException("获取客户端失败");
-        }
-        return applicationContext.getBean(ES_SERVICE_BEAN_NAME, ElasticsearchClient.class);
+        return client;
     }
 
-
     /**
-     * 装配的 Elasticsearch 客户端。
-     * @param config ES配置
+     * 根据配置属性装配 Elasticsearch 客户端。
+     *
+     * @param properties Elasticsearch 配置属性
      * @return Elasticsearch 客户端
      */
-    public static ElasticsearchClient assembly(ElasticsearchConfig config) {
-        Objects.requireNonNull(config, "Elasticsearch 配置不能为空");
+    public static ElasticsearchClient assembly(ElasticsearchProperties properties) {
+        Objects.requireNonNull(properties, "Elasticsearch 配置不能为空");
         // 1. 构建 RestClientBuilder
         RestClientBuilder restClientBuilder;
-        ElasticsearchMode mode = config.getMode() == null ? ElasticsearchMode.SINGLE_NODE : config.getMode();
-        ElasticsearchScheme scheme = config.getScheme() == null ? ElasticsearchScheme.HTTP : config.getScheme();
+        ElasticsearchMode mode = properties.getMode() == null ? ElasticsearchMode.SINGLE_NODE : properties.getMode();
+        ElasticsearchScheme scheme = properties.getScheme() == null ? ElasticsearchScheme.HTTP : properties.getScheme();
         if (mode.isCluster()) {
-            List<ElasticsearchConfig.ElasticsearchNode> nodes = config.getNodes();
+            List<ElasticsearchProperties.Node> nodes = properties.getNodes();
             if (CollUtil.isEmpty(nodes)) {
                 throw new IllegalArgumentException("Elasticsearch 集群模式必须配置 nodes");
             }
             HttpHost[] httpHosts = nodes.stream().map(node -> buildHttpHost(node, scheme)).toArray(HttpHost[]::new);
             restClientBuilder = RestClient.builder(httpHosts);
         } else {
-            ElasticsearchConfig.ElasticsearchNode node = config.getNode();
+            ElasticsearchProperties.Node node = properties.getNode();
             if (ObjUtil.isNull(node)) {
                 throw new IllegalArgumentException("Elasticsearch 单节点模式必须配置 node");
             }
@@ -98,57 +96,61 @@ public abstract class AbstractElasticsearchClientManager implements Elasticsearc
         }
 
         // 2. 设置超时
-        restClientBuilder.setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder.setConnectTimeout(config.getConnectTimeout()).setSocketTimeout(config.getSocketTimeout()).setConnectionRequestTimeout(config.getConnectionRequestTimeout()));
+        restClientBuilder.setRequestConfigCallback(requestConfigBuilder -> requestConfigBuilder
+                .setConnectTimeout(properties.getConnectTimeout())
+                .setSocketTimeout(properties.getSocketTimeout())
+                .setConnectionRequestTimeout(properties.getConnectionRequestTimeout()));
 
         // 3. http客户端自定义配置：鉴权、连接池、SSL
         restClientBuilder.setHttpClientConfigCallback(httpAsyncClientBuilder -> {
             // 连接池参数
-            httpAsyncClientBuilder.setMaxConnTotal(config.getMaxConnTotal());
-            httpAsyncClientBuilder.setMaxConnPerRoute(config.getMaxConnPerRoute());
+            httpAsyncClientBuilder.setMaxConnTotal(properties.getMaxConnTotal());
+            httpAsyncClientBuilder.setMaxConnPerRoute(properties.getMaxConnPerRoute());
 
             // Basic Auth
-            if (StrUtil.isNotBlank(config.getUsername())) {
+            if (StrUtil.isNotBlank(properties.getUsername())) {
                 CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-                credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.getUsername(), config.getPassword()));
+                credentialsProvider.setCredentials(AuthScope.ANY,
+                        new UsernamePasswordCredentials(properties.getUsername(), properties.getPassword()));
                 httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                log.debug("AbstractElasticsearchService.configureBasicAuth 已配置 Basic Auth，用户: {}", config.getUsername());
+                log.debug("AbstractElasticsearchClientManager.assembly 已配置 Basic Auth，用户: {}",
+                        properties.getUsername());
             }
 
             // SSL处理
             try {
-                if (config.isSslEnabled()) {
+                if (properties.isSslEnabled()) {
                     SSLContext sslContext = null;
 
                     // 1. 处理跳过证书验证
-                    if (config.isSslSkipVerify()) {
+                    if (properties.isSslSkipVerify()) {
                         httpAsyncClientBuilder.setSSLHostnameVerifier((hostname, session) -> true);
                         sslContext = createTrustAllSslContext();
-                        log.warn("AbstractElasticsearchService.configureSsl ️ SSL证书验证已禁用，仅用于开发测试环境！");
+                        log.warn("AbstractElasticsearchClientManager.assembly SSL证书验证已禁用，仅用于开发测试环境！");
                     }
 
                     // 2. 加载自定义证书（会覆盖 skipVerify 的配置）
-                    String caCertPath = config.getCaCertPath();
+                    String caCertPath = properties.getCaCertPath();
                     if (StrUtil.isNotEmpty(caCertPath)) {
                         String absolutePath = ConfigStringLoader.getAbsolutePathString(caCertPath);
                         if (StrUtil.isEmpty(absolutePath)) {
                             String errorMsg = String.format("证书文件不存在或无法解析: %s", caCertPath);
-                            if (config.isSslSkipVerify()) {
-                                log.warn("AbstractElasticsearchService.configureSsl {}, 已跳过证书验证", errorMsg);
+                            if (properties.isSslSkipVerify()) {
+                                log.warn("AbstractElasticsearchClientManager.assembly {}, 已跳过证书验证", errorMsg);
                             } else {
                                 throw new RuntimeException(errorMsg);
                             }
                         } else {
                             sslContext = loadCustomCertificate(absolutePath);
-                            log.info("AbstractElasticsearchService.configureSsl  成功加载自定义证书: {}", absolutePath);
+                            log.info("AbstractElasticsearchClientManager.assembly 成功加载自定义证书: {}", absolutePath);
                         }
                     }
 
                     // 3. 设置 SSLContext
                     if (sslContext != null) {
                         httpAsyncClientBuilder.setSSLContext(sslContext);
-                    } else if (!config.isSslSkipVerify()) {
-                        log.info("AbstractElasticsearchService.configureSsl 使用系统默认信任库验证SSL证书");
-                        // 显式设置系统默认 SSLContext
+                    } else if (!properties.isSslSkipVerify()) {
+                        log.info("AbstractElasticsearchClientManager.assembly 使用系统默认信任库验证SSL证书");
                         httpAsyncClientBuilder.setSSLContext(SSLContext.getDefault());
                     }
                 }
@@ -165,44 +167,6 @@ public abstract class AbstractElasticsearchClientManager implements Elasticsearc
         return new ElasticsearchClient(transport);
     }
 
-    @Override
-    public void refreshClient() throws IOException {
-        if (!REFRESH_LOCK.tryLock()) {
-            throw new RuntimeException("正在执行ES客户端刷新操作，请稍后重试");
-        }
-        ElasticsearchClient newClient = null;
-        try {
-            ElasticsearchConfig config = configProvider.getConfig();
-            newClient = assembly(config);
-
-            // 候选客户端验证通过前，持续保留当前客户端。
-            if (config.isHealthCheckAtStartup()) {
-                boolean ping = newClient.ping().value();
-                if (!ping) {
-                    throw new RuntimeException("ES连接健康检查失败，请检查ES服务与配置");
-                }
-                log.info("AbstractElasticsearchService.refreshClient  Elasticsearch 连接成功！");
-            }
-
-            ElasticsearchClient oldClient = null;
-            if (beanFactory.containsSingleton(ES_SERVICE_BEAN_NAME)) {
-                oldClient = beanFactory.getBean(ES_SERVICE_BEAN_NAME, ElasticsearchClient.class);
-                beanFactory.destroySingleton(ES_SERVICE_BEAN_NAME);
-            }
-            beanFactory.registerSingleton(ES_SERVICE_BEAN_NAME, newClient);
-            newClient = null;
-
-            if (oldClient != null) {
-                oldClient.close();
-            }
-        } finally {
-            if (newClient != null) {
-                newClient.close();
-            }
-            REFRESH_LOCK.unlock();
-        }
-    }
-
     /**
      * 将节点配置转换为 HTTP 主机，避免把 host:port 当作纯 host 传入底层客户端。
      *
@@ -210,23 +174,29 @@ public abstract class AbstractElasticsearchClientManager implements Elasticsearc
      * @param scheme 连接协议
      * @return HTTP 主机
      */
-    private static HttpHost buildHttpHost(ElasticsearchConfig.ElasticsearchNode node, ElasticsearchScheme scheme) {
+    private static HttpHost buildHttpHost(ElasticsearchProperties.Node node, ElasticsearchScheme scheme) {
         if (node == null || StrUtil.isBlank(node.getHost())) {
             throw new IllegalArgumentException("Elasticsearch 节点 host 不能为空");
         }
         return HttpHost.create(scheme.getValue() + "://" + node.getAddress());
     }
 
-
     /**
-     * 创建信任所有证书的 SSLContext（仅用于开发测试）
+     * 创建信任所有证书的 SSLContext（仅用于开发测试）。
+     *
+     * @return 信任所有证书的 SSLContext
+     * @throws Exception 构建失败
      */
     private static SSLContext createTrustAllSslContext() throws Exception {
         return SSLContexts.custom().loadTrustMaterial(null, (chain, authType) -> true).build();
     }
 
     /**
-     * 加载自定义证书
+     * 加载自定义证书。
+     *
+     * @param certPath 证书路径
+     * @return 基于该证书的 SSLContext
+     * @throws Exception 加载失败
      */
     private static SSLContext loadCustomCertificate(String certPath) throws Exception {
         try (FileInputStream fis = new FileInputStream(certPath)) {
@@ -238,7 +208,7 @@ public abstract class AbstractElasticsearchClientManager implements Elasticsearc
 
             return SSLContexts.custom().loadTrustMaterial(keyStore, null).build();
         } catch (Exception e) {
-            log.error("AbstractElasticsearchService.loadCustomCertificate 加载证书失败: {}", certPath, e);
+            log.error("AbstractElasticsearchClientManager.loadCustomCertificate 加载证书失败: {}", certPath, e);
             throw e;
         }
     }

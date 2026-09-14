@@ -1,4 +1,4 @@
-package com.hzj.elasticsearch.provider.es.enums;
+package com.hzj.elasticsearch.properties;
 
 /**
  * Elasticsearch 连接协议。

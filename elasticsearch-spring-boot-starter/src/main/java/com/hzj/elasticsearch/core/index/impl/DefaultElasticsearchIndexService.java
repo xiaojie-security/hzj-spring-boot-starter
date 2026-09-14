@@ -12,8 +12,7 @@ import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexAliasRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexCreateRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexMappingRequest;
 import com.hzj.elasticsearch.core.index.entity.ElasticsearchIndexSettingsRequest;
-import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -32,8 +31,13 @@ public class DefaultElasticsearchIndexService
         implements ElasticsearchIndexService {
 
 
-    public DefaultElasticsearchIndexService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
-        super(beanFactory, configProvider);
+    /**
+     * 创建索引级业务操作实现。
+     *
+     * @param client 已装配的 Elasticsearch 客户端
+     */
+    public DefaultElasticsearchIndexService(ElasticsearchClient client) {
+        super(client);
     }
 
     /**

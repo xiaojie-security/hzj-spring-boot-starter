@@ -1,5 +1,6 @@
 package com.hzj.elasticsearch.core.document.impl;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Conflicts;
 import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch._types.SortOrder;
@@ -16,10 +17,8 @@ import com.hzj.elasticsearch.core.document.enums.*;
 import com.hzj.elasticsearch.core.entity.ElasticsearchResponse;
 import com.hzj.elasticsearch.core.enums.ElasticsearchOperation;
 import com.hzj.elasticsearch.core.enums.ElasticsearchRefreshPolicy;
-import com.hzj.elasticsearch.provider.es.ElasticsearchConfigProvider;
 import com.hzj.elasticsearch.utils.ElasticsearchQueryConverter;
 import com.hzj.elasticsearch.utils.ElasticsearchResponseMapper;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,8 +35,13 @@ import java.util.stream.Collectors;
 public class DefaultElasticsearchDocumentService extends AbstractElasticsearchClientManager
         implements ElasticsearchDocumentService {
 
-    public DefaultElasticsearchDocumentService(ConfigurableListableBeanFactory beanFactory, ElasticsearchConfigProvider configProvider) {
-        super(beanFactory, configProvider);
+    /**
+     * 创建文档级业务操作实现。
+     *
+     * @param client 已装配的 Elasticsearch 客户端
+     */
+    public DefaultElasticsearchDocumentService(ElasticsearchClient client) {
+        super(client);
     }
 
     /**
