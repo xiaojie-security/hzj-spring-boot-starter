@@ -1,45 +1,38 @@
 package com.hzj.redis.config;
 
 import com.hzj.redis.core.cache.impl.RedisCacheService;
-import com.hzj.redis.core.lock.AbstractRedisLockClientManager;
 import com.hzj.redis.core.lock.RedisLockService;
-import com.hzj.redis.core.lock.impl.DefaultRedisLockService;
-import com.hzj.redis.core.queue.RedisDelayQueueService;
-import com.hzj.redis.core.queue.impl.DefaultRedisDelayQueueService;
-import com.hzj.redis.provider.lock.DistributedLockConfigProvider;
-import com.hzj.redis.provider.lock.impl.PropertiesDistributedLockConfigProvider;
-import com.hzj.redis.provider.lock.properties.RedisLockProperties;
-import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-
 /**
- * Redis 核心自动配置。
+ * Redis 核心自动配置（纯 Redis 部分）。
  * <p>
- * 负责注册 RedisTemplate、缓存服务、RedissonClient 以及分布式锁服务。
- * Redis 连接工厂和连接参数由 Spring Boot Redis 自动配置负责；本配置只在应用
- * 启动时根据 RedisProperties 创建 RedissonClient，不提供运行期动态刷新。
+ * 只负责 {@link RedisTemplate} 与基于它的缓存服务；Redisson 客户端、分布式锁与延迟队列
+ * 由 {@link RedissonConfiguration} 独立装配，两者的配置来源也相互独立：
+ * 连接参数来自 Spring Boot 的 {@link RedisProperties}（{@code spring.data.redis.*}），
+ * 而 Redisson 使用 {@code spring.redis.redisson.*}。
  * </p>
  * <p>
- * 必须在 {@link RedisAutoConfiguration} 之前注册：Spring Boot 自带的
- * redisTemplate 带 {@code @ConditionalOnMissingBean}，只要本配置的 redisTemplate
- * 先完成注册，它就会自动退让；反之若排在其后，同名 Bean 会被重复注册，
- * 在默认的 allow-bean-definition-overriding=false 下直接导致启动失败。
+ * 必须在 {@link RedisAutoConfiguration} 之前注册：Spring Boot 自带的 redisTemplate
+ * 带 {@code @ConditionalOnMissingBean}，只要本配置的 redisTemplate 先完成注册，
+ * 它就会自动退让；反之若排在其后，同名 Bean 会被重复注册，在默认的
+ * allow-bean-definition-overriding=false 下直接导致启动失败。同时必须排在
+ * {@link RedissonConfiguration} 之后，才能正确判断分布式锁服务是否可用。
  * </p>
  */
-@AutoConfiguration(before = RedisAutoConfiguration.class)
-@EnableConfigurationProperties({RedisProperties.class, RedisLockProperties.class})
+@AutoConfiguration(before = RedisAutoConfiguration.class, after = RedissonConfiguration.class)
+@EnableConfigurationProperties(RedisProperties.class)
 public class RedisCoreConfiguration {
 
     /**
@@ -67,13 +60,17 @@ public class RedisCoreConfiguration {
 
     /**
      * 注册缓存服务。
-     * <p>缓存服务通过组合复用已配置的 RedisTemplate。</p>
+     * <p>缓存服务通过组合复用已配置的 RedisTemplate，并依赖分布式锁服务实现缓存击穿双检。
+     * 由于 {@link RedissonConfiguration} 默认关闭，只有显式开启
+     * {@code spring.redis.redisson.enable=true}（或使用方自行提供 {@link RedisLockService}）
+     * 时才会装配本 Bean。</p>
      *
      * @param redisLockService 分布式锁服务
-     * @param redisTemplate RedisTemplate
+     * @param redisTemplate    RedisTemplate
      * @return Redis 缓存服务
      */
     @Bean
+    @ConditionalOnBean(RedisLockService.class)
     @ConditionalOnMissingBean(RedisCacheService.class)
     public RedisCacheService redisCacheService(RedisLockService redisLockService,
                                                @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate) {
@@ -87,68 +84,4 @@ public class RedisCoreConfiguration {
                 (RedisTemplate<String, Object>) (RedisTemplate<?, ?>) redisTemplate;
         return new RedisCacheService(redisLockService, typedRedisTemplate);
     }
-
-    /**
-     * 注册基于 Spring Boot Properties 的默认分布式锁配置提供者。
-     *
-     * @param properties 分布式锁配置属性
-     * @return 分布式锁配置提供者
-     */
-    @Bean
-    @ConditionalOnMissingBean(DistributedLockConfigProvider.class)
-    public DistributedLockConfigProvider distributedLockConfigProvider(RedisLockProperties properties) {
-        return new PropertiesDistributedLockConfigProvider(properties);
-    }
-
-    /**
-     * 注册 RedissonClient 单例。
-     *
-     * @param redisProperties Spring Boot Redis 配置属性
-     * @param distributedLockConfigProvider 分布式锁配置提供者
-     * @return RedissonClient 单例
-     */
-    @Bean(name = AbstractRedisLockClientManager.REDISSON_SERVICE_BEAN_NAME)
-    @ConditionalOnMissingBean(
-            name = AbstractRedisLockClientManager.REDISSON_SERVICE_BEAN_NAME )
-    @ConditionalOnBean(DistributedLockConfigProvider.class)
-    public RedissonClient redissonClient(
-            RedisProperties redisProperties,
-            DistributedLockConfigProvider distributedLockConfigProvider) {
-        return AbstractRedisLockClientManager.assembly(
-                distributedLockConfigProvider.getConfig(), redisProperties);
-    }
-
-    /**
-     * 注册分布式锁服务。
-     *
-     * @param redissonClient Redisson 客户端
-     * @param distributedLockConfigProvider 分布式锁配置提供者
-     * @return 分布式锁服务
-     */
-    @Bean
-    @ConditionalOnMissingBean(RedisLockService.class)
-    @ConditionalOnBean(DistributedLockConfigProvider.class)
-    public RedisLockService redisLockService(
-            RedissonClient redissonClient,
-            DistributedLockConfigProvider distributedLockConfigProvider) {
-        return new DefaultRedisLockService(redissonClient, distributedLockConfigProvider);
-    }
-
-
-    /**
-     * 注册 Redis 延迟队列服务。
-     * <p>
-     * 延迟队列服务复用自动配置的 RedissonClient，并统一管理生产者、消费者、消息序列化和主题前缀。
-     * </p>
-     *
-     * @param redissonClient Redisson客户端
-     * @return Redis延迟队列服务
-     */
-    @Bean
-    @ConditionalOnMissingBean(RedisDelayQueueService.class)
-    @ConditionalOnBean(RedissonClient.class)
-    public RedisDelayQueueService redisDelayQueueService(RedissonClient redissonClient) {
-        return new DefaultRedisDelayQueueService(redissonClient);
-    }
-
 }

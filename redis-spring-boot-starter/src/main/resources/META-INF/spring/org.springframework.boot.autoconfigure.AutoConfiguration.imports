@@ -1,1 +1,2 @@
 com.hzj.redis.config.RedisCoreConfiguration
+com.hzj.redis.config.RedissonConfiguration
