@@ -5,8 +5,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.hzj.aliyun.core.pns.AliyunPnsService;
 import com.aliyun.dypnsapi20170525.models.CheckSmsVerifyCodeResponseBody;
-import com.hzj.aliyun.provider.aliyun.pns.AliyunPnsConfigProvider;
-import com.hzj.aliyun.provider.aliyun.pns.entity.AliyunPnsConfig;
+import com.hzj.aliyun.provider.aliyun.pns.AliyunPnsRuntimeConfigProvider;
+import com.hzj.aliyun.provider.aliyun.pns.entity.AliyunPnsRuntimeConfig;
 import com.aliyun.tea.*;
 import com.hzj.aliyun.core.pns.domain.AliyunPnsTemplateParam;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DefaultAliyunPnsService implements AliyunPnsService {
 
-    private final AliyunPnsConfigProvider configProvider;
+    private final AliyunPnsRuntimeConfigProvider configProvider;
     private final com.aliyun.dypnsapi20170525.Client client;
 
     @Override
     public boolean sendSmsCode(String schemeName,String phoneNumber, String templateCode, AliyunPnsTemplateParam aliyunPnsTemplateParam) {
-        AliyunPnsConfig config = getConfig();
+        AliyunPnsRuntimeConfig config = getRuntimeConfig();
         String signName = config.getSignName();
         if(StrUtil.isEmpty(phoneNumber)) {
             log.warn("DefaultAliyunPnsService smsCodeSend 手机号不能为空");
@@ -65,7 +65,7 @@ public class DefaultAliyunPnsService implements AliyunPnsService {
 
     @Override
     public boolean checkSmsVerifyCode(String schemeName, String phoneNumber, String verifyCode) {
-        AliyunPnsConfig config = getConfig();
+        AliyunPnsRuntimeConfig config = getRuntimeConfig();
         if(StrUtil.isEmpty(phoneNumber)) {
             log.warn("DefaultAliyunPnsService checkSmsVerifyCode 手机号不能为空");
             return false;
@@ -98,10 +98,10 @@ public class DefaultAliyunPnsService implements AliyunPnsService {
         return false;
     }
 
-    private AliyunPnsConfig getConfig() {
-        AliyunPnsConfig config = configProvider.getConfig();
+    private AliyunPnsRuntimeConfig getRuntimeConfig() {
+        AliyunPnsRuntimeConfig config = configProvider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("AliyunPnsConfigProvider 返回的配置不能为空");
+            throw new IllegalStateException("AliyunPnsRuntimeConfigProvider 返回的配置不能为空");
         }
         return config;
     }

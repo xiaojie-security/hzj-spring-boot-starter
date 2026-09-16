@@ -5,7 +5,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.hzj.aliyun.core.sms.AliyunSmsService;
 import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
-import com.hzj.aliyun.provider.aliyun.sms.AliyunSmsConfigProvider;
+import com.hzj.aliyun.provider.aliyun.sms.AliyunSmsRuntimeConfigProvider;
+import com.hzj.aliyun.provider.aliyun.sms.entity.AliyunSmsRuntimeConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,12 +19,26 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class DefaultAliyunSmsService implements AliyunSmsService {
 
-    private final AliyunSmsConfigProvider configProvider;
+    private final AliyunSmsRuntimeConfigProvider configProvider;
     private final com.aliyun.dysmsapi20170525.Client client;
 
     @Override
     public boolean sendSmsCode(String phoneNumber, String templateCode, Object templateParam) {
-        return sendSmsCode(configProvider.getConfig().getSignName(), phoneNumber, templateCode, templateParam);
+        AliyunSmsRuntimeConfig config = getRuntimeConfig();
+        return sendSmsCode(config.getSignName(), phoneNumber, templateCode, templateParam);
+    }
+
+    /**
+     * 获取当前生效的短信运行时配置。
+     *
+     * @return 短信运行时配置
+     */
+    private AliyunSmsRuntimeConfig getRuntimeConfig() {
+        AliyunSmsRuntimeConfig config = configProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("AliyunSmsRuntimeConfigProvider 返回的配置不能为空");
+        }
+        return config;
     }
 
     @Override

@@ -4,8 +4,8 @@ import com.hzj.aliyun.core.imm.AliyunImmService;
 import com.hzj.aliyun.core.imm.exception.AliyunImmException;
 import com.aliyun.imm20200930.models.CreateMediaConvertTaskResponseBody;
 import com.hzj.aliyun.core.imm.domain.AliyunTransCodeResult;
-import com.hzj.aliyun.provider.aliyun.imm.AliyunImmConfigProvider;
-import com.hzj.aliyun.provider.aliyun.imm.entity.AliyunImmConfig;
+import com.hzj.aliyun.provider.aliyun.imm.AliyunImmRuntimeConfigProvider;
+import com.hzj.aliyun.provider.aliyun.imm.entity.AliyunImmRuntimeConfig;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.Collections;
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultAliyunImmService implements AliyunImmService {
-    private final AliyunImmConfigProvider configProvider;
+    private final AliyunImmRuntimeConfigProvider configProvider;
     private static final String VIDEO = "_transcoding";
     private final com.aliyun.imm20200930.Client client;
 
@@ -35,9 +35,9 @@ public class DefaultAliyunImmService implements AliyunImmService {
     @Override
     public String transcode(String bucket, String originObjectName) {
         try {
-            AliyunImmConfig imm = configProvider.getConfig();
+            AliyunImmRuntimeConfig imm = getRuntimeConfig();
             String objectName = getObjectName(originObjectName);
-            String videoObjectName = objectName + getTranscodeVideoSuffix();
+            String videoObjectName = objectName + getTranscodeVideoSuffix(imm);
             com.aliyun.imm20200930.models.TargetVideo.TargetVideoTranscodeVideo targets0TargetVideoTranscodeVideo = new com.aliyun.imm20200930.models.TargetVideo.TargetVideoTranscodeVideo()
                     .setCodec(imm.getCodec());
             com.aliyun.imm20200930.models.TargetVideo targets0TargetVideo = new com.aliyun.imm20200930.models.TargetVideo()
@@ -109,8 +109,27 @@ public class DefaultAliyunImmService implements AliyunImmService {
         return originObjectName.substring(0, lastIndexOf);
     }
 
-    private String getTranscodeVideoSuffix(){
-        return VIDEO + "." + configProvider.getConfig().getContainer();
+    /**
+     * 获取当前生效的 IMM 运行时配置。
+     *
+     * @return IMM 运行时配置
+     */
+    private AliyunImmRuntimeConfig getRuntimeConfig() {
+        AliyunImmRuntimeConfig config = configProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("AliyunImmRuntimeConfigProvider 返回的配置不能为空");
+        }
+        return config;
+    }
+
+    /**
+     * 根据当前转码容器生成视频对象后缀。
+     *
+     * @param config IMM 运行时配置
+     * @return 转码视频对象后缀
+     */
+    private String getTranscodeVideoSuffix(AliyunImmRuntimeConfig config){
+        return VIDEO + "." + config.getContainer();
     }
 
 }

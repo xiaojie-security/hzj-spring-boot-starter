@@ -5,22 +5,17 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * IMM 配置。
+ * IMM 启动期静态配置。
+ *
+ * <p>凭证、接入点和区域用于创建客户端，应用启动后不支持动态刷新。</p>
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class AliyunImmConfig extends AliyunBaseConfig {
+public class AliyunImmStaticConfig extends AliyunBaseConfig {
 
-    /** 媒体处理项目名称。 */
-    private String projectName;
     /** 服务区域。 */
     private String region;
-    /** 视频编码格式。 */
-    private String codec;
+
     /** 自定义服务接入点。 */
     private String endpointOverride;
-    /** 容器格式。 */
-    private String container;
-    /** 媒体处理服务地址。 */
-    private String uri;
 }

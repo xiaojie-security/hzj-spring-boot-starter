@@ -1,34 +1,22 @@
 package com.hzj.aliyun.provider.aliyun.sms.entity;
 
 import cn.hutool.core.collection.CollUtil;
-import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.Map;
 
 /**
- * 短信配置。
+ * 短信运行时业务配置。
+ *
+ * <p>短信签名支持运行时刷新。</p>
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class AliyunSmsConfig extends AliyunBaseConfig {
+public class AliyunSmsRuntimeConfig {
 
-    /**
-     * 短信服务接入点。
-     */
-    private String endpoint;
-    /**
-     * 短信服务区域。
-     */
-    private String region;
-    /**
-     * 签名映射。
-     */
+    /** 签名映射。 */
     private Map<String, String> signNames;
-    /**
-     * 默认签名。
-     */
+
+    /** 默认签名。 */
     private String defaultSignName;
 
     /**

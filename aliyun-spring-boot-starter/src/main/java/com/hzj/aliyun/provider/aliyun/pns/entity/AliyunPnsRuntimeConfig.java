@@ -1,22 +1,17 @@
 package com.hzj.aliyun.provider.aliyun.pns.entity;
 
-import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
- * 号码认证服务配置。
+ * 号码认证服务运行时业务配置。
+ *
+ * <p>签名和验证码策略支持运行时刷新。</p>
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class AliyunPnsConfig extends AliyunBaseConfig {
+public class AliyunPnsRuntimeConfig {
 
     /** 服务签名。 */
     private String signName;
-    /** 服务接入点。 */
-    private String endpoint;
-    /** 服务区域。 */
-    private String region;
 
     /** 验证码长度。 */
     private Long codeLength = 6L;

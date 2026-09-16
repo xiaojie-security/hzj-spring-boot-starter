@@ -7,8 +7,9 @@ import com.hzj.aliyun.utils.AliyunCredentialRegistry;
 import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.common.comm.SignVersion;
-import com.hzj.aliyun.provider.aliyun.oss.AliyunOssConfigProvider;
-import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssConfig;
+import com.hzj.aliyun.provider.aliyun.oss.AliyunOssRuntimeConfigProvider;
+import com.hzj.aliyun.provider.aliyun.oss.AliyunOssStaticConfigProvider;
+import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssStaticConfig;
 import com.aliyun.sdk.service.oss2.OSSClient;
 import com.aliyun.sdk.service.oss2.credentials.CredentialsProvider;
 import com.aliyun.sdk.service.oss2.credentials.CredentialsProviderSupplier;
@@ -21,16 +22,16 @@ import org.springframework.context.annotation.Bean;
  * 阿里云 OSS 配置。
  */
 @AutoConfiguration
-@ConditionalOnBean(AliyunOssConfigProvider.class)
+@ConditionalOnBean({AliyunOssStaticConfigProvider.class, AliyunOssRuntimeConfigProvider.class})
 public class AliyunOssConfiguration extends AliyunBaseConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(OSSClient.class)
     public OSSClient ossV2Client(AliyunCredentialRegistry credentialRegistry,
-                                 AliyunOssConfigProvider configProvider) throws Exception {
-        AliyunOssConfig oss = configProvider.getConfig();
+                                 AliyunOssStaticConfigProvider configProvider) throws Exception {
+        AliyunOssStaticConfig oss = configProvider.getConfig();
         if (oss == null) {
-            throw new IllegalStateException("AliyunOssConfigProvider 返回的配置不能为空");
+            throw new IllegalStateException("AliyunOssStaticConfigProvider 返回的配置不能为空");
         }
         AliyunCredentialConfig credentialConfig = oss.snapshotCredentialConfig();
 
@@ -51,10 +52,10 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
     @Bean
     @ConditionalOnMissingBean(com.aliyun.oss.OSS.class)
     public com.aliyun.oss.OSS ossClient(AliyunCredentialRegistry credentialRegistry,
-                                        AliyunOssConfigProvider configProvider) throws Exception {
-        AliyunOssConfig oss = configProvider.getConfig();
+                                        AliyunOssStaticConfigProvider configProvider) throws Exception {
+        AliyunOssStaticConfig oss = configProvider.getConfig();
         if (oss == null) {
-            throw new IllegalStateException("AliyunOssConfigProvider 返回的配置不能为空");
+            throw new IllegalStateException("AliyunOssStaticConfigProvider 返回的配置不能为空");
         }
         AliyunCredentialConfig credentialConfig = oss.snapshotCredentialConfig();
         com.aliyun.oss.common.auth.CredentialsProvider credentialsProvider = new com.aliyun.oss.common.auth.CredentialsProvider() {
@@ -81,14 +82,11 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(AliyunOssService.class)
-    public AliyunOssService aliyunOssService(AliyunOssConfigProvider configProvider,
+    public AliyunOssService aliyunOssService(AliyunOssStaticConfigProvider staticConfigProvider,
+                                             AliyunOssRuntimeConfigProvider runtimeConfigProvider,
                                              OSSClient ossV2Client,
                                              com.aliyun.oss.OSS ossClient) {
-        AliyunOssConfig oss = configProvider.getConfig();
-        if (oss == null) {
-            throw new IllegalStateException("AliyunOssConfigProvider 返回的配置不能为空");
-        }
-        return new DefaultAliyunOssService(ossV2Client, ossClient, configProvider,
-                oss.getEndpoint(), oss.getRegion());
+        return new DefaultAliyunOssService(ossV2Client, ossClient,
+                staticConfigProvider, runtimeConfigProvider);
     }
 }

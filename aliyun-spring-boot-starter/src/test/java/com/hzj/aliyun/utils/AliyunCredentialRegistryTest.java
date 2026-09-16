@@ -3,7 +3,7 @@ package com.hzj.aliyun.utils;
 import com.hzj.aliyun.provider.aliyun.common.entity.AliyunCredentialConfig;
 import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
 import com.hzj.aliyun.provider.aliyun.common.enums.AliyunCredentialMode;
-import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssConfig;
+import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssStaticConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -64,7 +64,7 @@ class AliyunCredentialRegistryTest {
      */
     @Test
     void shouldKeepCredentialSnapshotAfterRuntimeConfigChanges() {
-        AliyunBaseConfig serviceConfig = new AliyunOssConfig();
+        AliyunBaseConfig serviceConfig = new AliyunOssStaticConfig();
         serviceConfig.getCredential().setAccessKeyId("startup-access-key-id");
         serviceConfig.getCredential().setAccessKeySecret("startup-access-key-secret");
 

@@ -16,8 +16,10 @@ import com.hzj.aliyun.core.oss.AbstractAliyunOssService;
 import com.hzj.aliyun.core.oss.domain.AliyunMediaUploadDetails;
 import com.hzj.aliyun.core.oss.domain.AliyunPostUploadSignature;
 import com.hzj.aliyun.core.oss.exception.AliyunOssException;
-import com.hzj.aliyun.provider.aliyun.oss.AliyunOssConfigProvider;
-import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssConfig;
+import com.hzj.aliyun.provider.aliyun.oss.AliyunOssRuntimeConfigProvider;
+import com.hzj.aliyun.provider.aliyun.oss.AliyunOssStaticConfigProvider;
+import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssRuntimeConfig;
+import com.hzj.aliyun.provider.aliyun.oss.entity.AliyunOssStaticConfig;
 import com.hzj.aliyun.provider.aliyun.oss.enums.AliyunOssPermission;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -51,54 +53,46 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
     public static final String SIGNATURE_VERSION = "OSS4-HMAC-SHA256";
     private final OSSClient ossV2Client;
     private final OSS ossClient;
-    private final AliyunOssConfigProvider configProvider;
+    private final AliyunOssRuntimeConfigProvider runtimeConfigProvider;
     /** OSS 客户端启动时固定的接入点。 */
     private final String endpoint;
     /** OSS 客户端启动时固定的区域。 */
     private final String region;
 
     /**
-     * 使用 Provider 启动时的 endpoint 和 region 创建 OSS 服务。
+     * 使用静态配置 Provider 和运行时配置 Provider 创建 OSS 服务。
      *
      * @param ossV2Client OSS V2 客户端
      * @param ossClient OSS 旧版客户端
-     * @param configProvider OSS 运行时配置提供者
+     * @param staticConfigProvider OSS 启动期静态配置提供者
+     * @param runtimeConfigProvider OSS 运行时配置提供者
      */
     public DefaultAliyunOssService(OSSClient ossV2Client, OSS ossClient,
-                                   AliyunOssConfigProvider configProvider) {
-        this(ossV2Client, ossClient, configProvider, requireInitialConfig(configProvider));
+                                   AliyunOssStaticConfigProvider staticConfigProvider,
+                                   AliyunOssRuntimeConfigProvider runtimeConfigProvider) {
+        this.ossV2Client = Objects.requireNonNull(ossV2Client, "OSS V2 客户端不能为空");
+        this.ossClient = Objects.requireNonNull(ossClient, "OSS 客户端不能为空");
+        AliyunOssStaticConfig staticConfig = requireInitialConfig(staticConfigProvider);
+        this.runtimeConfigProvider = Objects.requireNonNull(runtimeConfigProvider,
+                "AliyunOssRuntimeConfigProvider 不能为空");
+        this.endpoint = staticConfig.getEndpoint();
+        this.region = staticConfig.getRegion();
     }
 
-    private DefaultAliyunOssService(OSSClient ossV2Client, OSS ossClient,
-                                    AliyunOssConfigProvider configProvider,
-                                    AliyunOssConfig initialConfig) {
-        this(ossV2Client, ossClient, configProvider,
-                initialConfig.getEndpoint(), initialConfig.getRegion());
+    private static AliyunOssStaticConfig requireInitialConfig(AliyunOssStaticConfigProvider configProvider) {
+        Objects.requireNonNull(configProvider, "AliyunOssStaticConfigProvider 不能为空");
+        AliyunOssStaticConfig config = configProvider.getConfig();
+        return Objects.requireNonNull(config, "AliyunOssStaticConfigProvider 返回的配置不能为空");
     }
 
     /**
-     * 使用显式启动期连接参数创建 OSS 服务。
+     * 获取当前生效的 OSS 运行时配置。
      *
-     * @param ossV2Client OSS V2 客户端
-     * @param ossClient OSS 旧版客户端
-     * @param configProvider OSS 运行时配置提供者
-     * @param endpoint OSS 启动期接入点
-     * @param region OSS 启动期区域
+     * @return OSS 运行时配置
      */
-    public DefaultAliyunOssService(OSSClient ossV2Client, OSS ossClient,
-                                   AliyunOssConfigProvider configProvider,
-                                   String endpoint, String region) {
-        this.ossV2Client = Objects.requireNonNull(ossV2Client, "OSS V2 客户端不能为空");
-        this.ossClient = Objects.requireNonNull(ossClient, "OSS 客户端不能为空");
-        this.configProvider = Objects.requireNonNull(configProvider, "AliyunOssConfigProvider 不能为空");
-        this.endpoint = endpoint;
-        this.region = region;
-    }
-
-    private static AliyunOssConfig requireInitialConfig(AliyunOssConfigProvider configProvider) {
-        Objects.requireNonNull(configProvider, "AliyunOssConfigProvider 不能为空");
-        AliyunOssConfig config = configProvider.getConfig();
-        return Objects.requireNonNull(config, "AliyunOssConfigProvider 返回的配置不能为空");
+    private AliyunOssRuntimeConfig getRuntimeConfig() {
+        AliyunOssRuntimeConfig config = runtimeConfigProvider.getConfig();
+        return Objects.requireNonNull(config, "AliyunOssRuntimeConfigProvider 返回的配置不能为空");
     }
 
 
@@ -503,14 +497,13 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
      * @param objectName 文件存储路径
      * @return 签名URL
      */
-    private String generatePresignedUrl(String bucket, String objectName) {
+    private String generatePresignedUrl(String bucket, String objectName, AliyunOssRuntimeConfig config) {
         GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectName);
         request.setExpiration(new Date(System.currentTimeMillis()
-                + 1000L * configProvider.getConfig().getSignedUrlDurationSeconds()));
+                + 1000L * config.getSignedUrlDurationSeconds()));
         request.setMethod(com.aliyun.oss.HttpMethod.GET);
         // 全新v2版本未提供生成临时签名的方法 使用老版本兼容先
         URL url = ossClient.generatePresignedUrl(request);
-        AliyunOssConfig config = configProvider.getConfig();
         if (StrUtil.isBlank(config.getDomain())) {
             return url.toString();
         }
@@ -533,10 +526,10 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
             log.error("AliyunOssMediaService getObjectUrl 参数错误 bucket:{} objectName:{}", bucket, objectName);
             throw AliyunOssException.FILE_NAME_ERROR;
         }
-        AliyunOssConfig config = configProvider.getConfig();
+        AliyunOssRuntimeConfig config = getRuntimeConfig();
         AliyunOssPermission permission = config.getPermission();
         if (permission == null || AliyunOssPermission.PRIVATE == permission) {
-            return generatePresignedUrl(bucket, objectName);
+            return generatePresignedUrl(bucket, objectName, config);
         }
         return buildPublicObjectUrl(config, bucket, objectName);
     }
@@ -549,7 +542,7 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
      * @param objectName OSS 对象名称
      * @return 公共对象访问地址
      */
-    private String buildPublicObjectUrl(AliyunOssConfig config, String bucket, String objectName) {
+    private String buildPublicObjectUrl(AliyunOssRuntimeConfig config, String bucket, String objectName) {
         String scheme = Boolean.TRUE.equals(config.getHttps()) ? "https" : "http";
         String domain = StrUtil.isBlank(config.getDomain())
                 ? bucket + "." + removeScheme(endpoint)
@@ -608,8 +601,9 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
             throw AliyunOssException.FILE_NAME_ERROR;
         }
         GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectName);
+        AliyunOssRuntimeConfig config = getRuntimeConfig();
         request.setExpiration(new Date(System.currentTimeMillis()
-                + 1000L * configProvider.getConfig().getSignedUrlDurationSeconds()));
+                + 1000L * config.getSignedUrlDurationSeconds()));
         request.setMethod(com.aliyun.oss.HttpMethod.GET);
         // 默认输出 jpg，并开启 fast 模式，满足大多数视频预览场景
         request.setProcess(buildVideoSnapshotProcess(timeInMillis));
@@ -625,7 +619,7 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
                     accessKeyId, accessKeySecret, securityToken);
             throw AliyunOssException.SYSTEM_ERROR;
         }
-        AliyunOssConfig config = configProvider.getConfig();
+        AliyunOssRuntimeConfig config = getRuntimeConfig();
         String directory = getDirectory();
         String bucket = getBucket();
         String callback = config.getCallback();
@@ -742,14 +736,14 @@ public class DefaultAliyunOssService extends AbstractAliyunOssService {
      */
     public String getBucket(String contentType) {
         if (StrUtil.isEmpty(contentType)) {
-            return configProvider.getConfig().getDefaultBucket();
+            return getRuntimeConfig().getDefaultBucket();
         }
         if (!contentType.contains("/")) {
-            return configProvider.getConfig().getDefaultBucket();
+            return getRuntimeConfig().getDefaultBucket();
         }
         // 获取文件类型的前缀
         String prefix = contentType.split("/")[0];
-        AliyunOssConfig config = configProvider.getConfig();
+        AliyunOssRuntimeConfig config = getRuntimeConfig();
         Map<String, String> bucketMap = config.getBuckets();
         return CollUtil.isNotEmpty(bucketMap) && bucketMap.containsKey(prefix) ? bucketMap.get(prefix) : config.getDefaultBucket();
     }
