@@ -2,4 +2,5 @@ com.hzj.aliyun.config.AliyunOssConfiguration
 com.hzj.aliyun.config.AliyunImmConfiguration
 com.hzj.aliyun.config.AliyunSmsConfiguration
 com.hzj.aliyun.config.AliyunPnsConfiguration
+com.hzj.aliyun.config.AliyunFaceVerificationConfiguration
 com.hzj.aliyun.config.AliyunConfiguration
