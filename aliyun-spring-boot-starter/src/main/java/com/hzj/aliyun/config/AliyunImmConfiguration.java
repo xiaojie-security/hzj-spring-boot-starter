@@ -2,6 +2,7 @@ package com.hzj.aliyun.config;
 
 import com.hzj.aliyun.core.imm.AliyunImmService;
 import com.hzj.aliyun.core.imm.impl.DefaultAliyunImmService;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunCredentialConfig;
 import com.hzj.aliyun.utils.AliyunCredentialRegistry;
 import com.hzj.aliyun.provider.aliyun.imm.AliyunImmConfigProvider;
 import com.hzj.aliyun.provider.aliyun.imm.entity.AliyunImmConfig;
@@ -21,14 +22,15 @@ public class AliyunImmConfiguration extends AliyunBaseConfiguration {
     @ConditionalOnMissingBean(com.aliyun.imm20200930.Client.class)
     public com.aliyun.imm20200930.Client immClient(AliyunCredentialRegistry credentialRegistry,
                                                     AliyunImmConfigProvider configProvider) throws Exception {
-        if (configProvider.getConfig() == null) {
-            return null;
-        }
-
         AliyunImmConfig imm = configProvider.getConfig();
+        if (imm == null) {
+            throw new IllegalStateException("AliyunImmConfigProvider 返回的配置不能为空");
+        }
+        AliyunCredentialConfig credentialConfig = imm.snapshotCredentialConfig();
 
-        com.aliyun.teaopenapi.models.Config config = credentialRegistry.createOpenApiConfig(imm);
-        config.setEndpoint(imm.getEndpointOverride());
+        com.aliyun.teaopenapi.models.Config config = credentialRegistry.createOpenApiConfig(credentialConfig)
+                .setEndpoint(imm.getEndpointOverride())
+                .setRegionId(imm.getRegion());
         return new com.aliyun.imm20200930.Client(config);
     }
 

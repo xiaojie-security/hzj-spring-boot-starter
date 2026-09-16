@@ -1,7 +1,7 @@
 package com.hzj.common.provider;
 
 /**
- * 动态配置提供者。
+ * 配置提供者。
  *
  * @param <T> 配置类型
  */

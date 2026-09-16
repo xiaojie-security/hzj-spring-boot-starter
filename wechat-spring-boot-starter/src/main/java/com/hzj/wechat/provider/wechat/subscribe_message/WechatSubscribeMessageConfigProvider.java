@@ -1,11 +1,11 @@
 package com.hzj.wechat.provider.wechat.subscribe_message;
 
-import com.hzj.common.provider.ConfigProvider;
+import com.hzj.common.provider.RuntimeConfigProvider;
 import com.hzj.wechat.provider.wechat.subscribe_message.entity.WechatSubscribeMessageConfig;
 
 /**
  * 微信订阅消息配置提供者。
  */
-public interface WechatSubscribeMessageConfigProvider extends ConfigProvider<WechatSubscribeMessageConfig> {
+public interface WechatSubscribeMessageConfigProvider extends RuntimeConfigProvider<WechatSubscribeMessageConfig> {
 
 }

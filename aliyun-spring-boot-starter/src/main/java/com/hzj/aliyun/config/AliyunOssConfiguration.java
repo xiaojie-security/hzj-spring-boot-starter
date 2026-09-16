@@ -2,6 +2,7 @@ package com.hzj.aliyun.config;
 
 import com.hzj.aliyun.core.oss.AliyunOssService;
 import com.hzj.aliyun.core.oss.impl.DefaultAliyunOssService;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunCredentialConfig;
 import com.hzj.aliyun.utils.AliyunCredentialRegistry;
 import com.aliyun.oss.ClientBuilderConfiguration;
 import com.aliyun.oss.OSSClientBuilder;
@@ -28,11 +29,14 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
     public OSSClient ossV2Client(AliyunCredentialRegistry credentialRegistry,
                                  AliyunOssConfigProvider configProvider) throws Exception {
         AliyunOssConfig oss = configProvider.getConfig();
+        if (oss == null) {
+            throw new IllegalStateException("AliyunOssConfigProvider 返回的配置不能为空");
+        }
+        AliyunCredentialConfig credentialConfig = oss.snapshotCredentialConfig();
 
         CredentialsProvider credentialsProviderV2 = new CredentialsProviderSupplier(() -> {
             try {
-                AliyunOssConfig current = configProvider.getConfig();
-                return credentialRegistry.getOssV2Credentials(current);
+                return credentialRegistry.getOssV2Credentials(credentialConfig);
             } catch (Exception e) {
                 throw new RuntimeException("获取凭证失败", e);
             }
@@ -49,6 +53,10 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
     public com.aliyun.oss.OSS ossClient(AliyunCredentialRegistry credentialRegistry,
                                         AliyunOssConfigProvider configProvider) throws Exception {
         AliyunOssConfig oss = configProvider.getConfig();
+        if (oss == null) {
+            throw new IllegalStateException("AliyunOssConfigProvider 返回的配置不能为空");
+        }
+        AliyunCredentialConfig credentialConfig = oss.snapshotCredentialConfig();
         com.aliyun.oss.common.auth.CredentialsProvider credentialsProvider = new com.aliyun.oss.common.auth.CredentialsProvider() {
             @Override
             public void setCredentials(com.aliyun.oss.common.auth.Credentials credentials) {
@@ -56,8 +64,7 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
 
             @Override
             public com.aliyun.oss.common.auth.Credentials getCredentials() {
-                AliyunOssConfig current = configProvider.getConfig();
-                return credentialRegistry.getOssCredentials(current);
+                return credentialRegistry.getOssCredentials(credentialConfig);
             }
         };
 
@@ -77,6 +84,11 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
     public AliyunOssService aliyunOssService(AliyunOssConfigProvider configProvider,
                                              OSSClient ossV2Client,
                                              com.aliyun.oss.OSS ossClient) {
-        return new DefaultAliyunOssService(ossV2Client, ossClient, configProvider);
+        AliyunOssConfig oss = configProvider.getConfig();
+        if (oss == null) {
+            throw new IllegalStateException("AliyunOssConfigProvider 返回的配置不能为空");
+        }
+        return new DefaultAliyunOssService(ossV2Client, ossClient, configProvider,
+                oss.getEndpoint(), oss.getRegion());
     }
 }

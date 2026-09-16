@@ -2,6 +2,7 @@ package com.hzj.aliyun.config;
 
 import com.hzj.aliyun.core.sms.AliyunSmsService;
 import com.hzj.aliyun.utils.AliyunCredentialRegistry;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunCredentialConfig;
 import com.hzj.aliyun.provider.aliyun.sms.AliyunSmsConfigProvider;
 import com.hzj.aliyun.provider.aliyun.sms.entity.AliyunSmsConfig;
 import com.hzj.aliyun.core.sms.impl.DefaultAliyunSmsService;
@@ -23,8 +24,13 @@ public class AliyunSmsConfiguration extends AliyunBaseConfiguration {
     public com.aliyun.dysmsapi20170525.Client client(AliyunCredentialRegistry credentialRegistry,
                                                      AliyunSmsConfigProvider configProvider) throws Exception{
         AliyunSmsConfig sms = configProvider.getConfig();
-        Config config = credentialRegistry.createOpenApiConfig(sms);
-        config.endpoint = sms.getEndpoint();
+        if (sms == null) {
+            throw new IllegalStateException("AliyunSmsConfigProvider 返回的配置不能为空");
+        }
+        AliyunCredentialConfig credentialConfig = sms.snapshotCredentialConfig();
+        Config config = credentialRegistry.createOpenApiConfig(credentialConfig)
+                .setEndpoint(sms.getEndpoint())
+                .setRegionId(sms.getRegion());
         return new com.aliyun.dysmsapi20170525.Client(config);
     }
 

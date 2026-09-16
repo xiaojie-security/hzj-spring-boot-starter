@@ -14,13 +14,21 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 public class AliyunSmsConfig extends AliyunBaseConfig {
 
-    /** 短信服务接入点。 */
+    /**
+     * 短信服务接入点。
+     */
     private String endpoint;
-    /** 短信服务区域。 */
+    /**
+     * 短信服务区域。
+     */
     private String region;
-    /** 签名映射。 */
+    /**
+     * 签名映射。
+     */
     private Map<String, String> signNames;
-    /** 默认签名。 */
+    /**
+     * 默认签名。
+     */
     private String defaultSignName;
 
     /**

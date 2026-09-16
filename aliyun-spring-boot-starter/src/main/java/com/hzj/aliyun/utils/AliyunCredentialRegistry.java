@@ -1,6 +1,6 @@
 package com.hzj.aliyun.utils;
 
-import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunCredentialConfig;
 import com.aliyun.sts20150401.models.AssumeRoleResponse;
 import com.aliyun.sts20150401.models.AssumeRoleResponseBody;
 import com.aliyun.tea.TeaException;
@@ -23,11 +23,11 @@ public class AliyunCredentialRegistry {
     /**
      * 创建 OpenAPI 客户端配置。
      *
-     * @param serviceConfig 当前阿里云能力配置
+     * @param credentialConfig 当前阿里云能力的启动期凭证快照
      * @return OpenAPI 配置
      */
-    public com.aliyun.teaopenapi.models.Config createOpenApiConfig(AliyunBaseConfig serviceConfig) {
-        ResolvedCredentials credentials = resolveCredentials(serviceConfig);
+    public com.aliyun.teaopenapi.models.Config createOpenApiConfig(AliyunCredentialConfig credentialConfig) {
+        ResolvedCredentials credentials = resolveCredentials(credentialConfig);
         com.aliyun.teaopenapi.models.Config openApiConfig = new com.aliyun.teaopenapi.models.Config();
         openApiConfig.setAccessKeyId(credentials.accessKeyId());
         openApiConfig.setAccessKeySecret(credentials.accessKeySecret());
@@ -38,11 +38,12 @@ public class AliyunCredentialRegistry {
     /**
      * 获取 OSS V2 使用的凭证。
      *
-     * @param serviceConfig OSS 配置
+     * @param credentialConfig OSS 凭证配置快照
      * @return OSS V2 凭证
      */
-    public com.aliyun.sdk.service.oss2.credentials.Credentials getOssV2Credentials(AliyunBaseConfig serviceConfig) {
-        ResolvedCredentials credentials = resolveCredentials(serviceConfig);
+    public com.aliyun.sdk.service.oss2.credentials.Credentials getOssV2Credentials(
+            AliyunCredentialConfig credentialConfig) {
+        ResolvedCredentials credentials = resolveCredentials(credentialConfig);
         return new com.aliyun.sdk.service.oss2.credentials.Credentials(
                 credentials.accessKeyId(), credentials.accessKeySecret(), credentials.securityToken());
     }
@@ -50,11 +51,11 @@ public class AliyunCredentialRegistry {
     /**
      * 获取旧版 OSS 使用的凭证。
      *
-     * @param serviceConfig OSS 配置
+     * @param credentialConfig OSS 凭证配置快照
      * @return OSS 凭证
      */
-    public com.aliyun.oss.common.auth.Credentials getOssCredentials(AliyunBaseConfig serviceConfig) {
-        ResolvedCredentials credentials = resolveCredentials(serviceConfig);
+    public com.aliyun.oss.common.auth.Credentials getOssCredentials(AliyunCredentialConfig credentialConfig) {
+        ResolvedCredentials credentials = resolveCredentials(credentialConfig);
         if (credentials.securityToken() == null) {
             return new com.aliyun.oss.common.auth.DefaultCredentials(
                     credentials.accessKeyId(), credentials.accessKeySecret());
@@ -63,13 +64,14 @@ public class AliyunCredentialRegistry {
                 credentials.accessKeyId(), credentials.accessKeySecret(), credentials.securityToken());
     }
 
-    private ResolvedCredentials resolveCredentials(AliyunBaseConfig serviceConfig) {
-        validateConfig(serviceConfig);
-        if (!serviceConfig.useSts()) {
-            return new ResolvedCredentials(serviceConfig.getAccessKeyId(), serviceConfig.getAccessKeySecret(), null);
+    private ResolvedCredentials resolveCredentials(AliyunCredentialConfig credentialConfig) {
+        validateConfig(credentialConfig);
+        if (!credentialConfig.useSts()) {
+            return new ResolvedCredentials(credentialConfig.getAccessKeyId(),
+                    credentialConfig.getAccessKeySecret(), null);
         }
         try {
-            return getStsCredential(serviceConfig);
+            return getStsCredential(credentialConfig);
         } catch (Exception e) {
             if (e instanceof IllegalStateException) {
                 throw (IllegalStateException) e;
@@ -78,31 +80,32 @@ public class AliyunCredentialRegistry {
         }
     }
 
-    private void validateConfig(AliyunBaseConfig serviceConfig) {
-        if (serviceConfig == null) {
+    private void validateConfig(AliyunCredentialConfig credentialConfig) {
+        if (credentialConfig == null) {
             throw invalidConfig("阿里云能力配置不能为空");
         }
-        if (serviceConfig.getCredentialMode() == null) {
+        if (credentialConfig.getCredentialMode() == null) {
             throw invalidConfig("阿里云能力 credentialMode 不能为空");
         }
-        if (isBlank(serviceConfig.getAccessKeyId()) || isBlank(serviceConfig.getAccessKeySecret())) {
+        if (isBlank(credentialConfig.getAccessKeyId()) || isBlank(credentialConfig.getAccessKeySecret())) {
             throw invalidConfig("阿里云能力必须配置 accessKeyId 和 accessKeySecret");
         }
-        if (serviceConfig.useSts()) {
-            if (isBlank(serviceConfig.getRamRoleArn())) {
+        if (credentialConfig.useSts()) {
+            if (isBlank(credentialConfig.getRamRoleArn())) {
                 throw invalidConfig("阿里云 STS 模式必须配置 ramRoleArn");
             }
-            if (serviceConfig.getExpire() == null || serviceConfig.getExpire() <= 0) {
+            if (credentialConfig.getStsDurationSeconds() == null
+                    || credentialConfig.getStsDurationSeconds() <= 0) {
                 throw invalidConfig("阿里云 STS 凭证有效期必须大于 0");
             }
         }
     }
 
-    private ResolvedCredentials getStsCredential(AliyunBaseConfig serviceConfig) {
-        String stsEndpoint = isBlank(serviceConfig.getStsEndpoint())
-                ? "sts.aliyuncs.com" : serviceConfig.getStsEndpoint();
-        StsClientKey clientKey = new StsClientKey(serviceConfig.getAccessKeyId(),
-                serviceConfig.getAccessKeySecret(), stsEndpoint);
+    private ResolvedCredentials getStsCredential(AliyunCredentialConfig credentialConfig) {
+        String stsEndpoint = isBlank(credentialConfig.getStsEndpoint())
+                ? "sts.aliyuncs.com" : credentialConfig.getStsEndpoint();
+        StsClientKey clientKey = new StsClientKey(credentialConfig.getAccessKeyId(),
+                credentialConfig.getAccessKeySecret(), stsEndpoint);
         com.aliyun.sts20150401.Client client = stsClients.computeIfAbsent(clientKey, key -> {
             try {
                 com.aliyun.teaopenapi.models.Config config = new com.aliyun.teaopenapi.models.Config()
@@ -117,8 +120,8 @@ public class AliyunCredentialRegistry {
             }
         });
         com.aliyun.sts20150401.models.AssumeRoleRequest request = new com.aliyun.sts20150401.models.AssumeRoleRequest()
-                .setRoleArn(serviceConfig.getRamRoleArn())
-                .setDurationSeconds(serviceConfig.getExpire())
+                .setRoleArn(credentialConfig.getRamRoleArn())
+                .setDurationSeconds(credentialConfig.getStsDurationSeconds())
                 .setRoleSessionName(UUID.randomUUID().toString());
         try {
             AssumeRoleResponse response = client.assumeRoleWithOptions(request,
@@ -131,11 +134,11 @@ public class AliyunCredentialRegistry {
                     credentials.getSecurityToken());
         } catch (TeaException error) {
             log.error("AliyunCredentialRegistry.getStsCredential 获取 STS 临时凭证失败, ramRoleArn={}",
-                    serviceConfig.getRamRoleArn(), error);
+                    credentialConfig.getRamRoleArn(), error);
             throw new IllegalStateException("获取阿里云 STS 临时凭证失败", error);
         } catch (Exception e) {
             log.error("AliyunCredentialRegistry.getStsCredential 获取 STS 临时凭证异常, ramRoleArn={}",
-                    serviceConfig.getRamRoleArn(), e);
+                    credentialConfig.getRamRoleArn(), e);
             throw new IllegalStateException("获取阿里云 STS 临时凭证失败", e);
         }
     }

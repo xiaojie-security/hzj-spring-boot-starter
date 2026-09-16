@@ -5,7 +5,7 @@ import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayRequest;
 import com.alipay.api.AlipayResponse;
 import com.alipay.api.DefaultAlipayClient;
-import com.hzj.common.provider.ConfigProvider;
+import com.hzj.common.provider.StaticConfigProvider;
 import com.hzj.alipay.provider.alipay.entity.AlipayBaseConfig;
 
 public abstract class AbstractAlipayService<T extends AlipayBaseConfig> {
@@ -15,7 +15,7 @@ public abstract class AbstractAlipayService<T extends AlipayBaseConfig> {
 
     protected abstract AlipayClient getAlipayClient();
 
-    protected abstract ConfigProvider<T> getAlipayConfigProvider();
+    protected abstract StaticConfigProvider<T> getAlipayConfigProvider();
 
     /**
      * 执行支付宝请求。
@@ -58,7 +58,7 @@ public abstract class AbstractAlipayService<T extends AlipayBaseConfig> {
     }
 
     protected T getCurrentConfig() {
-        ConfigProvider<T> provider = getAlipayConfigProvider();
+        StaticConfigProvider<T> provider = getAlipayConfigProvider();
         if (provider == null) {
             throw new IllegalStateException("ConfigProvider 未初始化");
         }
