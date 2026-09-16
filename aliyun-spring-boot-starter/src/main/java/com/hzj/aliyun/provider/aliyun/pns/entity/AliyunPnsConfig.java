@@ -1,6 +1,6 @@
 package com.hzj.aliyun.provider.aliyun.pns.entity;
 
-import com.hzj.aliyun.provider.aliyun.global.entity.AliyunBaseConfig;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

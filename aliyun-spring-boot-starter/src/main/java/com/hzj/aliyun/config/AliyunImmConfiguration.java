@@ -27,8 +27,7 @@ public class AliyunImmConfiguration extends AliyunBaseConfiguration {
 
         AliyunImmConfig imm = configProvider.getConfig();
 
-        com.aliyun.teaopenapi.models.Config config = credentialRegistry.createOpenApiConfig(
-                imm.getRamRoleArn(), 3600L);
+        com.aliyun.teaopenapi.models.Config config = credentialRegistry.createOpenApiConfig(imm);
         config.setEndpoint(imm.getEndpointOverride());
         return new com.aliyun.imm20200930.Client(config);
     }

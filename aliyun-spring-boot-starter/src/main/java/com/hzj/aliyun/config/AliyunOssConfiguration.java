@@ -32,7 +32,7 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
         CredentialsProvider credentialsProviderV2 = new CredentialsProviderSupplier(() -> {
             try {
                 AliyunOssConfig current = configProvider.getConfig();
-                return credentialRegistry.getOssV2Credentials(current.getRamRoleArn(), current.getExpire());
+                return credentialRegistry.getOssV2Credentials(current);
             } catch (Exception e) {
                 throw new RuntimeException("获取凭证失败", e);
             }
@@ -57,7 +57,7 @@ public class AliyunOssConfiguration extends AliyunBaseConfiguration {
             @Override
             public com.aliyun.oss.common.auth.Credentials getCredentials() {
                 AliyunOssConfig current = configProvider.getConfig();
-                return credentialRegistry.getOssCredentials(current.getRamRoleArn(), current.getExpire());
+                return credentialRegistry.getOssCredentials(current);
             }
         };
 

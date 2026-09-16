@@ -23,7 +23,7 @@ public class AliyunSmsConfiguration extends AliyunBaseConfiguration {
     public com.aliyun.dysmsapi20170525.Client client(AliyunCredentialRegistry credentialRegistry,
                                                      AliyunSmsConfigProvider configProvider) throws Exception{
         AliyunSmsConfig sms = configProvider.getConfig();
-        Config config = credentialRegistry.createOpenApiConfig(sms.getRamRoleArn(), 3600L);
+        Config config = credentialRegistry.createOpenApiConfig(sms);
         config.endpoint = sms.getEndpoint();
         return new com.aliyun.dysmsapi20170525.Client(config);
     }

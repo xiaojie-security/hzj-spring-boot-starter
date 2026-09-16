@@ -1,6 +1,6 @@
 package com.hzj.aliyun.provider.aliyun.oss.entity;
 
-import com.hzj.aliyun.provider.aliyun.global.entity.AliyunBaseConfig;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
 import com.hzj.aliyun.provider.aliyun.oss.enums.AliyunOssPermission;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -28,8 +28,6 @@ public class AliyunOssConfig extends AliyunBaseConfig {
     private Map<String, String> buckets;
     /** 默认存储桶。 */
     private String defaultBucket;
-    /** 临时凭证有效期，单位为秒。 */
-    private Long expire;
     /** 上传回调地址。 */
     private String callback;
 }

@@ -1,4 +1,3 @@
-com.hzj.aliyun.config.AliyunStsConfiguration
 com.hzj.aliyun.config.AliyunOssConfiguration
 com.hzj.aliyun.config.AliyunImmConfiguration
 com.hzj.aliyun.config.AliyunSmsConfiguration

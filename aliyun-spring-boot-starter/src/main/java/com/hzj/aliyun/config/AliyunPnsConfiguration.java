@@ -22,8 +22,7 @@ public class AliyunPnsConfiguration extends AliyunBaseConfiguration {
     public com.aliyun.dypnsapi20170525.Client client(AliyunCredentialRegistry credentialRegistry,
                                                      AliyunPnsConfigProvider configProvider) throws Exception {
         AliyunPnsConfig pns = configProvider.getConfig();
-        com.aliyun.teaopenapi.models.Config config = credentialRegistry.createOpenApiConfig(
-                        pns.getRamRoleArn(), 3600L)
+        com.aliyun.teaopenapi.models.Config config = credentialRegistry.createOpenApiConfig(pns)
                 .setEndpoint(pns.getEndpoint())
                 .setRegionId(pns.getRegion());
 

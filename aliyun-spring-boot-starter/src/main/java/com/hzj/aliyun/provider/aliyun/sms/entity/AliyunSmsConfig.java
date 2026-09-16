@@ -1,7 +1,7 @@
 package com.hzj.aliyun.provider.aliyun.sms.entity;
 
 import cn.hutool.core.collection.CollUtil;
-import com.hzj.aliyun.provider.aliyun.global.entity.AliyunBaseConfig;
+import com.hzj.aliyun.provider.aliyun.common.entity.AliyunBaseConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
