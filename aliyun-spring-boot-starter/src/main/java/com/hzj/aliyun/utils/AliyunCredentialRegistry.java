@@ -64,6 +64,25 @@ public class AliyunCredentialRegistry {
                 credentials.accessKeyId(), credentials.accessKeySecret(), credentials.securityToken());
     }
 
+    /**
+     * 获取 OSS POST 直传签名所需的凭证快照。
+     *
+     * <p>旧版 OSS SDK 的 {@code Credentials} 接口在不同版本中 getter 命名不一致，
+     * 业务层不应因此依赖 SDK 细节或重新解析 AccessKey。</p>
+     *
+     * @param credentialConfig 当前 OSS 能力的启动期凭证配置快照
+     * @return OSS 上传凭证快照
+     */
+    public OssUploadCredentials getOssUploadCredentials(AliyunCredentialConfig credentialConfig) {
+        ResolvedCredentials credentials = resolveCredentials(credentialConfig);
+        return new OssUploadCredentials(credentials.accessKeyId(), credentials.accessKeySecret(),
+                credentials.securityToken());
+    }
+
+    /** OSS 上传签名使用的凭证快照。 */
+    public record OssUploadCredentials(String accessKeyId, String accessKeySecret, String securityToken) {
+    }
+
     private ResolvedCredentials resolveCredentials(AliyunCredentialConfig credentialConfig) {
         validateConfig(credentialConfig);
         if (!credentialConfig.useSts()) {
