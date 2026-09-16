@@ -43,8 +43,10 @@ import com.hzj.alipay.core.payment.domain.AliPayTradeCloseResult;
 import com.hzj.alipay.core.payment.domain.AliPayTradeQueryParam;
 import com.hzj.alipay.core.payment.domain.AliPayTradeQueryResult;
 import com.hzj.alipay.core.AliPayException;
-import com.hzj.alipay.provider.alipay.payment.AlipayPaymentConfigProvider;
-import com.hzj.alipay.provider.alipay.payment.entity.AlipayPaymentConfig;
+import com.hzj.alipay.provider.alipay.payment.AlipayPaymentRuntimeConfigProvider;
+import com.hzj.alipay.provider.alipay.payment.AlipayPaymentStaticConfigProvider;
+import com.hzj.alipay.provider.alipay.payment.entity.AlipayPaymentRuntimeConfig;
+import com.hzj.alipay.provider.alipay.payment.entity.AlipayPaymentStaticConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -59,7 +61,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPaymentConfig> implements AlipayPaymentService {
+public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPaymentStaticConfig> implements AlipayPaymentService {
     private static final String APP_PRODUCT_CODE = "QUICK_MSECURITY_PAY";
     private static final String PAGE_PRODUCT_CODE = "FAST_INSTANT_TRADE_PAY";
     private static final String PRECREATE_PRODUCT_CODE = "FACE_TO_FACE_PAYMENT";
@@ -68,7 +70,8 @@ public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPay
     private static final String DEFAULT_INTEGRATION_TYPE = "PCWEB";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final AlipayPaymentConfigProvider provider;
+    private final AlipayPaymentStaticConfigProvider staticConfigProvider;
+    private final AlipayPaymentRuntimeConfigProvider runtimeConfigProvider;
 
     @Override
     protected AlipayClient getAlipayClient() {
@@ -76,8 +79,8 @@ public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPay
     }
 
     @Override
-    protected AlipayPaymentConfigProvider getAlipayConfigProvider() {
-        return provider;
+    protected AlipayPaymentStaticConfigProvider getAlipayConfigProvider() {
+        return staticConfigProvider;
     }
 
     /**
@@ -590,7 +593,7 @@ public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPay
         if (StringUtils.hasText(notifyUrl)) {
             return notifyUrl;
         }
-        return getCurrentConfig().getPaymentNotifyUrl();
+        return getRuntimeConfig().getPaymentNotifyUrl();
     }
 
     private String resolveIntegrationType(String integrationType) {
@@ -601,12 +604,25 @@ public class DefaultAlipayPaymentService extends AbstractAlipayService<AlipayPay
         if (StringUtils.hasText(paymentParam.getTimeExpire())) {
             return paymentParam.getTimeExpire();
         }
-        Long validityTime = getCurrentConfig().getValidityTime();
+        Long validityTime = getRuntimeConfig().getValidityTime();
         if (validityTime == null || validityTime <= 0) {
             return null;
         }
         return LocalDateTime.now().plus(validityTime, ChronoUnit.MILLIS)
                 .format(TIME_FORMATTER);
+    }
+
+    /**
+     * 获取当前生效的支付宝支付运行时配置。
+     *
+     * @return 支付宝支付运行时配置
+     */
+    private AlipayPaymentRuntimeConfig getRuntimeConfig() {
+        AlipayPaymentRuntimeConfig config = runtimeConfigProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("AlipayPaymentRuntimeConfigProvider 返回的配置不能为空");
+        }
+        return config;
     }
 
     private String formatAmount(BigDecimal amount) {

@@ -19,8 +19,8 @@ import com.hzj.alipay.core.verification.domain.AlipayMobileThreeMetaCheckResult;
 import com.hzj.alipay.core.verification.domain.AlipayTwoMetaCheckParam;
 import com.hzj.alipay.core.verification.domain.AlipayTwoMetaCheckResult;
 import com.hzj.alipay.core.verification.enums.AlipayVerificationMatch;
-import com.hzj.alipay.provider.alipay.verification.AlipayVerificationConfigProvider;
-import com.hzj.alipay.provider.alipay.verification.entity.AlipayVerificationConfig;
+import com.hzj.alipay.provider.alipay.verification.AlipayVerificationStaticConfigProvider;
+import com.hzj.alipay.provider.alipay.verification.entity.AlipayVerificationStaticConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,9 +29,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class DefaultAlipayVerificationService extends AbstractAlipayService<AlipayVerificationConfig> implements AlipayVerificationService {
+public class DefaultAlipayVerificationService
+        extends AbstractAlipayService<AlipayVerificationStaticConfig> implements AlipayVerificationService {
 
-    private final AlipayVerificationConfigProvider provider;
+    private final AlipayVerificationStaticConfigProvider provider;
 
     @Override
     protected com.alipay.api.AlipayClient getAlipayClient() {
@@ -39,7 +40,7 @@ public class DefaultAlipayVerificationService extends AbstractAlipayService<Alip
     }
 
     @Override
-    protected AlipayVerificationConfigProvider getAlipayConfigProvider() {
+    protected AlipayVerificationStaticConfigProvider getAlipayConfigProvider() {
         return provider;
     }
 

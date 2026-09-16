@@ -2,7 +2,7 @@ package com.hzj.alipay.config;
 
 import com.hzj.alipay.core.transfer.AlipayTransferService;
 import com.hzj.alipay.core.transfer.impl.DefaultAlipayTransferService;
-import com.hzj.alipay.provider.alipay.transfer.AlipayTransferConfigProvider;
+import com.hzj.alipay.provider.alipay.transfer.AlipayTransferStaticConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -11,10 +11,10 @@ import org.springframework.context.annotation.Bean;
 /**
  * 支付宝转账自动装配配置。
  * <p>
- * 仅当使用方提供了 {@link AlipayTransferConfigProvider} Bean 时才会装配。
+ * 仅当使用方提供了 {@link AlipayTransferStaticConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration
-@ConditionalOnBean(AlipayTransferConfigProvider.class)
+@ConditionalOnBean(AlipayTransferStaticConfigProvider.class)
 public class AlipayTransferConfiguration {
 
 
@@ -25,7 +25,7 @@ public class AlipayTransferConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AlipayTransferService.class)
-    public AlipayTransferService alipayTransferService(AlipayTransferConfigProvider provider) {
+    public AlipayTransferService alipayTransferService(AlipayTransferStaticConfigProvider provider) {
         return new DefaultAlipayTransferService(provider);
     }
 }

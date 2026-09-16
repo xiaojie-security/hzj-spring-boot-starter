@@ -2,7 +2,7 @@ package com.hzj.alipay.config;
 
 import com.hzj.alipay.core.verification.AlipayVerificationService;
 import com.hzj.alipay.core.verification.impl.DefaultAlipayVerificationService;
-import com.hzj.alipay.provider.alipay.verification.AlipayVerificationConfigProvider;
+import com.hzj.alipay.provider.alipay.verification.AlipayVerificationStaticConfigProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -11,10 +11,10 @@ import org.springframework.context.annotation.Bean;
 /**
  * 支付宝实名信息核验自动装配配置。
  * <p>
- * 仅当使用方提供了 {@link AlipayVerificationConfigProvider} Bean 时才会装配。
+ * 仅当使用方提供了 {@link AlipayVerificationStaticConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration
-@ConditionalOnBean(AlipayVerificationConfigProvider.class)
+@ConditionalOnBean(AlipayVerificationStaticConfigProvider.class)
 public class AlipayVerificationConfiguration {
 
     /**
@@ -25,7 +25,7 @@ public class AlipayVerificationConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AlipayVerificationService.class)
-    public AlipayVerificationService alipayVerificationService(AlipayVerificationConfigProvider provider) {
+    public AlipayVerificationService alipayVerificationService(AlipayVerificationStaticConfigProvider provider) {
         return new DefaultAlipayVerificationService(provider);
     }
 }
