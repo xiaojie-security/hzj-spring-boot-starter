@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WebApiConfig {
+public class AMapWebApiStaticConfig {
 
     /**
      * 高德 Web服务 API 密钥（key）

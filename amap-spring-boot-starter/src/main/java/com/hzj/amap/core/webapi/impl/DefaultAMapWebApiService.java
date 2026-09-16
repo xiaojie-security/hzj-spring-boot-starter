@@ -9,8 +9,8 @@ import com.hzj.amap.core.webapi.AMapWebApiException;
 import com.hzj.amap.core.webapi.AMapWebApiService;
 import com.hzj.amap.core.webapi.adapter.AMapObjectMapperFactory;
 import com.hzj.amap.core.webapi.domain.*;
-import com.hzj.amap.provider.webapi.AMapWebApiConfigProvider;
-import com.hzj.amap.provider.webapi.entity.WebApiConfig;
+import com.hzj.amap.provider.webapi.AMapWebApiStaticConfigProvider;
+import com.hzj.amap.provider.webapi.entity.AMapWebApiStaticConfig;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -27,7 +27,7 @@ import java.util.Map;
 public class DefaultAMapWebApiService implements AMapWebApiService {
 
     /** 高德 Web 服务动态配置提供者。 */
-    private final AMapWebApiConfigProvider provider;
+    private final AMapWebApiStaticConfigProvider provider;
 
     /** HTTP 调用客户端。 */
     private final OkHttpClient client;
@@ -40,7 +40,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      *
      * @param provider 高德 Web 服务动态配置提供者
      */
-    public DefaultAMapWebApiService(AMapWebApiConfigProvider provider) {
+    public DefaultAMapWebApiService(AMapWebApiStaticConfigProvider provider) {
         this(provider, new OkHttpClient.Builder().build(), AMapObjectMapperFactory.create());
     }
 
@@ -50,7 +50,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param provider 高德 Web 服务动态配置提供者
      * @param client OkHttp 调用客户端
      */
-    public DefaultAMapWebApiService(AMapWebApiConfigProvider provider, OkHttpClient client) {
+    public DefaultAMapWebApiService(AMapWebApiStaticConfigProvider provider, OkHttpClient client) {
         this(provider, client, AMapObjectMapperFactory.create());
     }
 
@@ -61,11 +61,11 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      * @param client OkHttp 调用客户端
      * @param objectMapper 应用 ObjectMapper
      */
-    public DefaultAMapWebApiService(AMapWebApiConfigProvider provider,
+    public DefaultAMapWebApiService(AMapWebApiStaticConfigProvider provider,
                                     OkHttpClient client,
                                     ObjectMapper objectMapper) {
         if (provider == null) {
-            throw new IllegalArgumentException("AMapWebApiConfigProvider 不能为空");
+            throw new IllegalArgumentException("AMapWebApiStaticConfigProvider 不能为空");
         }
         if (client == null) {
             throw new IllegalArgumentException("OkHttpClient 不能为空");
@@ -197,7 +197,7 @@ public class DefaultAMapWebApiService implements AMapWebApiService {
      */
     private String buildUrl(AMapWebApiRequest request, String action) {
         requireRequest(request, action);
-        WebApiConfig config = provider.getConfig();
+        AMapWebApiStaticConfig config = provider.getConfig();
         if (config == null || isBlank(config.getSecretKey())) {
             log.error("{} 未获取到高德 Web 服务配置或 key", action);
             throw new AMapWebApiException("未获取到高德 Web 服务配置", null, null);

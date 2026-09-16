@@ -2,7 +2,7 @@ package com.hzj.amap.config;
 
 import com.hzj.amap.core.webapi.AMapWebApiService;
 import com.hzj.amap.core.webapi.impl.DefaultAMapWebApiService;
-import com.hzj.amap.provider.webapi.AMapWebApiConfigProvider;
+import com.hzj.amap.provider.webapi.AMapWebApiStaticConfigProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -13,10 +13,10 @@ import org.springframework.context.annotation.Bean;
 /**
  * 高德地图自动配置。
  * <p>
- * 仅当使用方提供了 {@link AMapWebApiConfigProvider} Bean 时才会装配。
+ * 仅当使用方提供了 {@link AMapWebApiStaticConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration
-@ConditionalOnBean(AMapWebApiConfigProvider.class)
+@ConditionalOnBean(AMapWebApiStaticConfigProvider.class)
 public class AMapConfiguration {
 
     /**
@@ -27,7 +27,7 @@ public class AMapConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(AMapWebApiService.class)
-    public AMapWebApiService amapWebApiService(AMapWebApiConfigProvider provider,
+    public AMapWebApiService amapWebApiService(AMapWebApiStaticConfigProvider provider,
                                                ObjectProvider<ObjectMapper> objectMapperProvider) {
         ObjectMapper objectMapper = objectMapperProvider.getIfAvailable();
         return objectMapper == null
