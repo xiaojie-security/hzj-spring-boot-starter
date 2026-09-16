@@ -3,7 +3,8 @@ package com.hzj.wechat.config;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.xcx.safety_control.WechatXcxSafetyControlService;
 import com.hzj.wechat.core.xcx.safety_control.impl.DefaultWechatXcxSafetyControlService;
-import com.hzj.wechat.provider.wechat.safety_control.WechatSafetyControlConfigProvider;
+import com.hzj.wechat.provider.wechat.safety_control.WechatSafetyControlRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.safety_control.WechatSafetyControlStaticConfigProvider;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -14,10 +15,12 @@ import org.springframework.context.annotation.Bean;
  * 微信小程序安全风控自动装配配置。
  * <p>
  * 仅当使用方同时提供了 {@link WechatAccessTokenService} 与
- * {@link WechatSafetyControlConfigProvider} Bean 时才会装配。
+ * {@link WechatSafetyControlStaticConfigProvider} 与
+ * {@link WechatSafetyControlRuntimeConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration(after = WechatAccessConfiguration.class)
-@ConditionalOnBean({WechatAccessTokenService.class, WechatSafetyControlConfigProvider.class})
+@ConditionalOnBean({WechatAccessTokenService.class, WechatSafetyControlStaticConfigProvider.class,
+        WechatSafetyControlRuntimeConfigProvider.class})
 public class WechatXcxSafetyControlConfiguration {
 
     /**
@@ -31,8 +34,10 @@ public class WechatXcxSafetyControlConfiguration {
     @ConditionalOnMissingBean(WechatXcxSafetyControlService.class)
     public WechatXcxSafetyControlService wechatXcxSafetyControlService(
             WechatAccessTokenService accessTokenService,
-            WechatSafetyControlConfigProvider provider) {
+            WechatSafetyControlStaticConfigProvider staticConfigProvider,
+            WechatSafetyControlRuntimeConfigProvider runtimeConfigProvider) {
         return new DefaultWechatXcxSafetyControlService(
-                accessTokenService, provider, new OkHttpClient.Builder().build());
+                accessTokenService, staticConfigProvider, runtimeConfigProvider,
+                new OkHttpClient.Builder().build());
     }
 }

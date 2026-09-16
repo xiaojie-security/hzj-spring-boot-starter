@@ -9,8 +9,8 @@ import com.hzj.wechat.core.xcx.qrcode.WechatXcxQRCodeService;
 import com.hzj.wechat.core.xcx.qrcode.domain.WechatXcxQRCodeLineColor;
 import com.hzj.wechat.core.xcx.qrcode.domain.WechatXcxQRCodeRequest;
 import com.hzj.wechat.core.xcx.qrcode.enums.WechatXcxEnvVersion;
-import com.hzj.wechat.provider.wechat.qrcode.WechatQrCodeConfigProvider;
-import com.hzj.wechat.provider.wechat.qrcode.entity.WechatQrCodeConfig;
+import com.hzj.wechat.provider.wechat.qrcode.WechatQrCodeRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.qrcode.entity.WechatQrCodeRuntimeConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -35,7 +35,7 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
 
     private final WechatAccessTokenService accessTokenService;
 
-    private final WechatQrCodeConfigProvider provider;
+    private final WechatQrCodeRuntimeConfigProvider provider;
 
     private final OkHttpClient client;
 
@@ -66,7 +66,7 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
      * @param client HTTP 客户端
      */
     public DefaultWechatXcxQRCodeService(WechatAccessTokenService accessTokenService,
-                                         WechatQrCodeConfigProvider provider, OkHttpClient client) {
+                                         WechatQrCodeRuntimeConfigProvider provider, OkHttpClient client) {
         if (accessTokenService == null) {
             throw new IllegalArgumentException("WechatAccessTokenService 不能为空");
         }
@@ -184,7 +184,7 @@ public class DefaultWechatXcxQRCodeService implements WechatXcxQRCodeService {
         }
         WechatXcxEnvVersion envVersion = WechatXcxEnvVersion.RELEASE;
         if (provider != null) {
-            WechatQrCodeConfig config = provider.getConfig();
+            WechatQrCodeRuntimeConfig config = provider.getConfig();
             if (config != null && config.getEnvVersion() != null) {
                 envVersion = config.getEnvVersion();
             }

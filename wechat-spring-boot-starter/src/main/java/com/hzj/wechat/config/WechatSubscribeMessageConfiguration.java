@@ -3,7 +3,7 @@ package com.hzj.wechat.config;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.xcx.subscribe_message.WechatXcxSubscribeMessageService;
 import com.hzj.wechat.core.xcx.subscribe_message.impl.DefaultWechatXcxSubscribeMessageService;
-import com.hzj.wechat.provider.wechat.subscribe_message.WechatSubscribeMessageConfigProvider;
+import com.hzj.wechat.provider.wechat.subscribe_message.WechatSubscribeMessageRuntimeConfigProvider;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Bean;
  * 微信小程序订阅消息自动装配配置。
  * <p>
  * 仅当使用方同时提供了 {@link WechatAccessTokenService} 与
- * {@link WechatSubscribeMessageConfigProvider} Bean 时才会装配。
+ * {@link WechatSubscribeMessageRuntimeConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration(after = WechatAccessConfiguration.class)
-@ConditionalOnBean({WechatAccessTokenService.class, WechatSubscribeMessageConfigProvider.class})
+@ConditionalOnBean({WechatAccessTokenService.class, WechatSubscribeMessageRuntimeConfigProvider.class})
 public class WechatSubscribeMessageConfiguration {
 
     /**
@@ -31,7 +31,7 @@ public class WechatSubscribeMessageConfiguration {
     @ConditionalOnMissingBean(WechatXcxSubscribeMessageService.class)
     public WechatXcxSubscribeMessageService wechatXcxSubscribeMessageService(
             WechatAccessTokenService accessTokenService,
-            WechatSubscribeMessageConfigProvider provider) {
+            WechatSubscribeMessageRuntimeConfigProvider provider) {
         return new DefaultWechatXcxSubscribeMessageService(
                 accessTokenService, provider, new OkHttpClient.Builder().build());
     }

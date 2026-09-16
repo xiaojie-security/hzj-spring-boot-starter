@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WechatVirtualPaymentConfig {
+public class WechatVirtualPaymentStaticConfig {
 
     /**
      * 米大师侧申请的应用 ID，对应虚拟支付接口的 offer_id。

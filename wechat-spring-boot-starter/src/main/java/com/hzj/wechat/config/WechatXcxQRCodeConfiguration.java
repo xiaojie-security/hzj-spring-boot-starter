@@ -3,7 +3,7 @@ package com.hzj.wechat.config;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.xcx.qrcode.WechatXcxQRCodeService;
 import com.hzj.wechat.core.xcx.qrcode.impl.DefaultWechatXcxQRCodeService;
-import com.hzj.wechat.provider.wechat.qrcode.WechatQrCodeConfigProvider;
+import com.hzj.wechat.provider.wechat.qrcode.WechatQrCodeRuntimeConfigProvider;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Bean;
  * 微信小程序二维码自动装配配置。
  * <p>
  * 仅当使用方同时提供了 {@link WechatAccessTokenService} 与
- * {@link WechatQrCodeConfigProvider} Bean 时才会装配。
+ * {@link WechatQrCodeRuntimeConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration(after = WechatAccessConfiguration.class)
-@ConditionalOnBean({WechatAccessTokenService.class, WechatQrCodeConfigProvider.class})
+@ConditionalOnBean({WechatAccessTokenService.class, WechatQrCodeRuntimeConfigProvider.class})
 public class WechatXcxQRCodeConfiguration {
 
     /**
@@ -30,7 +30,7 @@ public class WechatXcxQRCodeConfiguration {
     @Bean
     @ConditionalOnMissingBean(WechatXcxQRCodeService.class)
     public WechatXcxQRCodeService wechatXcxQRCodeService(WechatAccessTokenService accessTokenService,
-                                                         WechatQrCodeConfigProvider provider) {
+                                                         WechatQrCodeRuntimeConfigProvider provider) {
         return new DefaultWechatXcxQRCodeService(accessTokenService, provider, new OkHttpClient.Builder().build());
     }
 }

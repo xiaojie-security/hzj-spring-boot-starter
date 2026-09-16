@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WechatSubscribeMessageConfig {
+public class WechatSubscribeMessageRuntimeConfig {
 
     /**
      * 发送订阅消息时跳转小程序的默认类型。

@@ -6,8 +6,8 @@ import com.google.gson.JsonSyntaxException;
 import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.oauth2.WechatWebpageOAuth2Service;
 import com.hzj.wechat.core.oauth2.domain.*;
-import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
-import com.hzj.wechat.provider.wechat.access.entity.WechatAccessConfig;
+import com.hzj.wechat.provider.wechat.access.WechatAccessStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.access.entity.WechatAccessStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +24,13 @@ import java.io.UncheckedIOException;
 public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Service {
 
     private final OkHttpClient client = new OkHttpClient.Builder().build();
-    private final WechatAccessConfigProvider provider;
+    private final WechatAccessStaticConfigProvider provider;
 
 
     @Override
     public String generateAuthUrl(AuthorizationRequest request) {
         requireNonNull(request, "AuthorizationRequest");
-        WechatAccessConfig config = getConfig();
+        WechatAccessStaticConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String responseType = defaultIfBlank(request.getResponseType(), "code");
         String scope = defaultIfBlank(request.getScope(), "snsapi_login");
@@ -56,7 +56,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
     @Override
     public AccessTokenResponse getAccessTokenByCode(AccessTokenRequest request) {
         requireNonNull(request, "AccessTokenRequest");
-        WechatAccessConfig config = getConfig();
+        WechatAccessStaticConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String secret = defaultIfBlank(request.getSecret(), config.getSecret());
         String grantType = defaultIfBlank(request.getGrantType(), "authorization_code");
@@ -112,7 +112,7 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
     @Override
     public RefreshTokenResponse refreshAccessToken(RefreshTokenRequest request) {
         requireNonNull(request, "RefreshTokenRequest");
-        WechatAccessConfig config = getConfig();
+        WechatAccessStaticConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String grantType = defaultIfBlank(request.getGrantType(), "refresh_token");
         requireNotBlank(appid, "appid");
@@ -220,8 +220,8 @@ public class DefaultWechatWebpageOAuth2Service implements WechatWebpageOAuth2Ser
         return isBlank(value) ? defaultValue : value;
     }
 
-    private WechatAccessConfig getConfig() {
-        WechatAccessConfig config = provider.getConfig();
+    private WechatAccessStaticConfig getConfig() {
+        WechatAccessStaticConfig config = provider.getConfig();
         if (config == null) {
             throw new WechatOAuth2Exception("未获取到微信网页 OAuth2 配置");
         }

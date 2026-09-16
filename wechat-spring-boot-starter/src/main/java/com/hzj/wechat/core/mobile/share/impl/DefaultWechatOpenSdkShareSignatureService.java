@@ -5,8 +5,8 @@ import com.hzj.wechat.core.mobile.share.WechatOpenSdkShareSignatureService;
 import com.hzj.wechat.core.mobile.share.domain.WechatOpenSdkShareSignatureRequest;
 import com.hzj.wechat.core.mobile.share.domain.WechatOpenSdkShareSignatureResponse;
 import com.hzj.wechat.core.mobile.share.enums.WechatOpenSdkSignatureAlgorithm;
-import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareConfigProvider;
-import com.hzj.wechat.provider.wechat.mobile.share.entity.WechatOpenSdkShareConfig;
+import com.hzj.wechat.provider.wechat.mobile.share.WechatOpenSdkShareStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.share.entity.WechatOpenSdkShareStaticConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -31,15 +31,16 @@ public class DefaultWechatOpenSdkShareSignatureService implements WechatOpenSdkS
             "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, PSSParameterSpec.TRAILER_FIELD_BC);
 
     /** OpenSDK 分享动态配置提供者。 */
-    private final WechatOpenSdkShareConfigProvider configProvider;
+    private final WechatOpenSdkShareStaticConfigProvider configProvider;
 
     /**
      * 创建微信 OpenSDK 分享签名服务。
      *
      * @param configProvider OpenSDK 分享动态配置提供者
      */
-    public DefaultWechatOpenSdkShareSignatureService(WechatOpenSdkShareConfigProvider configProvider) {
-        this.configProvider = Objects.requireNonNull(configProvider, "WechatOpenSdkShareConfigProvider 不能为空");
+    public DefaultWechatOpenSdkShareSignatureService(WechatOpenSdkShareStaticConfigProvider configProvider) {
+        this.configProvider = Objects.requireNonNull(configProvider,
+                "WechatOpenSdkShareStaticConfigProvider 不能为空");
     }
 
     /**
@@ -51,7 +52,7 @@ public class DefaultWechatOpenSdkShareSignatureService implements WechatOpenSdkS
     @Override
     public WechatOpenSdkShareSignatureResponse sign(WechatOpenSdkShareSignatureRequest request) {
         validateRequest(request);
-        WechatOpenSdkShareConfig config = requireConfig();
+        WechatOpenSdkShareStaticConfig config = requireConfig();
         String signContent = buildSignContent(request, config.getAppid());
         String msgSignature = sign(signContent, config.getSignatureAlgorithm(), config.getPrivateKey());
         return new WechatOpenSdkShareSignatureResponse(
@@ -88,8 +89,8 @@ public class DefaultWechatOpenSdkShareSignatureService implements WechatOpenSdkS
      *
      * @return OpenSDK 分享配置
      */
-    private WechatOpenSdkShareConfig requireConfig() {
-        WechatOpenSdkShareConfig config = configProvider.getConfig();
+    private WechatOpenSdkShareStaticConfig requireConfig() {
+        WechatOpenSdkShareStaticConfig config = configProvider.getConfig();
         if (config == null) {
             log.error("DefaultWechatOpenSdkShareSignatureService.requireConfig 未获取到微信移动应用OpenSDK配置");
             throw new WechatOpenSdkShareSignatureException("未获取到微信移动应用 OpenSDK 配置");

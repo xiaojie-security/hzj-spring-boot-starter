@@ -13,8 +13,8 @@ import com.hzj.wechat.core.xcx.face.domain.WechatXcxFaceGetVerifyIdResponse;
 import com.hzj.wechat.core.xcx.face.domain.WechatXcxFaceQueryVerifyInfoRequest;
 import com.hzj.wechat.core.xcx.face.domain.WechatXcxFaceQueryVerifyInfoResponse;
 import com.hzj.wechat.core.xcx.face.enums.WechatXcxFaceCertType;
-import com.hzj.wechat.provider.wechat.face.WechatFaceVerifyConfigProvider;
-import com.hzj.wechat.provider.wechat.face.entity.WechatFaceVerifyConfig;
+import com.hzj.wechat.provider.wechat.face.WechatFaceVerifyRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.face.entity.WechatFaceVerifyRuntimeConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -56,7 +56,7 @@ public class DefaultWechatXcxFaceVerifyService implements WechatXcxFaceVerifySer
 
     private final WechatAccessTokenService accessTokenService;
 
-    private final WechatFaceVerifyConfigProvider provider;
+    private final WechatFaceVerifyRuntimeConfigProvider provider;
 
     private final OkHttpClient client;
 
@@ -76,7 +76,7 @@ public class DefaultWechatXcxFaceVerifyService implements WechatXcxFaceVerifySer
      * @param provider           微信人脸核身配置提供者
      */
     public DefaultWechatXcxFaceVerifyService(WechatAccessTokenService accessTokenService,
-                                             WechatFaceVerifyConfigProvider provider) {
+                                             WechatFaceVerifyRuntimeConfigProvider provider) {
         this(accessTokenService, provider, new OkHttpClient.Builder().build());
     }
 
@@ -88,7 +88,7 @@ public class DefaultWechatXcxFaceVerifyService implements WechatXcxFaceVerifySer
      * @param client             HTTP 客户端
      */
     public DefaultWechatXcxFaceVerifyService(WechatAccessTokenService accessTokenService,
-                                             WechatFaceVerifyConfigProvider provider,
+                                             WechatFaceVerifyRuntimeConfigProvider provider,
                                              OkHttpClient client) {
         if (accessTokenService == null) {
             throw new IllegalArgumentException("WechatAccessTokenService 不能为空");
@@ -162,7 +162,7 @@ public class DefaultWechatXcxFaceVerifyService implements WechatXcxFaceVerifySer
 
     private WechatXcxFaceCertType resolveDefaultCertType() {
         if (provider != null) {
-            WechatFaceVerifyConfig config = provider.getConfig();
+            WechatFaceVerifyRuntimeConfig config = provider.getConfig();
             if (config != null && config.getCertType() != null) {
                 return config.getCertType();
             }

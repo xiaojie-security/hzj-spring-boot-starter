@@ -27,8 +27,8 @@ import com.hzj.wechat.core.xcx.subscribe_message.domain.WechatXcxSubscribeMessag
 import com.hzj.wechat.core.xcx.subscribe_message.domain.WechatXcxSubscribeMessageTemplateListResponse;
 import com.hzj.wechat.core.xcx.subscribe_message.enums.WechatXcxSubscribeMessageLang;
 import com.hzj.wechat.core.xcx.subscribe_message.enums.WechatXcxSubscribeMessageMiniProgramState;
-import com.hzj.wechat.provider.wechat.subscribe_message.WechatSubscribeMessageConfigProvider;
-import com.hzj.wechat.provider.wechat.subscribe_message.entity.WechatSubscribeMessageConfig;
+import com.hzj.wechat.provider.wechat.subscribe_message.WechatSubscribeMessageRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.subscribe_message.entity.WechatSubscribeMessageRuntimeConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -106,7 +106,7 @@ public class DefaultWechatXcxSubscribeMessageService implements WechatXcxSubscri
 
     private final WechatAccessTokenService accessTokenService;
 
-    private final WechatSubscribeMessageConfigProvider provider;
+    private final WechatSubscribeMessageRuntimeConfigProvider provider;
 
     private final OkHttpClient client;
 
@@ -126,7 +126,7 @@ public class DefaultWechatXcxSubscribeMessageService implements WechatXcxSubscri
      * @param provider 微信订阅消息配置提供者
      */
     public DefaultWechatXcxSubscribeMessageService(WechatAccessTokenService accessTokenService,
-                                                   WechatSubscribeMessageConfigProvider provider) {
+                                                   WechatSubscribeMessageRuntimeConfigProvider provider) {
         this(accessTokenService, provider, new OkHttpClient.Builder().build());
     }
 
@@ -138,7 +138,7 @@ public class DefaultWechatXcxSubscribeMessageService implements WechatXcxSubscri
      * @param client HTTP 客户端
      */
     public DefaultWechatXcxSubscribeMessageService(WechatAccessTokenService accessTokenService,
-                                                   WechatSubscribeMessageConfigProvider provider,
+                                                   WechatSubscribeMessageRuntimeConfigProvider provider,
                                                    OkHttpClient client) {
         if (accessTokenService == null) {
             throw new IllegalArgumentException("WechatAccessTokenService 不能为空");
@@ -398,7 +398,7 @@ public class DefaultWechatXcxSubscribeMessageService implements WechatXcxSubscri
     }
 
     private void applyConfiguredDefaults(WechatXcxSubscribeMessageSendRequest request) {
-        WechatSubscribeMessageConfig config = getConfig();
+        WechatSubscribeMessageRuntimeConfig config = getConfig();
         if (request.miniprogramState == null) {
             request.miniprogramState = config != null && config.getMiniprogramState() != null
                     ? config.getMiniprogramState() : WechatXcxSubscribeMessageMiniProgramState.FORMAL;
@@ -409,7 +409,7 @@ public class DefaultWechatXcxSubscribeMessageService implements WechatXcxSubscri
         }
     }
 
-    private WechatSubscribeMessageConfig getConfig() {
+    private WechatSubscribeMessageRuntimeConfig getConfig() {
         if (provider == null) {
             return null;
         }

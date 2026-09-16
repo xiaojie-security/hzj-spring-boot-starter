@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WechatQrCodeConfig {
+public class WechatQrCodeRuntimeConfig {
 
     /**
      * 小程序二维码激活版本

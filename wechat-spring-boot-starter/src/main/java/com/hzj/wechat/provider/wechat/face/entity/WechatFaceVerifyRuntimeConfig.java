@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WechatFaceVerifyConfig {
+public class WechatFaceVerifyRuntimeConfig {
 
     /**
      * 默认证件类型，未传时使用「身份证」。

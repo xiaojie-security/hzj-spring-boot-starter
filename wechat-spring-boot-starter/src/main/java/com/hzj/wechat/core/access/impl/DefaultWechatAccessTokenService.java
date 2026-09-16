@@ -7,8 +7,8 @@ import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.access.domain.WechatAccessTokenRequest;
 import com.hzj.wechat.core.access.domain.WechatAccessTokenResponse;
 import com.hzj.wechat.core.enums.WechatHttpMethod;
-import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
-import com.hzj.wechat.provider.wechat.access.entity.WechatAccessConfig;
+import com.hzj.wechat.provider.wechat.access.WechatAccessStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.access.entity.WechatAccessStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -26,7 +26,7 @@ import java.io.UncheckedIOException;
 @Slf4j
 public class DefaultWechatAccessTokenService implements WechatAccessTokenService {
 
-    private final WechatAccessConfigProvider provider;
+    private final WechatAccessStaticConfigProvider provider;
 
     private final OkHttpClient client;
 
@@ -35,7 +35,7 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
      *
      * @param provider 微信接口调用凭据配置提供者
      */
-    public DefaultWechatAccessTokenService(WechatAccessConfigProvider provider) {
+    public DefaultWechatAccessTokenService(WechatAccessStaticConfigProvider provider) {
         this(provider, new OkHttpClient.Builder().build());
     }
 
@@ -45,9 +45,9 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
      * @param provider 微信接口调用凭据配置提供者
      * @param client HTTP 客户端
      */
-    public DefaultWechatAccessTokenService(WechatAccessConfigProvider provider, OkHttpClient client) {
+    public DefaultWechatAccessTokenService(WechatAccessStaticConfigProvider provider, OkHttpClient client) {
         if (provider == null) {
-            throw new IllegalArgumentException("WechatAccessConfigProvider 不能为空");
+            throw new IllegalArgumentException("WechatAccessStaticConfigProvider 不能为空");
         }
         if (client == null) {
             throw new IllegalArgumentException("OkHttpClient 不能为空");
@@ -64,7 +64,7 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
     @Override
     public WechatAccessTokenResponse getStableAccessToken(WechatAccessTokenRequest request) {
         requireNonNull(request, "WechatAccessTokenRequest");
-        WechatAccessConfig config = getConfig();
+        WechatAccessStaticConfig config = getConfig();
         requireNotBlank(config.getAppid(), "appid");
         requireNotBlank(config.getSecret(), "secret");
         requireNotBlank(request.getGrantType(), "grantType");
@@ -140,8 +140,8 @@ public class DefaultWechatAccessTokenService implements WechatAccessTokenService
         }
     }
 
-    private WechatAccessConfig getConfig() {
-        WechatAccessConfig config = provider.getConfig();
+    private WechatAccessStaticConfig getConfig() {
+        WechatAccessStaticConfig config = provider.getConfig();
         if (config == null) {
             log.error("DefaultWechatAccessTokenService.getConfig 未获取到微信接口调用凭据配置");
             throw new WechatAccessTokenException("未获取到微信接口调用凭据配置");

@@ -3,7 +3,7 @@ package com.hzj.wechat.config;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.xcx.face.WechatXcxFaceVerifyService;
 import com.hzj.wechat.core.xcx.face.impl.DefaultWechatXcxFaceVerifyService;
-import com.hzj.wechat.provider.wechat.face.WechatFaceVerifyConfigProvider;
+import com.hzj.wechat.provider.wechat.face.WechatFaceVerifyRuntimeConfigProvider;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Bean;
  * 微信小程序人脸验证自动装配配置。
  * <p>
  * 仅当使用方同时提供了 {@link WechatAccessTokenService} 与
- * {@link WechatFaceVerifyConfigProvider} Bean 时才会装配。
+ * {@link WechatFaceVerifyRuntimeConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration(after = WechatAccessConfiguration.class)
-@ConditionalOnBean({WechatAccessTokenService.class, WechatFaceVerifyConfigProvider.class})
+@ConditionalOnBean({WechatAccessTokenService.class, WechatFaceVerifyRuntimeConfigProvider.class})
 public class WechatXcxFaceVerifyConfiguration {
 
     /**
@@ -30,7 +30,7 @@ public class WechatXcxFaceVerifyConfiguration {
     @Bean
     @ConditionalOnMissingBean(WechatXcxFaceVerifyService.class)
     public WechatXcxFaceVerifyService wechatXcxFaceVerifyService(WechatAccessTokenService accessTokenService,
-                                                                 WechatFaceVerifyConfigProvider provider) {
+                                                                 WechatFaceVerifyRuntimeConfigProvider provider) {
         return new DefaultWechatXcxFaceVerifyService(accessTokenService, provider, new OkHttpClient.Builder().build());
     }
 }

@@ -16,8 +16,10 @@ import com.hzj.wechat.core.payment.domain.TradeBillRequest;
 import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.payment.enums.WechatPaymentPrepayType;
 import com.hzj.wechat.core.payment.service.WechatPaymentService;
-import com.hzj.wechat.provider.wechat.payment.WechatPaymentConfigProvider;
-import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentConfig;
+import com.hzj.wechat.provider.wechat.payment.WechatPaymentRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.payment.WechatPaymentStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentRuntimeConfig;
+import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +37,15 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultWechatPaymentService implements WechatPaymentService {
-    private final WechatPaymentConfigProvider provider;
+    private final WechatPaymentStaticConfigProvider staticConfigProvider;
+    private final WechatPaymentRuntimeConfigProvider runtimeConfigProvider;
     private final OkHttpClient client = new OkHttpClient.Builder().build();
 
     @Override
     public PaymentPrepayResponse jsapiPrepay(PaymentPrepayRequest request) {
         applyPrepayRequestDefaults(request, WechatPaymentPrepayType.JSAPI);
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
+        WechatPaymentRuntimeConfig runtimeConfig = getRuntimeConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -50,7 +54,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
             request.mchid = config.getMchid();
         }
         if (isBlank(request.notifyUrl)) {
-            request.notifyUrl = config.getPaymentNotifyUrl();
+            request.notifyUrl = runtimeConfig.getPaymentNotifyUrl();
         }
 
         String reqBody = WechatPayUtils.toJson(request);
@@ -61,7 +65,8 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
     @Override
     public PaymentPrepayResponse appPrepay(PaymentPrepayRequest request) {
         applyPrepayRequestDefaults(request, WechatPaymentPrepayType.APP);
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
+        WechatPaymentRuntimeConfig runtimeConfig = getRuntimeConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -70,7 +75,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
             request.mchid = config.getMchid();
         }
         if (isBlank(request.notifyUrl)) {
-            request.notifyUrl = config.getPaymentNotifyUrl();
+            request.notifyUrl = runtimeConfig.getPaymentNotifyUrl();
         }
 
         String reqBody = WechatPayUtils.toJson(request);
@@ -81,7 +86,8 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
     @Override
     public PaymentPrepayResponse h5Prepay(PaymentPrepayRequest request) {
         applyPrepayRequestDefaults(request, WechatPaymentPrepayType.H5);
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
+        WechatPaymentRuntimeConfig runtimeConfig = getRuntimeConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -90,7 +96,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
             request.mchid = config.getMchid();
         }
         if (isBlank(request.notifyUrl)) {
-            request.notifyUrl = config.getPaymentNotifyUrl();
+            request.notifyUrl = runtimeConfig.getPaymentNotifyUrl();
         }
 
         String reqBody = WechatPayUtils.toJson(request);
@@ -101,7 +107,8 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
     @Override
     public PaymentPrepayResponse nativePrepay(PaymentPrepayRequest request) {
         applyPrepayRequestDefaults(request, WechatPaymentPrepayType.NATIVE);
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
+        WechatPaymentRuntimeConfig runtimeConfig = getRuntimeConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -110,7 +117,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
             request.mchid = config.getMchid();
         }
         if (isBlank(request.notifyUrl)) {
-            request.notifyUrl = config.getPaymentNotifyUrl();
+            request.notifyUrl = runtimeConfig.getPaymentNotifyUrl();
         }
 
         String reqBody = WechatPayUtils.toJson(request);
@@ -120,7 +127,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public PaymentOrderEntity queryOrderByTransactionId(QueryOrderByTransactionIdRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.mchid)) {
             request.mchid = config.getMchid();
@@ -138,7 +145,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public PaymentOrderEntity queryOrderByOutTradeNo(QueryOrderByOutTradeNoRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.mchid)) {
             request.mchid = config.getMchid();
@@ -156,7 +163,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public void closeOrder(PaymentCloseOrderRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.mchid)) {
             request.mchid = config.getMchid();
@@ -169,7 +176,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public RefundEntity createRefund(RefundRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String reqBody = WechatPayUtils.toJson(request);
         return executeJsonRequest(config, request.requestHost, request.requestMethod, request.requestPath,
@@ -178,7 +185,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public RefundEntity queryRefundByOutRefundNo(QueryRefundByOutRefundNoRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath.replace("{out_refund_no}", WechatPayUtils.urlEncode(request.outRefundNo));
         return executeJsonRequest(config, request.requestHost, request.requestMethod, uri, null, RefundEntity.class);
@@ -186,7 +193,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public RefundEntity createAbnormalRefund(AbnormalRefundRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath.replace("{refund_id}", WechatPayUtils.urlEncode(request.refundId));
         if (!isBlank(request.bankAccount)) {
@@ -201,7 +208,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public BillDownloadEntity getTradeBill(TradeBillRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath;
         Map<String, Object> args = new HashMap<>();
@@ -218,7 +225,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
 
     @Override
     public BillDownloadEntity getFundFlowBill(FundFlowBillRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath;
         Map<String, Object> args = new HashMap<>();
@@ -233,7 +240,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
                 BillDownloadEntity.class);
     }
 
-    private <T> T executeJsonRequest(WechatPaymentConfig config, String host, WechatHttpMethod requestMethod, String uri,
+    private <T> T executeJsonRequest(WechatPaymentStaticConfig config, String host, WechatHttpMethod requestMethod, String uri,
                                      String reqBody, Class<T> responseClass) {
         Request.Builder reqBuilder = new Request.Builder().url(host + uri);
         reqBuilder.addHeader("Accept", "application/json");
@@ -267,7 +274,7 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         }
     }
 
-    private void executeNoContentRequest(WechatPaymentConfig config, String host, WechatHttpMethod requestMethod, String uri,
+    private void executeNoContentRequest(WechatPaymentStaticConfig config, String host, WechatHttpMethod requestMethod, String uri,
                                          String reqBody) {
         Request.Builder reqBuilder = new Request.Builder().url(host + uri);
         reqBuilder.addHeader("Accept", "application/json");
@@ -306,10 +313,18 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
         }
     }
 
-    private WechatPaymentConfig getConfig() {
-        WechatPaymentConfig config = provider.getConfig();
+    private WechatPaymentStaticConfig getStaticConfig() {
+        WechatPaymentStaticConfig config = staticConfigProvider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("未获取到微信支付配置");
+            throw new IllegalStateException("未获取到微信支付静态配置");
+        }
+        return config;
+    }
+
+    private WechatPaymentRuntimeConfig getRuntimeConfig() {
+        WechatPaymentRuntimeConfig config = runtimeConfigProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("未获取到微信支付运行时配置");
         }
         return config;
     }

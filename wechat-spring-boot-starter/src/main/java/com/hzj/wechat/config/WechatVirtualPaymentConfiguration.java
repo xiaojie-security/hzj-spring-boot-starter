@@ -3,7 +3,7 @@ package com.hzj.wechat.config;
 import com.hzj.wechat.core.access.WechatAccessTokenService;
 import com.hzj.wechat.core.payment.service.WechatVirtualPaymentService;
 import com.hzj.wechat.core.payment.service.impl.DefaultWechatVirtualPaymentService;
-import com.hzj.wechat.provider.wechat.virtual.WechatVirtualPaymentConfigProvider;
+import com.hzj.wechat.provider.wechat.virtual.WechatVirtualPaymentStaticConfigProvider;
 import okhttp3.OkHttpClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -14,10 +14,10 @@ import org.springframework.context.annotation.Bean;
  * 微信虚拟支付自动装配配置。
  * <p>
  * 仅当使用方同时提供了 {@link WechatAccessTokenService} 与
- * {@link WechatVirtualPaymentConfigProvider} Bean 时才会装配。
+ * {@link WechatVirtualPaymentStaticConfigProvider} Bean 时才会装配。
  */
 @AutoConfiguration(after = WechatAccessConfiguration.class)
-@ConditionalOnBean({WechatAccessTokenService.class, WechatVirtualPaymentConfigProvider.class})
+@ConditionalOnBean({WechatAccessTokenService.class, WechatVirtualPaymentStaticConfigProvider.class})
 public class WechatVirtualPaymentConfiguration {
 
     /**
@@ -30,7 +30,7 @@ public class WechatVirtualPaymentConfiguration {
     @Bean
     @ConditionalOnMissingBean(WechatVirtualPaymentService.class)
     public WechatVirtualPaymentService wechatVirtualPaymentService(
-            WechatAccessTokenService accessTokenService, WechatVirtualPaymentConfigProvider provider) {
+            WechatAccessTokenService accessTokenService, WechatVirtualPaymentStaticConfigProvider provider) {
         return new DefaultWechatVirtualPaymentService(accessTokenService, provider,
                 new OkHttpClient.Builder().build());
     }

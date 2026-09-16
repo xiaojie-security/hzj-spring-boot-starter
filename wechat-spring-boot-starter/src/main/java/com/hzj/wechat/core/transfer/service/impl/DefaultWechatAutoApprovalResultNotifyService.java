@@ -3,8 +3,8 @@ package com.hzj.wechat.core.transfer.service.impl;
 import com.google.gson.annotations.SerializedName;
 import com.hzj.wechat.core.transfer.domain.AutoApprovalResultNotifyEntity;
 import com.hzj.wechat.core.transfer.service.WechatAutoApprovalResultNotifyService;
-import com.hzj.wechat.provider.wechat.transfer.WechatTransferConfigProvider;
-import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferConfig;
+import com.hzj.wechat.provider.wechat.transfer.WechatTransferStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferStaticConfig;
 import com.hzj.wechat.utils.AesUtil;
 import com.hzj.wechat.utils.WechatPayUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,14 +21,14 @@ import java.security.GeneralSecurityException;
 public class DefaultWechatAutoApprovalResultNotifyService implements WechatAutoApprovalResultNotifyService {
     private static final String FAIL_RESPONSE = "{\"code\":\"FAIL\",\"message\":\"失败\"}";
 
-    private final WechatTransferConfigProvider provider;
+    private final WechatTransferStaticConfigProvider provider;
 
     @Override
     public AutoApprovalResultNotifyEntity parseNotify(HttpServletRequest request, HttpServletResponse response) {
         try {
             String body = request.getReader().lines().reduce("", String::concat);
             CallbackNotifyRequest notifyRequest = WechatPayUtils.fromJson(body, CallbackNotifyRequest.class);
-            WechatTransferConfig config = getConfig();
+            WechatTransferStaticConfig config = getConfig();
             AesUtil aesUtil = new AesUtil(config.getApiV3Secret().getBytes(StandardCharsets.UTF_8));
             String decryptJson = aesUtil.decryptToString(
                     notifyRequest.resource.associatedData.getBytes(StandardCharsets.UTF_8),
@@ -61,8 +61,8 @@ public class DefaultWechatAutoApprovalResultNotifyService implements WechatAutoA
         }
     }
 
-    private WechatTransferConfig getConfig() {
-        WechatTransferConfig config = provider.getConfig();
+    private WechatTransferStaticConfig getConfig() {
+        WechatTransferStaticConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信转账配置");
         }

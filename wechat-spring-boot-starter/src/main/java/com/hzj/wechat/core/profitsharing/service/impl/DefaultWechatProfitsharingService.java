@@ -15,8 +15,8 @@ import com.hzj.wechat.core.profitsharing.domain.QueryProfitsharingReturnOrderReq
 import com.hzj.wechat.core.profitsharing.domain.UnfreezeProfitsharingOrderRequest;
 import com.hzj.wechat.core.profitsharing.service.WechatProfitsharingService;
 import com.hzj.wechat.core.enums.WechatHttpMethod;
-import com.hzj.wechat.provider.wechat.payment.WechatPaymentConfigProvider;
-import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentConfig;
+import com.hzj.wechat.provider.wechat.payment.WechatPaymentStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,12 +34,12 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultWechatProfitsharingService implements WechatProfitsharingService {
-    private final WechatPaymentConfigProvider provider;
+    private final WechatPaymentStaticConfigProvider provider;
     private final OkHttpClient client = new OkHttpClient.Builder().build();
 
     @Override
     public ProfitsharingOrderEntity createOrder(ProfitsharingOrderRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -52,7 +52,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public ProfitsharingOrderEntity queryOrderByOutOrderNo(QueryProfitsharingOrderRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath.replace("{out_order_no}", WechatPayUtils.urlEncode(request.outOrderNo));
         Map<String, Object> args = new HashMap<>();
@@ -66,7 +66,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public ProfitsharingReturnOrderEntity createReturnOrder(ProfitsharingReturnOrderRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.returnMchid)) {
             request.returnMchid = config.getMchid();
@@ -78,7 +78,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public ProfitsharingReturnOrderEntity queryReturnOrderByOutReturnNo(QueryProfitsharingReturnOrderRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath.replace("{out_return_no}", WechatPayUtils.urlEncode(request.outReturnNo));
         return executeJsonRequest(config, request.requestHost, request.requestMethod, uri, null, ProfitsharingReturnOrderEntity.class);
@@ -86,7 +86,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public ProfitsharingOrderEntity unfreezeRemainingFunds(UnfreezeProfitsharingOrderRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String reqBody = WechatPayUtils.toJson(request);
         return executeJsonRequest(config, request.requestHost, request.requestMethod, request.requestPath, reqBody, ProfitsharingOrderEntity.class);
@@ -94,7 +94,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public ProfitsharingAmountEntity queryRemainingAmount(QueryProfitsharingAmountRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath.replace("{transaction_id}", WechatPayUtils.urlEncode(request.transactionId));
         return executeJsonRequest(config, request.requestHost, request.requestMethod, uri, null, ProfitsharingAmountEntity.class);
@@ -102,7 +102,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public void addReceiver(ProfitsharingReceiverRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -117,7 +117,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public void deleteReceiver(DeleteProfitsharingReceiverRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -129,7 +129,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
 
     @Override
     public ProfitsharingBillDownloadEntity getBill(ProfitsharingBillRequest request) {
-        WechatPaymentConfig config = getConfig();
+        WechatPaymentStaticConfig config = getStaticConfig();
 
         String uri = request.requestPath;
         Map<String, Object> args = new HashMap<>();
@@ -142,7 +142,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         return executeJsonRequest(config, request.requestHost, request.requestMethod, uri, null, ProfitsharingBillDownloadEntity.class);
     }
 
-    private <T> T executeJsonRequest(WechatPaymentConfig config, String host, WechatHttpMethod requestMethod, String uri,
+    private <T> T executeJsonRequest(WechatPaymentStaticConfig config, String host, WechatHttpMethod requestMethod, String uri,
                                      String reqBody, Class<T> responseClass) {
         Request.Builder reqBuilder = new Request.Builder().url(host + uri);
         reqBuilder.addHeader("Accept", "application/json");
@@ -175,7 +175,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         }
     }
 
-    private void executeNoContentRequest(WechatPaymentConfig config, String host, WechatHttpMethod requestMethod, String uri,
+    private void executeNoContentRequest(WechatPaymentStaticConfig config, String host, WechatHttpMethod requestMethod, String uri,
                                          String reqBody) {
         Request.Builder reqBuilder = new Request.Builder().url(host + uri);
         reqBuilder.addHeader("Accept", "application/json");
@@ -202,7 +202,7 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         }
     }
 
-    private void encryptReceiverNames(WechatPaymentConfig config, ProfitsharingOrderRequest request) {
+    private void encryptReceiverNames(WechatPaymentStaticConfig config, ProfitsharingOrderRequest request) {
         if (request.receivers == null || request.receivers.isEmpty()) {
             return;
         }
@@ -213,8 +213,8 @@ public class DefaultWechatProfitsharingService implements WechatProfitsharingSer
         }
     }
 
-    private WechatPaymentConfig getConfig() {
-        WechatPaymentConfig config = provider.getConfig();
+    private WechatPaymentStaticConfig getStaticConfig() {
+        WechatPaymentStaticConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信支付分账配置");
         }

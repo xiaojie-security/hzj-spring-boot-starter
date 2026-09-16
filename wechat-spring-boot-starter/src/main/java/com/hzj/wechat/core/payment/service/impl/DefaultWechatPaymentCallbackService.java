@@ -3,8 +3,8 @@ package com.hzj.wechat.core.payment.service.impl;
 import com.google.gson.annotations.SerializedName;
 import com.hzj.wechat.core.payment.domain.PaymentCallbackEntity;
 import com.hzj.wechat.core.payment.service.WechatPaymentCallbackService;
-import com.hzj.wechat.provider.wechat.payment.WechatPaymentConfigProvider;
-import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentConfig;
+import com.hzj.wechat.provider.wechat.payment.WechatPaymentStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.payment.entity.WechatPaymentStaticConfig;
 import com.hzj.wechat.utils.AesUtil;
 import com.hzj.wechat.utils.WechatPayUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,14 +21,14 @@ import java.security.GeneralSecurityException;
 public class DefaultWechatPaymentCallbackService implements WechatPaymentCallbackService {
     private static final String FAIL_RESPONSE = "{\"code\":\"FAIL\",\"message\":\"失败\"}";
 
-    private final WechatPaymentConfigProvider provider;
+    private final WechatPaymentStaticConfigProvider provider;
 
     @Override
     public PaymentCallbackEntity parseCallback(HttpServletRequest request, HttpServletResponse response) {
         try {
             String body = request.getReader().lines().reduce("", String::concat);
             CallbackNotifyRequest notifyRequest = WechatPayUtils.fromJson(body, CallbackNotifyRequest.class);
-            WechatPaymentConfig config = getConfig();
+            WechatPaymentStaticConfig config = getConfig();
             AesUtil aesUtil = new AesUtil(config.getApiV3Secret().getBytes(StandardCharsets.UTF_8));
             String decryptJson = aesUtil.decryptToString(
                     notifyRequest.resource.associatedData.getBytes(StandardCharsets.UTF_8),
@@ -60,8 +60,8 @@ public class DefaultWechatPaymentCallbackService implements WechatPaymentCallbac
         }
     }
 
-    private WechatPaymentConfig getConfig() {
-        WechatPaymentConfig config = provider.getConfig();
+    private WechatPaymentStaticConfig getConfig() {
+        WechatPaymentStaticConfig config = provider.getConfig();
         if (config == null) {
             throw new IllegalStateException("未获取到微信支付配置");
         }

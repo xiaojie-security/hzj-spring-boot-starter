@@ -7,8 +7,8 @@ import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.xcx.oauth.WechatXcxOAuthService;
 import com.hzj.wechat.core.xcx.oauth.domain.XcxCode2SessionRequest;
 import com.hzj.wechat.core.xcx.oauth.domain.XcxCode2SessionResponse;
-import com.hzj.wechat.provider.wechat.access.WechatAccessConfigProvider;
-import com.hzj.wechat.provider.wechat.access.entity.WechatAccessConfig;
+import com.hzj.wechat.provider.wechat.access.WechatAccessStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.access.entity.WechatAccessStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +28,12 @@ import java.io.UncheckedIOException;
 public class DefaultWechatXcxOAuthService implements WechatXcxOAuthService {
 
     private final OkHttpClient client = new OkHttpClient.Builder().build();
-    private final WechatAccessConfigProvider provider;
+    private final WechatAccessStaticConfigProvider provider;
 
     @Override
     public XcxCode2SessionResponse getSessionByCode(XcxCode2SessionRequest request) {
         requireNonNull(request, "XcxCode2SessionRequest");
-        WechatAccessConfig config = getConfig();
+        WechatAccessStaticConfig config = getConfig();
         String appid = defaultIfBlank(request.getAppid(), config.getAppid());
         String secret = defaultIfBlank(request.getSecret(), config.getSecret());
         String grantType = defaultIfBlank(request.getGrantType(), "authorization_code");
@@ -130,8 +130,8 @@ public class DefaultWechatXcxOAuthService implements WechatXcxOAuthService {
         return isBlank(value) ? defaultValue : value;
     }
 
-    private WechatAccessConfig getConfig() {
-        WechatAccessConfig config = provider.getConfig();
+    private WechatAccessStaticConfig getConfig() {
+        WechatAccessStaticConfig config = provider.getConfig();
         if (config == null) {
             throw new WechatXcxOAuth2Exception("未获取到微信认证配置");
         }

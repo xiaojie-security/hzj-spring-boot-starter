@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WechatAccessConfig {
+public class WechatAccessStaticConfig {
 
     /**
      * 微信应用唯一标识。

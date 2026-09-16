@@ -12,8 +12,10 @@ import com.hzj.wechat.core.transfer.domain.UserConfirmAuthorizationEntity;
 import com.hzj.wechat.core.enums.WechatHttpMethod;
 import com.hzj.wechat.core.transfer.enums.WechatTransferType;
 import com.hzj.wechat.core.transfer.service.WechatTransferService;
-import com.hzj.wechat.provider.wechat.transfer.WechatTransferConfigProvider;
-import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferConfig;
+import com.hzj.wechat.provider.wechat.transfer.WechatTransferRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.transfer.WechatTransferStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferRuntimeConfig;
+import com.hzj.wechat.provider.wechat.transfer.entity.WechatTransferStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +34,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DefaultWechatTransferService implements WechatTransferService {
 
-    private final WechatTransferConfigProvider provider;
+    private final WechatTransferStaticConfigProvider staticConfigProvider;
+    private final WechatTransferRuntimeConfigProvider runtimeConfigProvider;
     private final OkHttpClient client = new OkHttpClient.Builder().build();
 
     @Override
@@ -40,13 +43,14 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
+        WechatTransferRuntimeConfig runtimeConfig = getRuntimeConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
         }
         if (isBlank(request.authorizationNotifyUrl)) {
-            request.authorizationNotifyUrl = config.getAuthorizationNotifyUrl();
+            request.authorizationNotifyUrl = runtimeConfig.getAuthorizationNotifyUrl();
         }
 
         String reqBody = WechatPayUtils.toJson(request);
@@ -89,7 +93,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
@@ -138,16 +142,17 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
+        WechatTransferRuntimeConfig runtimeConfig = getRuntimeConfig();
 
         if (isBlank(request.appid)) {
             request.appid = config.getAppid();
         }
         if (isBlank(request.notifyUrl)) {
-            request.notifyUrl = config.getTransferNotifyUrl();
+            request.notifyUrl = runtimeConfig.getTransferNotifyUrl();
         }
         if (request.authorizationInfo != null && isBlank(request.authorizationInfo.authorizationNotifyUrl)) {
-            request.authorizationInfo.authorizationNotifyUrl = config.getAuthorizationNotifyUrl();
+            request.authorizationInfo.authorizationNotifyUrl = runtimeConfig.getAuthorizationNotifyUrl();
         }
         if (!isBlank(request.userName)) {
             request.userName = WechatPayUtils.encrypt(config.getWechatPayPublicKey(), request.userName);
@@ -192,7 +197,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
 
         String uri = path.replace("{out_authorization_no}", WechatPayUtils.urlEncode(request.outAuthorizationNo));
         Map<String, Object> args = new HashMap<>();
@@ -232,7 +237,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
 
         String uri = path.replace("{out_bill_no}", WechatPayUtils.urlEncode(request.outBillNo));
 
@@ -267,7 +272,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
 
         String uri = path.replace("{transfer_bill_no}", WechatPayUtils.urlEncode(request.transferBillNo));
 
@@ -302,7 +307,7 @@ public class DefaultWechatTransferService implements WechatTransferService {
         String host = request.requestHost;
         WechatHttpMethod method = request.requestMethod;
         String path = request.requestPath;
-        WechatTransferConfig config = getConfig();
+        WechatTransferStaticConfig config = getStaticConfig();
 
         String uri = path.replace("{out_authorization_no}", WechatPayUtils.urlEncode(request.outAuthorizationNo));
 
@@ -334,10 +339,18 @@ public class DefaultWechatTransferService implements WechatTransferService {
         }
     }
 
-    private WechatTransferConfig getConfig() {
-        WechatTransferConfig config = provider.getConfig();
+    private WechatTransferStaticConfig getStaticConfig() {
+        WechatTransferStaticConfig config = staticConfigProvider.getConfig();
         if (config == null) {
-            throw new IllegalStateException("未获取到微信转账配置");
+            throw new IllegalStateException("未获取到微信转账静态配置");
+        }
+        return config;
+    }
+
+    private WechatTransferRuntimeConfig getRuntimeConfig() {
+        WechatTransferRuntimeConfig config = runtimeConfigProvider.getConfig();
+        if (config == null) {
+            throw new IllegalStateException("未获取到微信转账运行时配置");
         }
         return config;
     }

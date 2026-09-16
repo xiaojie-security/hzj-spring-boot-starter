@@ -3,22 +3,13 @@ package com.hzj.wechat.provider.wechat.mobile.launch.entity;
 import lombok.Data;
 
 /**
- * 微信 H5 拉起 App 动态配置。
+ * 微信 H5 Launch App 运行时业务配置。
  */
 @Data
-public class WechatH5LaunchAppConfig {
-
-    /** 微信开放平台移动应用 AppID。 */
-    private String appid;
-
-    /** 认证服务号 AppID，用于微信 H5 JS-SDK 配置。 */
-    private String jsSdkAppid;
+public class WechatH5LaunchAppRuntimeConfig {
 
     /** 微信 H5 落地页地址。 */
     private String landingPageUrl;
-
-    /** Launch App 场景码 HMAC 签名密钥。 */
-    private String sceneSigningSecret;
 
     /** Launch App 场景码有效期，单位秒。 */
     private long sceneTtlSeconds = 300L;

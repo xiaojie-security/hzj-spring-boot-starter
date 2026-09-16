@@ -13,8 +13,8 @@ import com.hzj.wechat.core.xcx.sec_check.domain.WechatXcxSecCheckMsgRequest;
 import com.hzj.wechat.core.xcx.sec_check.domain.WechatXcxSecCheckMsgResponse;
 import com.hzj.wechat.core.xcx.sec_check.enums.WechatXcxSecCheckMediaType;
 import com.hzj.wechat.core.xcx.sec_check.enums.WechatXcxSecCheckScene;
-import com.hzj.wechat.provider.wechat.sec_check.WechatSecCheckConfigProvider;
-import com.hzj.wechat.provider.wechat.sec_check.entity.WechatSecCheckConfig;
+import com.hzj.wechat.provider.wechat.sec_check.WechatSecCheckRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.sec_check.entity.WechatSecCheckRuntimeConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -45,7 +45,7 @@ public class DefaultWechatXcxSecCheckService implements WechatXcxSecCheckService
 
     private final WechatAccessTokenService accessTokenService;
 
-    private final WechatSecCheckConfigProvider provider;
+    private final WechatSecCheckRuntimeConfigProvider provider;
 
     private final OkHttpClient client;
 
@@ -65,7 +65,7 @@ public class DefaultWechatXcxSecCheckService implements WechatXcxSecCheckService
      * @param provider           微信内容安全配置提供者
      */
     public DefaultWechatXcxSecCheckService(WechatAccessTokenService accessTokenService,
-                                           WechatSecCheckConfigProvider provider) {
+                                           WechatSecCheckRuntimeConfigProvider provider) {
         this(accessTokenService, provider, new OkHttpClient.Builder().build());
     }
 
@@ -77,7 +77,7 @@ public class DefaultWechatXcxSecCheckService implements WechatXcxSecCheckService
      * @param client             HTTP 客户端
      */
     public DefaultWechatXcxSecCheckService(WechatAccessTokenService accessTokenService,
-                                           WechatSecCheckConfigProvider provider,
+                                           WechatSecCheckRuntimeConfigProvider provider,
                                            OkHttpClient client) {
         if (accessTokenService == null) {
             throw new IllegalArgumentException("WechatAccessTokenService 不能为空");
@@ -161,7 +161,7 @@ public class DefaultWechatXcxSecCheckService implements WechatXcxSecCheckService
         if (provider == null) {
             return WechatXcxSecCheckScene.PROFILE;
         }
-        WechatSecCheckConfig config = provider.getConfig();
+        WechatSecCheckRuntimeConfig config = provider.getConfig();
         if (config != null && config.getScene() != null) {
             return config.getScene();
         }

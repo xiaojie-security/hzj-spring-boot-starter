@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WechatSecCheckConfig {
+public class WechatSecCheckRuntimeConfig {
 
     /**
      * 内容安全检测的默认场景，未传时使用「资料」。

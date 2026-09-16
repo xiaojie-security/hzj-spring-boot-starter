@@ -10,8 +10,10 @@ import com.hzj.wechat.core.xcx.safety_control.domain.WechatXcxSafetyControlApiRe
 import com.hzj.wechat.core.xcx.safety_control.domain.WechatXcxSafetyControlUserRiskRankRequest;
 import com.hzj.wechat.core.xcx.safety_control.domain.WechatXcxSafetyControlUserRiskRankResponse;
 import com.hzj.wechat.core.xcx.safety_control.enums.WechatXcxSafetyControlScene;
-import com.hzj.wechat.provider.wechat.safety_control.WechatSafetyControlConfigProvider;
-import com.hzj.wechat.provider.wechat.safety_control.entity.WechatSafetyControlConfig;
+import com.hzj.wechat.provider.wechat.safety_control.WechatSafetyControlRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.safety_control.WechatSafetyControlStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.safety_control.entity.WechatSafetyControlRuntimeConfig;
+import com.hzj.wechat.provider.wechat.safety_control.entity.WechatSafetyControlStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -37,7 +39,9 @@ public class DefaultWechatXcxSafetyControlService implements WechatXcxSafetyCont
 
     private final WechatAccessTokenService accessTokenService;
 
-    private final WechatSafetyControlConfigProvider provider;
+    private final WechatSafetyControlStaticConfigProvider staticConfigProvider;
+
+    private final WechatSafetyControlRuntimeConfigProvider runtimeConfigProvider;
 
     private final OkHttpClient client;
 
@@ -47,29 +51,34 @@ public class DefaultWechatXcxSafetyControlService implements WechatXcxSafetyCont
      * @param accessTokenService 微信接口调用凭据服务
      */
     public DefaultWechatXcxSafetyControlService(WechatAccessTokenService accessTokenService) {
-        this(accessTokenService, null, new OkHttpClient.Builder().build());
+        this(accessTokenService, null, null, new OkHttpClient.Builder().build());
     }
 
     /**
      * 使用默认 OkHttp 客户端创建安全风控服务。
      *
      * @param accessTokenService 微信接口调用凭据服务
-     * @param provider           微信安全风控配置提供者
+     * @param staticConfigProvider 微信安全风控启动期静态配置提供者
+     * @param runtimeConfigProvider 微信安全风控运行时业务配置提供者
      */
     public DefaultWechatXcxSafetyControlService(WechatAccessTokenService accessTokenService,
-                                                WechatSafetyControlConfigProvider provider) {
-        this(accessTokenService, provider, new OkHttpClient.Builder().build());
+                                                WechatSafetyControlStaticConfigProvider staticConfigProvider,
+                                                WechatSafetyControlRuntimeConfigProvider runtimeConfigProvider) {
+        this(accessTokenService, staticConfigProvider, runtimeConfigProvider,
+                new OkHttpClient.Builder().build());
     }
 
     /**
      * 创建微信小程序安全风控服务。
      *
      * @param accessTokenService 微信接口调用凭据服务
-     * @param provider           微信安全风控配置提供者
+     * @param staticConfigProvider 微信安全风控启动期静态配置提供者
+     * @param runtimeConfigProvider 微信安全风控运行时业务配置提供者
      * @param client             HTTP 客户端
      */
     public DefaultWechatXcxSafetyControlService(WechatAccessTokenService accessTokenService,
-                                                WechatSafetyControlConfigProvider provider,
+                                                WechatSafetyControlStaticConfigProvider staticConfigProvider,
+                                                WechatSafetyControlRuntimeConfigProvider runtimeConfigProvider,
                                                 OkHttpClient client) {
         if (accessTokenService == null) {
             throw new IllegalArgumentException("WechatAccessTokenService 不能为空");
@@ -78,7 +87,8 @@ public class DefaultWechatXcxSafetyControlService implements WechatXcxSafetyCont
             throw new IllegalArgumentException("OkHttpClient 不能为空");
         }
         this.accessTokenService = accessTokenService;
-        this.provider = provider;
+        this.staticConfigProvider = staticConfigProvider;
+        this.runtimeConfigProvider = runtimeConfigProvider;
         this.client = client;
     }
 
@@ -119,20 +129,24 @@ public class DefaultWechatXcxSafetyControlService implements WechatXcxSafetyCont
     }
 
     private String resolveAppid() {
-        WechatSafetyControlConfig config = getConfig();
+        WechatSafetyControlStaticConfig config = getStaticConfig();
         return config == null ? null : config.getAppid();
     }
 
     private Boolean resolveIsTest() {
-        WechatSafetyControlConfig config = getConfig();
+        WechatSafetyControlRuntimeConfig config = getRuntimeConfig();
         if (config == null || config.getIsTest() == null) {
             return Boolean.FALSE;
         }
         return config.getIsTest();
     }
 
-    private WechatSafetyControlConfig getConfig() {
-        return provider == null ? null : provider.getConfig();
+    private WechatSafetyControlStaticConfig getStaticConfig() {
+        return staticConfigProvider == null ? null : staticConfigProvider.getConfig();
+    }
+
+    private WechatSafetyControlRuntimeConfig getRuntimeConfig() {
+        return runtimeConfigProvider == null ? null : runtimeConfigProvider.getConfig();
     }
 
     private <T> T execute(WechatXcxSafetyControlApiRequest request, String methodName, Class<T> responseType) {

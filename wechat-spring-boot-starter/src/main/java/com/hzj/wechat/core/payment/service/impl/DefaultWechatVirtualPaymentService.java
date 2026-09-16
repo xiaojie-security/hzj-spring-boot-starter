@@ -7,8 +7,8 @@ import com.hzj.wechat.core.payment.domain.*;
 import com.hzj.wechat.core.payment.service.WechatVirtualPaymentException;
 import com.hzj.wechat.core.payment.service.WechatVirtualPaymentService;
 import com.hzj.wechat.core.enums.WechatHttpMethod;
-import com.hzj.wechat.provider.wechat.virtual.WechatVirtualPaymentConfigProvider;
-import com.hzj.wechat.provider.wechat.virtual.entity.WechatVirtualPaymentConfig;
+import com.hzj.wechat.provider.wechat.virtual.WechatVirtualPaymentStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.virtual.entity.WechatVirtualPaymentStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -25,7 +25,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     private final WechatAccessTokenService accessTokenService;
 
-    private final WechatVirtualPaymentConfigProvider provider;
+    private final WechatVirtualPaymentStaticConfigProvider provider;
 
     private final OkHttpClient client;
 
@@ -36,7 +36,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
      * @param provider 微信配置提供者
      */
     public DefaultWechatVirtualPaymentService(WechatAccessTokenService accessTokenService,
-                                              WechatVirtualPaymentConfigProvider provider) {
+                                              WechatVirtualPaymentStaticConfigProvider provider) {
         this(accessTokenService, provider, new OkHttpClient.Builder().build());
     }
 
@@ -48,12 +48,12 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
      * @param client HTTP 客户端
      */
     public DefaultWechatVirtualPaymentService(WechatAccessTokenService accessTokenService,
-                                              WechatVirtualPaymentConfigProvider provider, OkHttpClient client) {
+                                              WechatVirtualPaymentStaticConfigProvider provider, OkHttpClient client) {
         if (accessTokenService == null) {
             throw new IllegalArgumentException("WechatAccessTokenService 不能为空");
         }
         if (provider == null) {
-            throw new IllegalArgumentException("WechatVirtualPaymentConfigProvider 不能为空");
+            throw new IllegalArgumentException("WechatVirtualPaymentStaticConfigProvider 不能为空");
         }
         if (client == null) {
             throw new IllegalArgumentException("OkHttpClient 不能为空");
@@ -65,7 +65,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse queryUserBalance(WechatQueryUserBalanceRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, true, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, true, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireNotBlank(request.getUserIp(), getAction(request), "user_ip");
         return execute(getAction(request), request, config, true);
@@ -73,13 +73,13 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse currencyPay(WechatCurrencyPayRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, true, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, true, true);
         return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryOrder(WechatQueryOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireOneOf(request.getOrderId(), request.getWxOrderId(), getAction(request), "order_id 或 wx_order_id");
         return execute(getAction(request), request, config, true);
@@ -87,7 +87,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse cancelCurrencyPay(WechatCancelCurrencyPayRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, true, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, true, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireNotBlank(request.getUserIp(), getAction(request), "user_ip");
         requireNotBlank(request.getPayOrderId(), getAction(request), "pay_order_id");
@@ -98,7 +98,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public void notifyProvideGoods(WechatNotifyProvideGoodsRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, false);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, false);
         requireOneOf(request.getOrderId(), request.getWxOrderId(), getAction(request),
                 "order_id 或 wx_order_id");
         execute(getAction(request), request, config, true);
@@ -106,7 +106,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse presentCurrency(WechatPresentCurrencyRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, false);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, false);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireNotBlank(request.getOrderId(), getAction(request), "order_id");
         requirePositive(request.getAmount(), getAction(request), "amount");
@@ -115,7 +115,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse refundOrder(WechatRefundOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireOneOf(request.getOrderId(), request.getWxOrderId(), getAction(request), "order_id 或 wx_order_id");
         requireNotBlank(request.getRefundOrderId(), getAction(request), "refund_order_id");
@@ -127,21 +127,21 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse createWithdrawOrder(WechatCreateWithdrawOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, true);
         requireNotBlank(request.getWithdrawNo(), getAction(request), "withdraw_no");
         return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse queryWithdrawOrder(WechatQueryWithdrawOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, true);
         requireNotBlank(request.getWithdrawNo(), getAction(request), "withdraw_no");
         return execute(getAction(request), request, config, true);
     }
 
     @Override
     public WechatVirtualPaymentResponse sendSubscribePrePayment(WechatSendSubscribePrePaymentRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), false, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), false, false, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requirePositive(request.getDeductPrice(), getAction(request), "deduct_price");
         requireNotBlank(request.getProductId(), getAction(request), "product_id");
@@ -151,7 +151,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse submitSubscribePayOrder(WechatSubmitSubscribePayOrderRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), true, false, false);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), true, false, false);
         if (isBlank(request.getOfferId())) {
             request.setOfferId(config.getOfferId());
         }
@@ -172,7 +172,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse querySubscribeContract(WechatQuerySubscribeContractRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), false, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), false, false, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireNotBlank(request.getProductId(), getAction(request), "product_id");
         requireNotBlank(request.getOutContractCode(), getAction(request), "out_contract_code");
@@ -181,7 +181,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     @Override
     public WechatVirtualPaymentResponse cancelSubscribeContract(WechatCancelSubscribeContractRequest request) {
-        WechatVirtualPaymentConfig config = prepare(request, getAction(request), false, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, getAction(request), false, false, true);
         requireNotBlank(request.getOpenid(), getAction(request), "openid");
         requireNotBlank(request.getTerminationReason(), getAction(request), "termination_reason");
         requireNotBlank(request.getProductId(), getAction(request), "product_id");
@@ -357,17 +357,17 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
 
     private WechatVirtualPaymentResponse executeAdditional(String action, WechatVirtualPaymentRequest request,
                                                            boolean envRequired, boolean envIncluded) {
-        WechatVirtualPaymentConfig config = prepare(request, action, envRequired, false, true);
+        WechatVirtualPaymentStaticConfig config = prepare(request, action, envRequired, false, true);
         return execute(action, request, config, envIncluded);
     }
 
     private WechatVirtualPaymentResponse executeAdditionalWithoutPaySignature(
             String action, WechatVirtualPaymentRequest request, boolean envRequired, boolean envIncluded) {
-        WechatVirtualPaymentConfig config = prepare(request, action, envRequired, false, false);
+        WechatVirtualPaymentStaticConfig config = prepare(request, action, envRequired, false, false);
         return execute(action, request, config, envIncluded);
     }
 
-    private WechatVirtualPaymentConfig prepare(WechatVirtualPaymentRequest request, String action,
+    private WechatVirtualPaymentStaticConfig prepare(WechatVirtualPaymentRequest request, String action,
                                                boolean envRequired, boolean signatureRequired,
                                                boolean paySigRequired) {
         if (request == null) {
@@ -384,7 +384,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
         if (request.getRequestMethod() == null) {
             request.setRequestMethod(request.getRequestApi().getRequestMethod());
         }
-        WechatVirtualPaymentConfig config = provider.getConfig();
+        WechatVirtualPaymentStaticConfig config = provider.getConfig();
         if (config == null) {
             log.error("DefaultWechatVirtualPaymentService.{} 未获取到虚拟支付配置", action);
             throw new WechatVirtualPaymentException("未获取到微信虚拟支付配置");
@@ -408,7 +408,7 @@ public class DefaultWechatVirtualPaymentService implements WechatVirtualPaymentS
     }
 
     private WechatVirtualPaymentResponse execute(String action, WechatVirtualPaymentRequest request,
-                                                 WechatVirtualPaymentConfig config, boolean envIncluded) {
+                                                 WechatVirtualPaymentStaticConfig config, boolean envIncluded) {
         String accessToken = accessTokenService.getAccessToken();
         if (isBlank(accessToken)) {
             log.error("DefaultWechatVirtualPaymentService.{} 获取到空 access_token", action);

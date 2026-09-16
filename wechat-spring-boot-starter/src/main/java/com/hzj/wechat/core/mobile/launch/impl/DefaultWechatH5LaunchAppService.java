@@ -11,8 +11,10 @@ import com.hzj.wechat.core.mobile.launch.domain.WechatH5JsSdkSignatureResponse;
 import com.hzj.wechat.core.mobile.launch.domain.WechatH5LaunchAppSceneIssueRequest;
 import com.hzj.wechat.core.mobile.launch.domain.WechatH5LaunchAppSceneResolveResponse;
 import com.hzj.wechat.core.mobile.launch.domain.WechatH5LaunchAppSceneResponse;
-import com.hzj.wechat.provider.wechat.mobile.launch.WechatH5LaunchAppConfigProvider;
-import com.hzj.wechat.provider.wechat.mobile.launch.entity.WechatH5LaunchAppConfig;
+import com.hzj.wechat.provider.wechat.mobile.launch.WechatH5LaunchAppRuntimeConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.launch.WechatH5LaunchAppStaticConfigProvider;
+import com.hzj.wechat.provider.wechat.mobile.launch.entity.WechatH5LaunchAppRuntimeConfig;
+import com.hzj.wechat.provider.wechat.mobile.launch.entity.WechatH5LaunchAppStaticConfig;
 import com.hzj.wechat.utils.WechatPayUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -55,8 +57,11 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
     /** 微信接口调用凭据服务。 */
     private final WechatAccessTokenService accessTokenService;
 
-    /** 微信 H5 拉起 App 动态配置提供者。 */
-    private final WechatH5LaunchAppConfigProvider launchAppConfigProvider;
+    /** 微信 H5 拉起 App 启动期静态配置提供者。 */
+    private final WechatH5LaunchAppStaticConfigProvider staticConfigProvider;
+
+    /** 微信 H5 拉起 App 运行时业务配置提供者。 */
+    private final WechatH5LaunchAppRuntimeConfigProvider runtimeConfigProvider;
 
     /** HTTP 客户端。 */
     private final OkHttpClient client;
@@ -68,26 +73,33 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
      * 使用默认 OkHttp 客户端创建服务。
      *
      * @param accessTokenService 微信接口调用凭据服务
-     * @param launchAppConfigProvider 微信 H5 拉起 App 动态配置提供者
+     * @param staticConfigProvider 微信 H5 拉起 App 启动期静态配置提供者
+     * @param runtimeConfigProvider 微信 H5 拉起 App 运行时业务配置提供者
      */
     public DefaultWechatH5LaunchAppService(WechatAccessTokenService accessTokenService,
-                                           WechatH5LaunchAppConfigProvider launchAppConfigProvider) {
-        this(accessTokenService, launchAppConfigProvider, new OkHttpClient.Builder().build());
+                                           WechatH5LaunchAppStaticConfigProvider staticConfigProvider,
+                                           WechatH5LaunchAppRuntimeConfigProvider runtimeConfigProvider) {
+        this(accessTokenService, staticConfigProvider, runtimeConfigProvider,
+                new OkHttpClient.Builder().build());
     }
 
     /**
      * 创建服务。
      *
      * @param accessTokenService 微信接口调用凭据服务
-     * @param launchAppConfigProvider 微信 H5 拉起 App 动态配置提供者
+     * @param staticConfigProvider 微信 H5 拉起 App 启动期静态配置提供者
+     * @param runtimeConfigProvider 微信 H5 拉起 App 运行时业务配置提供者
      * @param client HTTP 客户端
      */
     public DefaultWechatH5LaunchAppService(WechatAccessTokenService accessTokenService,
-                                           WechatH5LaunchAppConfigProvider launchAppConfigProvider,
+                                           WechatH5LaunchAppStaticConfigProvider staticConfigProvider,
+                                           WechatH5LaunchAppRuntimeConfigProvider runtimeConfigProvider,
                                            OkHttpClient client) {
         this.accessTokenService = requireConstructorArgument(accessTokenService, "WechatAccessTokenService");
-        this.launchAppConfigProvider = requireConstructorArgument(launchAppConfigProvider,
-                "WechatH5LaunchAppConfigProvider");
+        this.staticConfigProvider = requireConstructorArgument(staticConfigProvider,
+                "WechatH5LaunchAppStaticConfigProvider");
+        this.runtimeConfigProvider = requireConstructorArgument(runtimeConfigProvider,
+                "WechatH5LaunchAppRuntimeConfigProvider");
         this.client = requireConstructorArgument(client, "OkHttpClient");
     }
 
@@ -98,12 +110,13 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
             throw new WechatH5LaunchAppException("微信 H5 JS-SDK 签名请求不能为空");
         }
         String url = removeFragment(requireText(request.getUrl(), "url"));
-        WechatH5LaunchAppConfig launchConfig = requireLaunchConfig();
-        String appid = requireText(launchConfig.getJsSdkAppid(), "wechat.mobile.launch.jsSdkAppid");
+        WechatH5LaunchAppStaticConfig staticConfig = requireStaticConfig();
+        WechatH5LaunchAppRuntimeConfig runtimeConfig = requireRuntimeConfig();
+        String appid = requireText(staticConfig.getJsSdkAppid(), "wechat.mobile.launch.jsSdkAppid");
         String nonceStr = isBlank(request.getNonceStr()) ? createNonceStr() : request.getNonceStr().trim();
         long timestamp = request.getTimestamp() == null || request.getTimestamp() <= 0
                 ? Instant.now().getEpochSecond() : request.getTimestamp();
-        String ticket = getJsapiTicket(appid, launchConfig);
+        String ticket = getJsapiTicket(appid, runtimeConfig);
         String signContent = "jsapi_ticket=" + ticket + "&noncestr=" + nonceStr + "&timestamp=" + timestamp
                 + "&url=" + url;
         String signature = sha1(signContent);
@@ -116,13 +129,14 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
             log.error("DefaultWechatH5LaunchAppService.issueScene 场景签发请求不能为空");
             throw new WechatH5LaunchAppException("微信 H5 Launch App 场景签发请求不能为空");
         }
-        WechatH5LaunchAppConfig config = requireLaunchConfig();
-        String appid = requireText(config.getAppid(), "wechat.mobile.launch.appid");
-        String landingPageUrl = requireText(config.getLandingPageUrl(), "wechat.mobile.launch.landingPageUrl");
-        String signingSecret = requireText(config.getSceneSigningSecret(), "wechat.mobile.launch.sceneSigningSecret");
+        WechatH5LaunchAppStaticConfig staticConfig = requireStaticConfig();
+        WechatH5LaunchAppRuntimeConfig runtimeConfig = requireRuntimeConfig();
+        String appid = requireText(staticConfig.getAppid(), "wechat.mobile.launch.appid");
+        String landingPageUrl = requireText(runtimeConfig.getLandingPageUrl(), "wechat.mobile.launch.landingPageUrl");
+        String signingSecret = requireText(staticConfig.getSceneSigningSecret(), "wechat.mobile.launch.sceneSigningSecret");
         String targetPath = requireText(request.getTargetPath(), "targetPath");
         long issuedAt = Instant.now().getEpochSecond();
-        long expiresAt = issuedAt + requirePositive(config.getSceneTtlSeconds(), "wechat.mobile.launch.sceneTtlSeconds");
+        long expiresAt = issuedAt + requirePositive(runtimeConfig.getSceneTtlSeconds(), "wechat.mobile.launch.sceneTtlSeconds");
         JsonObject payload = new JsonObject();
         payload.addProperty("targetPath", targetPath);
         addOptionalProperty(payload, "targetId", request.getTargetId());
@@ -138,7 +152,7 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
     @Override
     public WechatH5LaunchAppSceneResolveResponse resolveScene(String scene) {
         String normalizedScene = requireText(scene, "scene");
-        WechatH5LaunchAppConfig config = requireLaunchConfig();
+        WechatH5LaunchAppStaticConfig config = requireStaticConfig();
         String signingSecret = requireText(config.getSceneSigningSecret(), "wechat.mobile.launch.sceneSigningSecret");
         JsonObject payload = parseVerifiedScene(normalizedScene, signingSecret);
         String targetPath = getRequiredString(payload, "targetPath");
@@ -159,7 +173,7 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
      * @param config H5 拉起 App 配置
      * @return JSAPI Ticket
      */
-    private String getJsapiTicket(String appid, WechatH5LaunchAppConfig config) {
+    private String getJsapiTicket(String appid, WechatH5LaunchAppRuntimeConfig config) {
         JsapiTicketCache currentCache = ticketCache;
         if (isTicketValid(currentCache, appid, config)) {
             return currentCache.ticket();
@@ -185,7 +199,7 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
      * @param config H5 拉起 App 配置
      * @return JSAPI Ticket
      */
-    private String requestJsapiTicket(WechatH5LaunchAppConfig config) {
+    private String requestJsapiTicket(WechatH5LaunchAppRuntimeConfig config) {
         String ticketUrl = requireText(config.getJsapiTicketUrl(), "wechat.mobile.launch.jsapiTicketUrl");
         HttpUrl baseUrl;
         try {
@@ -256,7 +270,7 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
      * @param config H5 拉起 App 配置
      * @return Ticket 缓存有效期
      */
-    private long requestTicketExpiresIn(WechatH5LaunchAppConfig config) {
+    private long requestTicketExpiresIn(WechatH5LaunchAppRuntimeConfig config) {
         long refreshAhead = Math.max(0L, config.getJsapiTicketRefreshAheadSeconds());
         long expiresIn = lastTicketExpiresIn;
         if (expiresIn <= refreshAhead) {
@@ -275,7 +289,7 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
      * @param config H5 拉起 App 配置
      * @return 是否有效
      */
-    private boolean isTicketValid(JsapiTicketCache cache, String appid, WechatH5LaunchAppConfig config) {
+    private boolean isTicketValid(JsapiTicketCache cache, String appid, WechatH5LaunchAppRuntimeConfig config) {
         if (cache == null || isBlank(config.getJsapiTicketUrl()) || !appid.equals(cache.appid())
                 || !config.getJsapiTicketUrl().equals(cache.ticketUrl())) {
             return false;
@@ -404,11 +418,25 @@ public class DefaultWechatH5LaunchAppService implements WechatH5LaunchAppService
      *
      * @return 微信 H5 拉起 App 配置
      */
-    private WechatH5LaunchAppConfig requireLaunchConfig() {
-        WechatH5LaunchAppConfig config = launchAppConfigProvider.getConfig();
+    private WechatH5LaunchAppStaticConfig requireStaticConfig() {
+        WechatH5LaunchAppStaticConfig config = staticConfigProvider.getConfig();
         if (config == null) {
-            log.error("DefaultWechatH5LaunchAppService.requireLaunchConfig 未获取到微信 H5 拉起 App 配置");
-            throw new WechatH5LaunchAppException("未获取到微信 H5 拉起 App 配置");
+            log.error("DefaultWechatH5LaunchAppService.requireStaticConfig 未获取到微信 H5 拉起 App 静态配置");
+            throw new WechatH5LaunchAppException("未获取到微信 H5 拉起 App 静态配置");
+        }
+        return config;
+    }
+
+    /**
+     * 获取当前生效的微信 H5 Launch App 运行时配置。
+     *
+     * @return H5 Launch App 运行时配置
+     */
+    private WechatH5LaunchAppRuntimeConfig requireRuntimeConfig() {
+        WechatH5LaunchAppRuntimeConfig config = runtimeConfigProvider.getConfig();
+        if (config == null) {
+            log.error("DefaultWechatH5LaunchAppService.requireRuntimeConfig 未获取到微信 H5 拉起 App 运行时配置");
+            throw new WechatH5LaunchAppException("未获取到微信 H5 拉起 App 运行时配置");
         }
         return config;
     }

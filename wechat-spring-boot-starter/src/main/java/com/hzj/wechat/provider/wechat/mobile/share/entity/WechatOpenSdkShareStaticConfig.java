@@ -9,7 +9,7 @@ import java.security.PrivateKey;
  * 微信 OpenSDK 分享动态配置。
  */
 @Data
-public class WechatOpenSdkShareConfig {
+public class WechatOpenSdkShareStaticConfig {
 
     /** 微信开放平台移动应用 AppID。 */
     private String appid;
