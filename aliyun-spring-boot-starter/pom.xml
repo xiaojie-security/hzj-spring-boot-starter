@@ -27,6 +27,7 @@
         <alipay-sdk-java.version>4.40.771.ALL</alipay-sdk-java.version>
         <dysmsapi20170525.version>4.5.1</dysmsapi20170525.version>
         <cloudauth20190307.version>3.13.4</cloudauth20190307.version>
+        <ocr_api20210707.version>3.1.2</ocr_api20210707.version>
     </properties>
 
     <dependencies>
@@ -152,6 +153,12 @@
             <groupId>com.aliyun</groupId>
             <artifactId>dysmsapi20170525</artifactId>
             <version>${dysmsapi20170525.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>ocr_api20210707</artifactId>
+            <version>${ocr_api20210707.version}</version>
         </dependency>
 
         <dependency>
