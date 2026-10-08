@@ -133,13 +133,52 @@ public class DefaultAliyunOcrService implements AliyunOcrService {
                 .setOutputBarCode(resolveBoolean(param.getOutputBarCode(), config.getOutputBarCode()))
                 .setOutputStamp(resolveBoolean(param.getOutputStamp(), config.getOutputStamp()))
                 .setOutputKVExcel(resolveBoolean(param.getOutputKVExcel(), config.getOutputKVExcel()));
-        applyAdvancedConfig(request, param, config);
-        applyIdCardConfig(request, param);
-        applyInternationalIdCardConfig(request, param);
-        applyInternationalBusinessLicenseConfig(request, param);
-        applyMultiLanConfig(request, param);
-        applyTableConfig(request, param, config);
+        applyTypeSpecificConfig(request, param, config, type);
         return request;
+    }
+
+    /**
+     * 按识别类型分发专有配置。
+     *
+     * <p>阿里云 RecognizeAllText 的各类专有配置仅在对应 Type 下合法，携带到其他 Type 会被服务端直接拒绝，
+     * 例如 {@code Invalid input parameter: param (AdvancedConfig) is not valid for type (BusinessLicense)}。</p>
+     *
+     * <p>其中 AdvancedConfig 与 TableConfig 的取值来自运行时配置默认值，「非 null 即视为已设置」，
+     * 因此不能以「参数是否为空」判断是否填充，必须按 Type 严格分发，否则默认类型之外的所有类型都会带上
+     * 非法参数而调用失败。</p>
+     *
+     * @param request 请求对象
+     * @param param 统一识别参数
+     * @param config OCR 运行时配置
+     * @param type 生效的识别类型
+     */
+    private void applyTypeSpecificConfig(RecognizeAllTextRequest request, AliyunOcrRecognizeAllTextParam param,
+                                         AliyunOcrRuntimeConfig config, AliyunOcrType type) {
+        if (type == null) {
+            return;
+        }
+        switch (type) {
+            case ADVANCED:
+                applyAdvancedConfig(request, param, config);
+                break;
+            case TABLE:
+                applyTableConfig(request, param, config);
+                break;
+            case ID_CARD:
+                applyIdCardConfig(request, param);
+                break;
+            case INTERNATIONAL_ID_CARD:
+                applyInternationalIdCardConfig(request, param);
+                break;
+            case INTERNATIONAL_BUSINESS_LICENSE:
+                applyInternationalBusinessLicenseConfig(request, param);
+                break;
+            case MULTI_LANG:
+                applyMultiLanConfig(request, param);
+                break;
+            default:
+                break;
+        }
     }
 
     /**

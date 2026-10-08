@@ -24,12 +24,14 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -137,6 +139,46 @@ class DefaultAliyunOcrServiceTest {
     }
 
     @Test
+    void shouldNotApplyAdvancedConfigForNonAdvancedType() throws Exception {
+        // 运行时配置里 Advanced/Table 的布尔项全部为非 null 的 false：
+        // 这些值只对 Advanced / Table 类型合法，绝不能下发给其他类型，否则阿里云会以
+        // `param (AdvancedConfig) is not valid for type (BusinessLicense)` 拒绝请求。
+        AliyunOcrRuntimeConfig runtimeConfig = new AliyunOcrRuntimeConfig();
+        runtimeConfig.setDefaultType(AliyunOcrType.ADVANCED);
+        runtimeConfig.setOutputRow(false);
+        runtimeConfig.setOutputParagraph(false);
+        runtimeConfig.setOutputTable(false);
+        runtimeConfig.setOutputCharInfo(false);
+        runtimeConfig.setOutputTableExcel(false);
+        runtimeConfig.setOutputTableHtml(false);
+        runtimeConfig.setLineLessTable(false);
+        runtimeConfig.setHandWritingTable(false);
+        AliyunOcrRuntimeConfigProvider provider = runtimeConfigProvider(runtimeConfig);
+
+        com.aliyun.ocr_api20210707.Client client = mock(com.aliyun.ocr_api20210707.Client.class);
+        RecognizeAllTextResponseBody body = new RecognizeAllTextResponseBody()
+                .setCode("200")
+                .setData(new RecognizeAllTextResponseBody.RecognizeAllTextResponseBodyData()
+                        .setHeight(100)
+                        .setWidth(100));
+        when(client.recognizeAllTextWithOptions(any(RecognizeAllTextRequest.class), any()))
+                .thenReturn(new RecognizeAllTextResponse().setBody(body));
+
+        DefaultAliyunOcrService service = new DefaultAliyunOcrService(provider, client);
+        service.recognizeAllText(AliyunOcrRecognizeAllTextParam.builder()
+                .url("https://example.com/license.png")
+                .type(AliyunOcrType.BUSINESS_LICENSE)
+                .build());
+
+        ArgumentCaptor<RecognizeAllTextRequest> captor = ArgumentCaptor.forClass(RecognizeAllTextRequest.class);
+        verify(client).recognizeAllTextWithOptions(captor.capture(), any());
+        RecognizeAllTextRequest request = captor.getValue();
+        assertThat(request.getType()).isEqualTo(AliyunOcrType.BUSINESS_LICENSE.getCode());
+        assertThat(request.getAdvancedConfig()).isNull();
+        assertThat(request.getTableConfig()).isNull();
+    }
+
+    @Test
     void shouldRejectWhenUrlAndBodyBothProvidedOrMissing() {
         AliyunOcrRuntimeConfigProvider provider = runtimeConfigProvider(new AliyunOcrRuntimeConfig());
         DefaultAliyunOcrService service = new DefaultAliyunOcrService(provider,
@@ -166,22 +208,33 @@ class DefaultAliyunOcrServiceTest {
                 .thenReturn(new RecognizeAllTextResponse().setBody(body));
 
         DefaultAliyunOcrService service = new DefaultAliyunOcrService(provider, client);
+        // 各专有配置仅在对应 Type 下合法，因此按类型分别发起请求断言，
+        // 不能把多个专有配置塞进同一次请求（阿里云会以 Invalid input parameter 拒绝）。
         service.recognizeAllText(AliyunOcrRecognizeAllTextParam.builder()
                 .url("https://example.com/a.png")
                 .type(AliyunOcrType.MULTI_LANG)
                 .outputCoordinate(AliyunOcrCoordinate.POINTS)
                 .languages(Arrays.asList(AliyunOcrLanguage.ENGLISH, AliyunOcrLanguage.CHINESE))
+                .build());
+        service.recognizeAllText(AliyunOcrRecognizeAllTextParam.builder()
+                .url("https://example.com/b.png")
+                .type(AliyunOcrType.INTERNATIONAL_ID_CARD)
                 .internationalIdCardCountry(AliyunOcrInternationalIdCardCountry.VIETNAM)
+                .build());
+        service.recognizeAllText(AliyunOcrRecognizeAllTextParam.builder()
+                .url("https://example.com/c.png")
+                .type(AliyunOcrType.INTERNATIONAL_BUSINESS_LICENSE)
                 .internationalBusinessLicenseCountry(AliyunOcrInternationalBusinessLicenseCountry.KOREA)
                 .build());
 
         ArgumentCaptor<RecognizeAllTextRequest> captor = ArgumentCaptor.forClass(RecognizeAllTextRequest.class);
-        verify(client).recognizeAllTextWithOptions(captor.capture(), any());
-        RecognizeAllTextRequest request = captor.getValue();
-        assertThat(request.getMultiLanConfig().getLanguages()).isEqualTo("eng,chn");
-        assertThat(request.getInternationalIdCardConfig().getCountry()).isEqualTo("Vietnam");
-        assertThat(request.getInternationalBusinessLicenseConfig().getCountry()).isEqualTo("Korea");
-        assertThat(request.getOutputCoordinate()).isEqualTo("points");
+        verify(client, times(3)).recognizeAllTextWithOptions(captor.capture(), any());
+        List<RecognizeAllTextRequest> requests = captor.getAllValues();
+        RecognizeAllTextRequest multiLangRequest = requests.get(0);
+        assertThat(multiLangRequest.getMultiLanConfig().getLanguages()).isEqualTo("eng,chn");
+        assertThat(multiLangRequest.getOutputCoordinate()).isEqualTo("points");
+        assertThat(requests.get(1).getInternationalIdCardConfig().getCountry()).isEqualTo("Vietnam");
+        assertThat(requests.get(2).getInternationalBusinessLicenseConfig().getCountry()).isEqualTo("Korea");
     }
 
     @Test
