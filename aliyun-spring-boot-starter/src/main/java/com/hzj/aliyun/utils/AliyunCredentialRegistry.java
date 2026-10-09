@@ -4,6 +4,8 @@ import com.hzj.aliyun.provider.aliyun.common.entity.AliyunCredentialConfig;
 import com.aliyun.sts20150401.models.AssumeRoleResponse;
 import com.aliyun.sts20150401.models.AssumeRoleResponseBody;
 import com.aliyun.tea.TeaException;
+import com.aliyun.credentials.Client;
+import com.aliyun.credentials.provider.RamRoleArnCredentialProvider;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
@@ -27,11 +29,14 @@ public class AliyunCredentialRegistry {
      * @return OpenAPI 配置
      */
     public com.aliyun.teaopenapi.models.Config createOpenApiConfig(AliyunCredentialConfig credentialConfig) {
-        ResolvedCredentials credentials = resolveCredentials(credentialConfig);
+        validateConfig(credentialConfig);
         com.aliyun.teaopenapi.models.Config openApiConfig = new com.aliyun.teaopenapi.models.Config();
-        openApiConfig.setAccessKeyId(credentials.accessKeyId());
-        openApiConfig.setAccessKeySecret(credentials.accessKeySecret());
-        openApiConfig.setSecurityToken(credentials.securityToken());
+        if (credentialConfig.useSts()) {
+            openApiConfig.setCredential(new Client(createStsCredentialProvider(credentialConfig)));
+        } else {
+            openApiConfig.setAccessKeyId(credentialConfig.getAccessKeyId());
+            openApiConfig.setAccessKeySecret(credentialConfig.getAccessKeySecret());
+        }
         return openApiConfig;
     }
 
@@ -97,6 +102,26 @@ public class AliyunCredentialRegistry {
             }
             throw new IllegalStateException("获取阿里云 STS 临时凭证失败", e);
         }
+    }
+
+    /**
+     * 创建支持自动刷新的 RAM 角色凭证提供者。
+     *
+     * @param credentialConfig 当前阿里云能力的凭证配置
+     * @return RAM 角色凭证提供者
+     */
+    private RamRoleArnCredentialProvider createStsCredentialProvider(
+            AliyunCredentialConfig credentialConfig) {
+        String stsEndpoint = isBlank(credentialConfig.getStsEndpoint())
+                ? "sts.aliyuncs.com" : credentialConfig.getStsEndpoint();
+        return RamRoleArnCredentialProvider.builder()
+                .roleArn(credentialConfig.getRamRoleArn())
+                .accessKeyId(credentialConfig.getAccessKeyId())
+                .accessKeySecret(credentialConfig.getAccessKeySecret())
+                .durationSeconds(Math.toIntExact(credentialConfig.getStsDurationSeconds()))
+                .roleSessionName(UUID.randomUUID().toString())
+                .STSEndpoint(stsEndpoint)
+                .build();
     }
 
     private void validateConfig(AliyunCredentialConfig credentialConfig) {
