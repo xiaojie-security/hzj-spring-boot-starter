@@ -302,11 +302,13 @@ public class DefaultWechatPaymentService implements WechatPaymentService {
     }
 
     private void applyPrepayRequestDefaults(PaymentPrepayRequest request, WechatPaymentPrepayType prepayType) {
-        if (request.prepayType == null) {
-            request.prepayType = prepayType;
-        }
         if (isBlank(request.requestPath)) {
-            request.requestPath = request.prepayType.getRequestPath();
+            // The service method selects the endpoint. A new request defaults to JSAPI,
+            // so using request.prepayType here would route appPrepay to the JSAPI API.
+            request.prepayType = prepayType;
+            request.requestPath = prepayType.getRequestPath();
+        } else if (request.prepayType == null) {
+            request.prepayType = prepayType;
         }
         if (request.requestMethod == null) {
             request.requestMethod = WechatHttpMethod.POST;
